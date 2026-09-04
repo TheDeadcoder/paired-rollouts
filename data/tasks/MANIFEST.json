@@ -1,0 +1,94 @@
+{
+  "files": {
+    "diagnostic": {
+      "count": 16,
+      "path": "data/tasks/diagnostic.jsonl",
+      "requests_per_task": {
+        "1": 10,
+        "2": 4,
+        "3": 2
+      },
+      "sha256": "4d312084f749fa82f265a421d7985816930490244236b130bf7708d984a1fad0",
+      "templates": {
+        "address_change": 3,
+        "cancel_paid_refund": 1,
+        "cancel_pending": 3,
+        "open_ticket": 7,
+        "open_ticket_no_order": 3,
+        "partial_refund_delivered": 1,
+        "reserve_and_ship": 4,
+        "ship_reserved": 2
+      },
+      "write_calls_per_task": {
+        "1": 8,
+        "2": 4,
+        "3": 1,
+        "4": 2,
+        "5": 1
+      }
+    },
+    "heldout": {
+      "count": 300,
+      "path": "data/tasks/heldout.jsonl",
+      "requests_per_task": {
+        "1": 155,
+        "2": 92,
+        "3": 53
+      },
+      "sha256": "d23dfc97799fab023bace3b22365c80580f1e6f6c1a7fca6a241156f9325c333",
+      "templates": {
+        "address_change": 133,
+        "cancel_paid_refund": 57,
+        "cancel_pending": 49,
+        "open_ticket": 93,
+        "open_ticket_no_order": 37,
+        "partial_refund_delivered": 54,
+        "reserve_and_ship": 43,
+        "ship_reserved": 32
+      },
+      "write_calls_per_task": {
+        "1": 128,
+        "2": 81,
+        "3": 43,
+        "4": 28,
+        "5": 11,
+        "6": 6,
+        "7": 1,
+        "8": 1,
+        "10": 1
+      }
+    },
+    "train": {
+      "count": 2000,
+      "path": "data/tasks/train.jsonl",
+      "requests_per_task": {
+        "1": 1009,
+        "2": 698,
+        "3": 293
+      },
+      "sha256": "9447636a49d4f4dff2b64cd3a81421d7473f0f55fdbf1947fa332bfc55989b7a",
+      "templates": {
+        "address_change": 707,
+        "cancel_paid_refund": 383,
+        "cancel_pending": 323,
+        "open_ticket": 654,
+        "open_ticket_no_order": 328,
+        "partial_refund_delivered": 409,
+        "reserve_and_ship": 275,
+        "ship_reserved": 205
+      },
+      "write_calls_per_task": {
+        "1": 781,
+        "2": 607,
+        "3": 364,
+        "4": 154,
+        "5": 70,
+        "6": 21,
+        "7": 3
+      }
+    }
+  },
+  "generator_code_sha256": "78bef270f0cd0e898972f15fc522cd1cd46cecf638f2ce06b802e44914b1538d",
+  "generator_seed": 20260904,
+  "pairedrl_version": "0.0.1"
+}
