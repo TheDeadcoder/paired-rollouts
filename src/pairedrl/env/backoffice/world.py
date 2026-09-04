@@ -235,6 +235,13 @@ class World:
             world.orders[order_id] = order
         for sku, product in world.products.items():
             product.stock = max(product.stock, world.reserved_quantity(sku))
+        for order in world.orders.values():
+            if order.status == "paid" and not order_fully_reserved(order) and rng.random() < 0.7:
+                for item in order.items:
+                    missing = item.quantity - order_reserved_quantity(order, item.sku)
+                    shortfall = missing - world.available(item.sku)
+                    if shortfall > 0:
+                        world.products[item.sku].stock += shortfall
         order_ids = sorted(world.orders)
         for i in range(1, 11):
             order = world.orders[rng.choice(order_ids)]
