@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Secrets and local settings
+.env
+*.env
+.modal.toml
+
+# Large or regenerable artifacts (registers/ IS committed; raw outputs are not)
+outputs/
+checkpoints/
+wandb/
+*.safetensors
+*.pt
+*.bin
+*.gguf
+
+# OS and editors
+.DS_Store
+.idea/
+.vscode/

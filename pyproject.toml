@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pairedrl"
+version = "0.0.1"
+description = "Paired rollouts (common random numbers) for group-relative RL of LLM agents in stochastic environments"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+dependencies = [
+  "numpy>=1.26",
+  "pydantic>=2.7",
+  "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+  "ruff>=0.5",
+]
+# Pinned on day 1 after the stack check on the GPU machines. Do not install locally.
+train = [
+  "torch",
+  "transformers",
+  "trl",
+  "peft",
+  "accelerate",
+  "datasets",
+  "vllm",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
