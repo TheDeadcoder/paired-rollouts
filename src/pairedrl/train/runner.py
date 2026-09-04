@@ -35,8 +35,9 @@ class RunSpec:
     num_generations: int = 8
     lora_r: int = 32
     learning_rate: float = 1e-5
-    max_completion_length: int = 4096
+    max_completion_length: int = 6144
     max_tool_calling_iterations: int = 32
+    vllm_max_model_length: int = 12288
     scale_rewards: str = "group"
     loss_type: str = "dapo"
     eval_every: int = 20
@@ -50,7 +51,7 @@ class RunSpec:
     adapter_path: str | None = None
     vllm_gpu_memory_utilization: float = 0.35
     per_device_eval_batch_size: int = 64
-    micro_batch: int = 8
+    micro_batch: int = 4
     notes: str = ""
 
     def __post_init__(self):
@@ -198,6 +199,7 @@ def build_trainer(spec: RunSpec, data_dir, out_dir, log_path):
         use_vllm=True,
         vllm_mode="colocate",
         vllm_gpu_memory_utilization=spec.vllm_gpu_memory_utilization,
+        vllm_max_model_length=spec.vllm_max_model_length,
         scale_rewards=spec.scale_rewards,
         loss_type=spec.loss_type,
         chat_template_kwargs={"enable_thinking": False},
@@ -217,12 +219,24 @@ def build_trainer(spec: RunSpec, data_dir, out_dir, log_path):
     train_dataset = Dataset.from_list(train_rows) if train_rows else Dataset.from_list(periodic["clean"][:per_device])
 
     class PhasedTrainer(GRPOTrainer):
+        """Stamps the phase onto episode records, chunks log-prob passes, and skips the loss in evaluation."""
+
         def evaluate(self, eval_dataset=None, ignore_keys=None, metric_key_prefix="eval"):
             BackOfficeEnv.phase = f"{metric_key_prefix}:step{self.state.global_step}"
             try:
                 return super().evaluate(eval_dataset=eval_dataset, ignore_keys=ignore_keys, metric_key_prefix=metric_key_prefix)
             finally:
                 BackOfficeEnv.phase = "train"
+
+        def _get_per_token_logps_and_entropies(self, model, input_ids, attention_mask, logits_to_keep, batch_size=None, **kwargs):
+            chunk = min(batch_size or input_ids.size(0), self.args.per_device_train_batch_size)
+            return super()._get_per_token_logps_and_entropies(model, input_ids, attention_mask, logits_to_keep, chunk, **kwargs)
+
+        def prediction_step(self, model, inputs, prediction_loss_only, ignore_keys=None):
+            import torch
+
+            self._prepare_inputs(inputs)
+            return torch.zeros((), device=self.accelerator.device), None, None
 
     trainer = PhasedTrainer(
         model=model,
