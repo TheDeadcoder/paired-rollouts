@@ -1,0 +1,13 @@
+{
+  "run_id": "calib-qwen3.5-4b",
+  "model": "Qwen/Qwen3.5-4B",
+  "condition": "CALIB",
+  "arm": "paired",
+  "p": 0.25,
+  "q": 0.0,
+  "seed": 0,
+  "eval_only": true,
+  "final_eval_tasks": 200,
+  "diagnostic_steps": [0],
+  "notes": "zero-shot calibration for the 4B model"
+}

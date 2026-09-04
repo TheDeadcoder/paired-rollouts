@@ -1,0 +1,13 @@
+{
+  "run_id": "gate1-c0-clean-s0",
+  "model": "Qwen/Qwen3.5-2B",
+  "condition": "C0",
+  "arm": "clean",
+  "p": 0.0,
+  "q": 0.0,
+  "seed": 0,
+  "steps": 100,
+  "prompts_per_step": 24,
+  "num_generations": 8,
+  "notes": "gate 1: does the pipeline learn on the clean environment within budget"
+}

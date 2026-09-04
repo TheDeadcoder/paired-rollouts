@@ -53,6 +53,7 @@ class BackOfficeEnv:
 
     _slot_counter: ClassVar[int] = 0
     _slot_lock: ClassVar[threading.Lock] = threading.Lock()
+    phase: ClassVar[str] = "train"
 
     def __init__(self, task_paths, log_path: str | os.PathLike | None = None):
         with BackOfficeEnv._slot_lock:
@@ -111,6 +112,7 @@ class BackOfficeEnv:
         observed, flipped = observe(result.success, self.schedule)
         record = {
             "task_id": self.task.task_id,
+            "phase": BackOfficeEnv.phase,
             "condition": self.row.get("condition"),
             "mode": self.config.mode if self.config else "clean",
             "schedule_seed": int(self.row.get("schedule_seed", 0)),

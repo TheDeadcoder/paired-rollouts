@@ -1,0 +1,13 @@
+{
+  "run_id": "gate1-c2-paired-s0",
+  "model": "Qwen/Qwen3.5-2B",
+  "condition": "C2",
+  "arm": "paired",
+  "p": 0.25,
+  "q": 0.0,
+  "seed": 0,
+  "steps": 100,
+  "prompts_per_step": 24,
+  "num_generations": 8,
+  "notes": "gate 1: noise plumbing end to end; exploratory, not pre-registered"
+}
