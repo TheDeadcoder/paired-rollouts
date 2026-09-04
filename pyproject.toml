@@ -20,15 +20,17 @@ dev = [
   "pytest>=8.0",
   "ruff>=0.5",
 ]
-# Pinned on day 1 after the stack check on the GPU machines. Do not install locally.
+cloud = [
+  "modal>=1.5,<2",
+]
 train = [
-  "torch",
-  "transformers",
-  "trl",
-  "peft",
-  "accelerate",
-  "datasets",
-  "vllm",
+  "torch==2.13.0",
+  "transformers==5.16.1",
+  "trl==1.12.0",
+  "vllm==0.27.1",
+  "peft==0.20.0",
+  "accelerate==1.14.0",
+  "datasets==5.0.1",
 ]
 
 [tool.setuptools.packages.find]
