@@ -50,8 +50,9 @@ class RunSpec:
     eval_only: bool = False
     adapter_path: str | None = None
     vllm_gpu_memory_utilization: float = 0.35
-    per_device_eval_batch_size: int = 64
-    micro_batch: int = 4
+    per_device_eval_batch_size: int = 128
+    micro_batch: int = 2
+    logprob_chunk: int = 1
     notes: str = ""
 
     def __post_init__(self):
@@ -69,6 +70,8 @@ class RunSpec:
             raise ValueError("prompts_per_step * num_generations must be divisible by micro_batch")
         if self.per_device_eval_batch_size % self.micro_batch != 0:
             raise ValueError("per_device_eval_batch_size must be divisible by micro_batch")
+        if self.logprob_chunk < 1:
+            raise ValueError("logprob_chunk must be at least 1")
 
     def to_dict(self) -> dict:
         return dataclasses.asdict(self)
@@ -167,8 +170,8 @@ def build_trainer(spec: RunSpec, data_dir, out_dir, log_path):
     """Construct the TRL trainer. Imports TRL lazily so the rest of the module stays importable on any machine."""
     from datasets import Dataset
     from peft import LoraConfig, PeftModel
-    from transformers import AutoModelForCausalLM
     from trl import GRPOConfig, GRPOTrainer
+    from trl.trainer.utils import create_model_from_path
 
     from pairedrl.train.env_adapter import BackOfficeEnv, make_env_factory
 
@@ -203,13 +206,14 @@ def build_trainer(spec: RunSpec, data_dir, out_dir, log_path):
         scale_rewards=spec.scale_rewards,
         loss_type=spec.loss_type,
         chat_template_kwargs={"enable_thinking": False},
+        model_init_kwargs={"dtype": "bfloat16"},
         seed=spec.seed,
         shuffle_dataset=False,
     )
     peft_config = None
     model = spec.model
     if spec.adapter_path:
-        base = AutoModelForCausalLM.from_pretrained(spec.model, dtype="bfloat16")
+        base = create_model_from_path(spec.model, dtype="bfloat16")
         model = PeftModel.from_pretrained(base, spec.adapter_path)
     else:
         peft_config = LoraConfig(
@@ -219,7 +223,11 @@ def build_trainer(spec: RunSpec, data_dir, out_dir, log_path):
     train_dataset = Dataset.from_list(train_rows) if train_rows else Dataset.from_list(periodic["clean"][:per_device])
 
     class PhasedTrainer(GRPOTrainer):
-        """Stamps the phase onto episode records, chunks log-prob passes, and skips the loss in evaluation."""
+        """Stamps the phase onto episode records, chunks log-prob passes, and skips the loss in evaluation.
+
+        A log-prob pass materializes (chunk, max_completion_length, vocab) logits at least twice: 3 GB per
+        sequence in bf16 with a 248k vocabulary and a 6144-token cap, which is why the chunk is small.
+        """
 
         def evaluate(self, eval_dataset=None, ignore_keys=None, metric_key_prefix="eval"):
             BackOfficeEnv.phase = f"{metric_key_prefix}:step{self.state.global_step}"
@@ -229,7 +237,7 @@ def build_trainer(spec: RunSpec, data_dir, out_dir, log_path):
                 BackOfficeEnv.phase = "train"
 
         def _get_per_token_logps_and_entropies(self, model, input_ids, attention_mask, logits_to_keep, batch_size=None, **kwargs):
-            chunk = min(batch_size or input_ids.size(0), self.args.per_device_train_batch_size)
+            chunk = min(batch_size or input_ids.size(0), spec.logprob_chunk)
             return super()._get_per_token_logps_and_entropies(model, input_ids, attention_mask, logits_to_keep, chunk, **kwargs)
 
         def prediction_step(self, model, inputs, prediction_loss_only, ignore_keys=None):

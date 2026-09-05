@@ -40,6 +40,10 @@ def test_spec_validation_and_round_trip():
         spec(eval_only=True, train_only=True)
     with pytest.raises(ValueError):
         spec(prompts_per_step=5, num_generations=8, micro_batch=16)
+    with pytest.raises(ValueError):
+        spec(logprob_chunk=0)
+    assert (s.micro_batch, s.logprob_chunk, s.per_device_eval_batch_size) == (2, 1, 128)
+    assert (s.max_completion_length, s.vllm_max_model_length) == (6144, 12288)
     assert spec(arm="clean", p=0.0).training_noise().is_clean
     assert spec(arm="blocking").training_noise().mode == "independent"
     assert spec(arm="independent").eval_noise().mode == "paired"

@@ -41,7 +41,7 @@ runs_volume = modal.Volume.from_name("pairedrl-runs", create_if_missing=True)
     gpu="H100",
     timeout=8 * 3600,
     volumes={HF_CACHE: hf_cache, RUNS: runs_volume},
-    max_inputs=1,
+    single_use_containers=True,
 )
 def run(spec_dict: dict, git_commit: str) -> dict:
     import importlib.metadata as md
