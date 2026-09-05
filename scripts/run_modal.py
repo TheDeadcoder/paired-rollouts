@@ -86,6 +86,7 @@ def vllm_facts(trainer) -> dict:
     timeout=24 * 3600,
     volumes={HF_CACHE: hf_cache, RUNS: runs_volume},
     single_use_containers=True,
+    retries=modal.Retries(max_retries=3, backoff_coefficient=1.0, initial_delay=60.0),
 )
 def run(spec_dict: dict, git_commit: str) -> dict:
     import importlib.metadata as md
@@ -153,7 +154,8 @@ def run(spec_dict: dict, git_commit: str) -> dict:
         write_state()
         if spec.eval_only:
             schedule.run_final(splits)
-            schedule.run_diagnostic(0)
+            if 0 in spec.diagnostic_steps:
+                schedule.run_diagnostic(0)
         else:
             if not spec.train_only:
                 schedule.run_periodic(0)

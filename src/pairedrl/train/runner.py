@@ -36,7 +36,7 @@ class RunSpec:
     lora_r: int = 32
     learning_rate: float = 1e-5
     max_completion_length: int = 6144
-    max_tool_calling_iterations: int = 32
+    max_tool_calling_iterations: int = 24
     vllm_max_model_length: int = 12288
     scale_rewards: str = "group"
     loss_type: str = "dapo"
@@ -50,6 +50,8 @@ class RunSpec:
     eval_only: bool = False
     adapter_path: str | None = None
     vllm_gpu_memory_utilization: float = 0.35
+    vllm_enable_prefix_caching: bool | None = None
+    vllm_max_num_batched_tokens: int | None = None
     per_device_eval_batch_size: int = 128
     micro_batch: int = 2
     logprob_chunk: int = 1
@@ -72,6 +74,10 @@ class RunSpec:
             raise ValueError("per_device_eval_batch_size must be divisible by micro_batch")
         if self.logprob_chunk < 1:
             raise ValueError("logprob_chunk must be at least 1")
+        if self.vllm_max_num_batched_tokens is not None and self.vllm_max_num_batched_tokens < 1024:
+            raise ValueError("vllm_max_num_batched_tokens must be at least 1024")
+        if self.max_tool_calling_iterations < 2:
+            raise ValueError("max_tool_calling_iterations must be at least 2")
 
     def to_dict(self) -> dict:
         return dataclasses.asdict(self)
@@ -166,6 +172,33 @@ def luck_share_tables(records: list[dict], field: str = "true_success") -> list[
     return tables
 
 
+def vllm_engine_overrides(spec: RunSpec) -> dict:
+    overrides = {}
+    if spec.vllm_enable_prefix_caching is not None:
+        overrides["enable_prefix_caching"] = spec.vllm_enable_prefix_caching
+    if spec.vllm_max_num_batched_tokens is not None:
+        overrides["max_num_batched_tokens"] = spec.vllm_max_num_batched_tokens
+    return overrides
+
+
+def patch_vllm_engine(overrides: dict) -> None:
+    """TRL builds its colocated vLLM engine with fixed kwargs (no prefix caching for hybrid models,
+    max_num_batched_tokens 4096); this wraps the LLM class it instantiates so run specs can override them."""
+    import trl.generation.vllm_generation as vg
+
+    base = getattr(vg, "_pairedrl_base_llm", None) or vg.LLM
+    vg._pairedrl_base_llm = base
+    if not overrides:
+        vg.LLM = base
+        return
+
+    class PatchedLLM(base):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **{**kwargs, **overrides})
+
+    vg.LLM = PatchedLLM
+
+
 def build_trainer(spec: RunSpec, data_dir, out_dir, log_path):
     """Construct the TRL trainer. Imports TRL lazily so the rest of the module stays importable on any machine."""
     from datasets import Dataset
@@ -175,6 +208,7 @@ def build_trainer(spec: RunSpec, data_dir, out_dir, log_path):
 
     from pairedrl.train.env_adapter import BackOfficeEnv, make_env_factory
 
+    patch_vllm_engine(vllm_engine_overrides(spec))
     splits = load_task_splits(data_dir)
     task_paths = [str(pathlib.Path(data_dir) / f"{n}.jsonl") for n in ("train", "heldout", "diagnostic")]
     train_rows = assemble_training_rows(spec, splits["train"]) if not spec.eval_only else []

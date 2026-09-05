@@ -14,6 +14,7 @@ from pairedrl.train.runner import (
     luck_share_tables,
     read_episode_log,
     summarize_episodes,
+    vllm_engine_overrides,
 )
 
 SPLITS = load_task_splits("data/tasks")
@@ -43,7 +44,12 @@ def test_spec_validation_and_round_trip():
     with pytest.raises(ValueError):
         spec(logprob_chunk=0)
     assert (s.micro_batch, s.logprob_chunk, s.per_device_eval_batch_size) == (2, 1, 128)
-    assert (s.max_completion_length, s.vllm_max_model_length) == (6144, 12288)
+    assert (s.max_completion_length, s.vllm_max_model_length, s.max_tool_calling_iterations) == (6144, 12288, 24)
+    assert vllm_engine_overrides(s) == {}
+    assert vllm_engine_overrides(spec(vllm_enable_prefix_caching=True, vllm_max_num_batched_tokens=8192)) == {
+        "enable_prefix_caching": True, "max_num_batched_tokens": 8192}
+    with pytest.raises(ValueError):
+        spec(vllm_max_num_batched_tokens=512)
     assert spec(arm="clean", p=0.0).training_noise().is_clean
     assert spec(arm="blocking").training_noise().mode == "independent"
     assert spec(arm="independent").eval_noise().mode == "paired"

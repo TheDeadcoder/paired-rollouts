@@ -1,0 +1,16 @@
+{
+  "run_id": "speed-c-prefix-caching",
+  "model": "Qwen/Qwen3.5-2B",
+  "condition": "SPEED",
+  "arm": "paired",
+  "p": 0.25,
+  "q": 0.0,
+  "seed": 0,
+  "eval_only": true,
+  "final_eval_tasks": 32,
+  "diagnostic_steps": [],
+  "max_tool_calling_iterations": 24,
+  "vllm_max_num_batched_tokens": 8192,
+  "vllm_enable_prefix_caching": true,
+  "notes": "generation speed check C: B plus vLLM prefix caching enabled for the hybrid model"
+}
