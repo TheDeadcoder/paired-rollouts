@@ -1,0 +1,70 @@
+{
+  "episodes_per_run": 384,
+  "runs": {
+    "speed-a-baseline": {
+      "episodes_logged": 384,
+      "estimated_cost_usd": 1.14,
+      "git_commit": "f9cf41bf45cc013035098f1b864443aae1537f61",
+      "max_tool_calling_iterations": 32,
+      "peak_mem_gb": 53.61,
+      "set_seconds": {
+        "final_clean": 229.3,
+        "final_heldout_types": 292.0,
+        "final_noisy": 284.0
+      },
+      "status": "COMPLETE",
+      "vllm": {
+        "enable_prefix_caching": false,
+        "max_model_len": 12288,
+        "max_num_batched_tokens": 4096,
+        "max_num_seqs": 192
+      },
+      "wall_time_s": 1039.0
+    },
+    "speed-b-iters24-batched8192": {
+      "episodes_logged": 384,
+      "estimated_cost_usd": 1.05,
+      "git_commit": "f9cf41bf45cc013035098f1b864443aae1537f61",
+      "max_tool_calling_iterations": 24,
+      "peak_mem_gb": 53.54,
+      "set_seconds": {
+        "final_clean": 233.6,
+        "final_heldout_types": 263.4,
+        "final_noisy": 279.8
+      },
+      "status": "COMPLETE",
+      "vllm": {
+        "enable_prefix_caching": false,
+        "max_model_len": 12288,
+        "max_num_batched_tokens": 8192,
+        "max_num_seqs": 192
+      },
+      "wall_time_s": 953.4
+    },
+    "speed-c-prefix-caching": {
+      "episodes_logged": 384,
+      "estimated_cost_usd": 1.24,
+      "git_commit": "f9cf41bf45cc013035098f1b864443aae1537f61",
+      "max_tool_calling_iterations": 24,
+      "peak_mem_gb": 53.54,
+      "set_seconds": {
+        "final_clean": 277.2,
+        "final_heldout_types": 266.3,
+        "final_noisy": 287.7
+      },
+      "status": "COMPLETE",
+      "vllm": {
+        "enable_prefix_caching": true,
+        "max_model_len": 12288,
+        "max_num_batched_tokens": 8192,
+        "max_num_seqs": 192
+      },
+      "wall_time_s": 1126.2
+    }
+  },
+  "sets": [
+    "final_clean",
+    "final_noisy",
+    "final_heldout_types"
+  ]
+}

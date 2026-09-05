@@ -1,13 +1,21 @@
 {
   "run_id": "gate1-c0-clean-s0",
-  "model": "Qwen/Qwen3.5-2B",
   "condition": "C0",
   "arm": "clean",
   "p": 0.0,
   "q": 0.0,
+  "model": "Qwen/Qwen3.5-2B",
   "seed": 0,
   "steps": 100,
   "prompts_per_step": 24,
   "num_generations": 8,
-  "notes": "gate 1: does the pipeline learn on the clean environment within budget"
+  "eval_every": 20,
+  "eval_tasks": 64,
+  "final_eval_tasks": 200,
+  "diagnostic_steps": [
+    0,
+    50,
+    100
+  ],
+  "notes": "gate 1: training plumbing end to end on the clean environment, learning curve to 100 steps, step time and cost; exploratory, not pre-registered"
 }
