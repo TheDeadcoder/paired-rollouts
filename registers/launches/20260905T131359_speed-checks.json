@@ -1,0 +1,28 @@
+{
+  "app": "pairedrl-train",
+  "commit": "f9cf41bf45cc013035098f1b864443aae1537f61",
+  "entries": [
+    {
+      "call_id": "fc-01M1RV8Q65DA7P4M61XSVDXYD8",
+      "dashboard_url": "https://modal.com/id/fc-01M1RV8Q65DA7P4M61XSVDXYD8",
+      "run_id": "speed-a-baseline",
+      "spawned_utc": "2026-09-05T13:14:01+00:00",
+      "spec_path": "configs/speed-a-baseline.json"
+    },
+    {
+      "call_id": "fc-01M1RV8RB9WBJ0KKDY5CS3C2VG",
+      "dashboard_url": "https://modal.com/id/fc-01M1RV8RB9WBJ0KKDY5CS3C2VG",
+      "run_id": "speed-b-iters24-batched8192",
+      "spawned_utc": "2026-09-05T13:14:02+00:00",
+      "spec_path": "configs/speed-b-iters24-batched8192.json"
+    },
+    {
+      "call_id": "fc-01M1RV8SHTHC80C73SPYBVM12X",
+      "dashboard_url": "https://modal.com/id/fc-01M1RV8SHTHC80C73SPYBVM12X",
+      "run_id": "speed-c-prefix-caching",
+      "spawned_utc": "2026-09-05T13:14:03+00:00",
+      "spec_path": "configs/speed-c-prefix-caching.json"
+    }
+  ],
+  "launched_utc": "2026-09-05T13:13:59+00:00"
+}
