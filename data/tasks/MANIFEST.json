@@ -4,91 +4,87 @@
       "count": 16,
       "path": "data/tasks/diagnostic.jsonl",
       "requests_per_task": {
-        "1": 10,
-        "2": 4,
-        "3": 2
+        "1": 1,
+        "2": 8,
+        "3": 7
       },
-      "sha256": "4d312084f749fa82f265a421d7985816930490244236b130bf7708d984a1fad0",
+      "sha256": "43f82bdf1c6e5fc74beb3c05c8ac0ebb21fc60ee34787fd109ad64400430ef78",
       "templates": {
-        "address_change": 3,
-        "cancel_paid_refund": 1,
+        "address_change": 9,
+        "cancel_paid_refund": 4,
         "cancel_pending": 3,
-        "open_ticket": 7,
+        "open_ticket": 11,
         "open_ticket_no_order": 3,
-        "partial_refund_delivered": 1,
-        "reserve_and_ship": 4,
-        "ship_reserved": 2
+        "partial_refund_delivered": 5,
+        "ship_reserved": 3
       },
       "write_calls_per_task": {
-        "1": 8,
-        "2": 4,
-        "3": 1,
-        "4": 2,
-        "5": 1
+        "2": 8,
+        "3": 6,
+        "4": 2
       }
     },
     "heldout": {
       "count": 300,
       "path": "data/tasks/heldout.jsonl",
       "requests_per_task": {
-        "1": 155,
-        "2": 92,
-        "3": 53
+        "1": 48,
+        "2": 137,
+        "3": 115
       },
-      "sha256": "d23dfc97799fab023bace3b22365c80580f1e6f6c1a7fca6a241156f9325c333",
+      "sha256": "9cceb1013563ebe47c6bde1f510ae12784724884aa10e47080800a89590121c7",
       "templates": {
-        "address_change": 133,
-        "cancel_paid_refund": 57,
-        "cancel_pending": 49,
-        "open_ticket": 93,
-        "open_ticket_no_order": 37,
-        "partial_refund_delivered": 54,
-        "reserve_and_ship": 43,
-        "ship_reserved": 32
+        "address_change": 143,
+        "cancel_paid_refund": 60,
+        "cancel_pending": 75,
+        "open_ticket": 135,
+        "open_ticket_no_order": 63,
+        "partial_refund_delivered": 93,
+        "reserve_and_ship": 59,
+        "ship_reserved": 39
       },
       "write_calls_per_task": {
-        "1": 128,
-        "2": 81,
-        "3": 43,
-        "4": 28,
-        "5": 11,
-        "6": 6,
-        "7": 1,
-        "8": 1,
-        "10": 1
+        "1": 37,
+        "2": 99,
+        "3": 95,
+        "4": 37,
+        "5": 20,
+        "6": 8,
+        "7": 4
       }
     },
     "train": {
       "count": 2000,
       "path": "data/tasks/train.jsonl",
       "requests_per_task": {
-        "1": 1009,
-        "2": 698,
-        "3": 293
+        "1": 395,
+        "2": 763,
+        "3": 842
       },
-      "sha256": "9447636a49d4f4dff2b64cd3a81421d7473f0f55fdbf1947fa332bfc55989b7a",
+      "sha256": "2bbec1c596afc8495933a59a35cc69fec0b75c22caa7ab42759f4f7a296828ae",
       "templates": {
-        "address_change": 707,
-        "cancel_paid_refund": 383,
-        "cancel_pending": 323,
-        "open_ticket": 654,
-        "open_ticket_no_order": 328,
-        "partial_refund_delivered": 409,
-        "reserve_and_ship": 275,
-        "ship_reserved": 205
+        "address_change": 1030,
+        "cancel_paid_refund": 480,
+        "cancel_pending": 468,
+        "open_ticket": 846,
+        "open_ticket_no_order": 434,
+        "partial_refund_delivered": 558,
+        "reserve_and_ship": 332,
+        "ship_reserved": 299
       },
       "write_calls_per_task": {
-        "1": 781,
-        "2": 607,
-        "3": 364,
-        "4": 154,
-        "5": 70,
-        "6": 21,
-        "7": 3
+        "1": 318,
+        "2": 569,
+        "3": 609,
+        "4": 308,
+        "5": 111,
+        "6": 69,
+        "7": 15,
+        "8": 1
       }
     }
   },
-  "generator_code_sha256": "78bef270f0cd0e898972f15fc522cd1cd46cecf638f2ce06b802e44914b1538d",
+  "generator_code_sha256": "0c7d1097022a15885df14300f063e1d61dba0a502a33f4f120ce92ba1312f6cd",
   "generator_seed": 20260904,
   "pairedrl_version": "0.0.1"
 }

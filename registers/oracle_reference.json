@@ -1,0 +1,129 @@
+{
+  "conditions": {
+    "C1_p0.10": {
+      "config": {
+        "mode": "paired",
+        "p": 0.1,
+        "q": 0.0,
+        "weights": {
+          "outage": 0.1,
+          "rate_limit": 0.15,
+          "stale": 0.15,
+          "transient": 0.45,
+          "truncate": 0.15
+        }
+      },
+      "naive": {
+        "budget_exceeded_frac": 0.0,
+        "episodes": 1200,
+        "exposed_frac": 0.3725,
+        "mean_calls": 6.6033333333333335,
+        "outage_hit_frac": 0.059166666666666666,
+        "success": 0.7225
+      },
+      "recovering": {
+        "budget_exceeded_frac": 0.0,
+        "episodes": 1200,
+        "exposed_frac": 0.3725,
+        "mean_calls": 7.320833333333334,
+        "outage_hit_frac": 0.06333333333333334,
+        "success": 0.9591666666666666
+      }
+    },
+    "C2_p0.25": {
+      "config": {
+        "mode": "paired",
+        "p": 0.25,
+        "q": 0.0,
+        "weights": {
+          "outage": 0.1,
+          "rate_limit": 0.15,
+          "stale": 0.15,
+          "transient": 0.45,
+          "truncate": 0.15
+        }
+      },
+      "naive": {
+        "budget_exceeded_frac": 0.0,
+        "episodes": 1200,
+        "exposed_frac": 0.7383333333333333,
+        "mean_calls": 6.6033333333333335,
+        "outage_hit_frac": 0.145,
+        "success": 0.41333333333333333
+      },
+      "recovering": {
+        "budget_exceeded_frac": 0.016666666666666666,
+        "episodes": 1200,
+        "exposed_frac": 0.7383333333333333,
+        "mean_calls": 8.703333333333333,
+        "outage_hit_frac": 0.19916666666666666,
+        "success": 0.8625
+      }
+    },
+    "clean": {
+      "config": {
+        "mode": "clean",
+        "p": 0.0,
+        "q": 0.0,
+        "weights": {
+          "outage": 0.1,
+          "rate_limit": 0.15,
+          "stale": 0.15,
+          "transient": 0.45,
+          "truncate": 0.15
+        }
+      },
+      "naive": {
+        "budget_exceeded_frac": 0.0,
+        "episodes": 1200,
+        "exposed_frac": 0.0,
+        "mean_calls": 6.6033333333333335,
+        "outage_hit_frac": 0.0,
+        "success": 1.0
+      },
+      "recovering": {
+        "budget_exceeded_frac": 0.0,
+        "episodes": 1200,
+        "exposed_frac": 0.0,
+        "mean_calls": 6.6033333333333335,
+        "outage_hit_frac": 0.0,
+        "success": 1.0
+      }
+    },
+    "heldout_types_p0.25": {
+      "config": {
+        "mode": "paired",
+        "p": 0.25,
+        "q": 0.0,
+        "weights": {
+          "field_dropout": 0.5,
+          "timeout_after_commit": 0.5
+        }
+      },
+      "naive": {
+        "budget_exceeded_frac": 0.0,
+        "episodes": 1200,
+        "exposed_frac": 0.7266666666666667,
+        "mean_calls": 6.6033333333333335,
+        "outage_hit_frac": 0.0,
+        "success": 1.0
+      },
+      "recovering": {
+        "budget_exceeded_frac": 0.0,
+        "episodes": 1200,
+        "exposed_frac": 0.7266666666666667,
+        "mean_calls": 7.185833333333333,
+        "outage_hit_frac": 0.0,
+        "success": 1.0
+      }
+    }
+  },
+  "n_tasks": 300,
+  "seeds": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "tasks": "data/tasks/heldout.jsonl"
+}

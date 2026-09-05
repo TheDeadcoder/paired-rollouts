@@ -16,9 +16,10 @@ from pairedrl.noise.noisy_api import NoisyToolAPI
 from pairedrl.noise.oracle import observe
 from pairedrl.noise.schedule import NoiseSchedule, resolve_seed
 
-BUDGET_BASE = 10
-BUDGET_PER_SUBGOAL = 3
-BUDGET_CAP = 30
+BUDGET_BASE = 7
+BUDGET_PER_SUBGOAL = 2
+BUDGET_CAP = 21
+FAILED_CALLS_KEPT = 6
 
 _TASK_CACHE: dict[str, dict[str, Task]] = {}
 _CACHE_LOCK = threading.Lock()
@@ -101,7 +102,8 @@ class BackOfficeEnv:
                 self.api.finished = True
                 return _error(
                     "BUDGET_EXCEEDED",
-                    f"the budget of {self.budget} tool calls is exhausted; no further calls are accepted",
+                    f"the budget of {self.budget} tool calls is exhausted; the episode is over; "
+                    "do not call any more tools; reply with one short sentence",
                 )
         return getattr(self.api, name)(**kwargs)
 
@@ -133,6 +135,10 @@ class BackOfficeEnv:
             "tool_sequence": [
                 {"tool": c["tool"], "ok": c["ok"], "code": c["code"]} for c in self.api.call_log
             ],
+            "failed_calls": [
+                {"tool": c["tool"], "code": c["code"], "args": json.dumps(c["args"], sort_keys=True, default=str)[:200]}
+                for c in self.api.call_log if not c["ok"]
+            ][:FAILED_CALLS_KEPT],
         }
         self.last_episode = record
         if self.log_path is not None:

@@ -3,10 +3,10 @@
 from dataclasses import asdict, dataclass, field
 
 MODES = ("paired", "independent", "clean")
-TRANSITION_TYPES = ("transient", "rate_limit", "stale", "truncate")
+TRANSITION_TYPES = ("transient", "rate_limit", "outage", "stale", "truncate")
 HELDOUT_TYPES = ("timeout_after_commit", "field_dropout")
 FAULT_TYPES = TRANSITION_TYPES + HELDOUT_TYPES
-DEFAULT_WEIGHTS = {"transient": 0.45, "rate_limit": 0.15, "stale": 0.25, "truncate": 0.15}
+DEFAULT_WEIGHTS = {"transient": 0.45, "rate_limit": 0.15, "outage": 0.10, "stale": 0.15, "truncate": 0.15}
 RETRY_AFTER_CHOICES = (15, 30, 45, 60)
 
 

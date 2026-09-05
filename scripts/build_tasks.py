@@ -11,6 +11,7 @@ from pairedrl.env.backoffice import Task, generate_tasks, write_jsonl
 
 GENERATOR_SEED = 20260904
 SPECS = {"train": ("train", 2000, 60), "heldout": ("heldout", 300, 0), "diagnostic": ("heldout", 16, 0)}
+DIAGNOSTIC_SUBGOALS = (2, 4)
 CODE_FILES = ("world.py", "tools.py", "tasks.py", "grader.py")
 
 
@@ -49,12 +50,13 @@ def relabel(tasks: list[Task], split: str) -> list[Task]:
 def build(out_dir: pathlib.Path) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
     used: set[int] = set()
-    heldout_pool = dedupe(generate_tasks(340, "heldout", GENERATOR_SEED), used)
+    heldout_pool = dedupe(generate_tasks(360, "heldout", GENERATOR_SEED), used)
     train_pool = dedupe(generate_tasks(2060, "train", GENERATOR_SEED), used)
+    diagnostic_pool = [t for t in heldout_pool[300:] if DIAGNOSTIC_SUBGOALS[0] <= t.n_subgoals <= DIAGNOSTIC_SUBGOALS[1]]
     datasets = {
         "train": relabel(train_pool[:2000], "train"),
         "heldout": relabel(heldout_pool[:300], "heldout"),
-        "diagnostic": relabel(heldout_pool[300:316], "diagnostic"),
+        "diagnostic": relabel(diagnostic_pool[:16], "diagnostic"),
     }
     manifest = {
         "generator_seed": GENERATOR_SEED,

@@ -129,13 +129,19 @@ def test_recovering_oracle_through_env_under_transition_noise(tmp_path):
     factory = make_env_factory(TASK_PATHS, log_path=log)
     env = factory()
     successes = 0
+    outage_free = 0
     for i, task in enumerate(TASKS[:40]):
         env.reset(**row_for(task, cfg, seed=i))
-        run_oracle(task, env.api, recover=True)
-        successes += env.get_reward()
-    assert successes == 40
+        result = run_oracle(task, env.api, recover=True)
+        reward = env.get_reward()
+        successes += reward
+        if not any(k.startswith("outage") for k in result.faults):
+            outage_free += 1
+            assert reward == 1.0
+    assert 20 <= successes <= 40 and outage_free >= 20
     records = [json.loads(line) for line in log.read_text().splitlines()]
     assert len(records) == 40 and any(r["exposed"] for r in records)
+    assert all("failed_calls" in r for r in records)
     assert all(r["condition"] == "test" and r["mode"] == "paired" for r in records)
 
 
@@ -176,6 +182,6 @@ def test_eval_and_diagnostic_rows():
 
 
 def test_budget_formula():
-    assert budget_for(next(t for t in TASKS if t.n_subgoals == 1)) == 13
-    assert budget_for(next(t for t in TASKS if t.n_subgoals == 3)) == 19
-    assert all(13 <= budget_for(t) <= 30 for t in TASKS)
+    assert budget_for(next(t for t in TASKS if t.n_subgoals == 1)) == 9
+    assert budget_for(next(t for t in TASKS if t.n_subgoals == 3)) == 13
+    assert all(9 <= budget_for(t) <= 21 for t in TASKS)

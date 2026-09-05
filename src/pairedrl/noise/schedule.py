@@ -1,6 +1,9 @@
-"""Seeded fault schedules keyed by (tool, per-tool call index), plus one episode-level draw."""
+"""Seeded fault schedules keyed by the logical request (tool, canonical arguments, repeat index), plus one
+episode-level draw. Two rollouts that issue the same request under the same schedule meet the same fate, whatever
+else they did before: this is the common-random-numbers synchronization the paired design relies on."""
 
 import hashlib
+import json
 import random
 from dataclasses import dataclass
 
@@ -21,10 +24,15 @@ class Fate:
         return self.kind is not None
 
 
+def request_key(kwargs: dict) -> str:
+    """Canonical form of a call's arguments; numbers and their string forms are the same request."""
+    return json.dumps({k: str(v) for k, v in kwargs.items()}, sort_keys=True, separators=(",", ":"))
+
+
 def applicable_types(tool: str) -> tuple[str, ...]:
     if tool in CONTROL_TOOLS:
         return ()
-    types = ["transient", "rate_limit"]
+    types = ["transient", "rate_limit", "outage"]
     if tool in READ_TOOLS:
         types += ["stale", "field_dropout"]
     if tool in LIST_TOOLS:
@@ -54,11 +62,12 @@ class NoiseSchedule:
     def _rng(self, *key) -> random.Random:
         return random.Random(derive_seed(self.seed, *key))
 
-    def fate(self, tool: str, call_index: int) -> Fate:
+    def fate(self, tool: str, request: str, repeat: int) -> Fate:
+        """Fate of the `repeat`-th issue of `request` (a `request_key`) to `tool` under this schedule."""
         types = applicable_types(tool)
         if self.config.is_clean or self.config.p <= 0 or not types:
             return Fate(None)
-        rng = self._rng("call", tool, call_index)
+        rng = self._rng("request", tool, request, repeat)
         u = rng.random()
         retry_after = rng.choice(RETRY_AFTER_CHOICES)
         dropped = rng.randrange(0, 1_000_000)

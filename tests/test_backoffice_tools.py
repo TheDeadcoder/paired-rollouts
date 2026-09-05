@@ -119,6 +119,13 @@ def test_update_address_rules(api):
     assert err["error"]["code"] == "INVALID_STATE"
     err = call(api, "update_shipping_address", order_id=pending.order_id, street="", city="Dhaka", postal_code="1200")
     assert err["error"]["code"] == "INVALID_ARGUMENT"
+    out = call(api, "update_shipping_address", order_id=pending.order_id, street="2 New St", city="Sylhet", postal_code=3100)
+    assert out["shipping_address"]["postal_code"] == "3100" and pending.shipping_address.postal_code == "3100"
+    err = call(api, "update_shipping_address", order_id=pending.order_id, street="2 New St", city="Sylhet", postal_code=True)
+    assert err["error"]["code"] == "INVALID_ARGUMENT"
+    assert json.loads(api.get_order("nope"))["error"]["code"] == "NOT_FOUND"
+    api.finish("done")
+    assert "do not call any more tools" in json.loads(api.get_order(pending.order_id))["error"]["message"]
 
 
 def test_cancel_rules(api):

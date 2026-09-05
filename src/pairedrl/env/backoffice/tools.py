@@ -55,6 +55,11 @@ def _error(code: str, message: str, **extra) -> str:
 
 
 def _require_text(value: object, name: str) -> str:
+    """Accept strings and plain numbers (a postal code sent as 7497 is the string "7497")."""
+    if isinstance(value, bool):
+        raise ToolError("INVALID_ARGUMENT", f"{name} must be a non-empty string")
+    if isinstance(value, int) or (isinstance(value, float) and value.is_integer()):
+        value = str(int(value))
     if not isinstance(value, str) or not value.strip():
         raise ToolError("INVALID_ARGUMENT", f"{name} must be a non-empty string")
     return value.strip()
@@ -93,7 +98,10 @@ class ToolAPI:
     def _run(self, name: str, fn, **kwargs) -> str:
         if self.finished:
             self.call_log.append({"tool": name, "args": kwargs, "ok": False, "code": "EPISODE_FINISHED"})
-            return _error("EPISODE_FINISHED", "the episode was already finished")
+            return _error(
+                "EPISODE_FINISHED",
+                "the episode is over; do not call any more tools; reply with one short sentence",
+            )
         try:
             payload = fn(**kwargs)
         except ToolError as e:

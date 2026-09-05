@@ -5,18 +5,22 @@ from collections import Counter
 
 from pairedrl.env.backoffice.tools import CONTROL_TOOLS, READ_TOOLS, ToolAPI, _dumps, _error
 from pairedrl.env.backoffice.world import World
-from pairedrl.noise.schedule import LIST_TOOLS, NoiseSchedule
+from pairedrl.noise.schedule import LIST_TOOLS, NoiseSchedule, request_key
 
 TRUNCATED_PAGE = 2
+OUTAGE_MESSAGE = "temporary failure; the request was not applied, retry it"
 
 
 class NoisyToolAPI(ToolAPI):
+    """Faults are keyed by (tool, request_key(args), repeat): the n-th issue of the same logical request."""
+
     def __init__(self, world: World, schedule: NoiseSchedule | None = None):
         super().__init__(world)
         self.schedule = schedule
         self.call_index: Counter = Counter()
         self.fault_log: list[dict] = []
         self.rate_limited_until = 0
+        self.outages: set[tuple[str, str]] = set()
         self._stale_snapshot: dict | None = None
 
     @property
@@ -38,8 +42,9 @@ class NoisyToolAPI(ToolAPI):
     def _run(self, name: str, fn, **kwargs) -> str:
         if self.finished or self.schedule is None or name in CONTROL_TOOLS:
             return super()._run(name, fn, **kwargs)
-        k = self.call_index[name]
-        self.call_index[name] += 1
+        request = request_key(kwargs)
+        k = self.call_index[(name, request)]
+        self.call_index[(name, request)] += 1
         clock = self.world.clock_seconds
         if clock < self.rate_limited_until:
             remaining = self.rate_limited_until - clock
@@ -49,12 +54,19 @@ class NoisyToolAPI(ToolAPI):
                 f"too many requests; wait {remaining} seconds before calling again",
                 retry_after_seconds=remaining,
             )
-        fate = self.schedule.fate(name, k)
+        if (name, request) in self.outages:
+            self._log_fault(name, k, "outage_ongoing", kwargs, "SERVICE_UNAVAILABLE")
+            return _error("SERVICE_UNAVAILABLE", OUTAGE_MESSAGE)
+        fate = self.schedule.fate(name, request, k)
         if fate.kind is None:
             return super()._run(name, fn, **kwargs)
         if fate.kind == "transient":
             self._log_fault(name, k, "transient", kwargs, "SERVICE_UNAVAILABLE")
-            return _error("SERVICE_UNAVAILABLE", "temporary failure; the request was not applied, retry it")
+            return _error("SERVICE_UNAVAILABLE", OUTAGE_MESSAGE)
+        if fate.kind == "outage":
+            self.outages.add((name, request))
+            self._log_fault(name, k, "outage", kwargs, "SERVICE_UNAVAILABLE")
+            return _error("SERVICE_UNAVAILABLE", OUTAGE_MESSAGE)
         if fate.kind == "rate_limit":
             self.rate_limited_until = clock + fate.retry_after
             self._log_fault(name, k, "rate_limit", kwargs, "RATE_LIMITED")

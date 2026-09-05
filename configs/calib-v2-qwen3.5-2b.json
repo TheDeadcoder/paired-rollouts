@@ -1,0 +1,15 @@
+{
+  "run_id": "calib-v2-qwen3.5-2b",
+  "model": "Qwen/Qwen3.5-2B",
+  "condition": "CALIB",
+  "arm": "paired",
+  "p": 0.25,
+  "q": 0.0,
+  "seed": 0,
+  "eval_only": true,
+  "final_eval_tasks": 200,
+  "diagnostic_steps": [
+    0
+  ],
+  "notes": "environment v2 zero-shot calibration for Qwen/Qwen3.5-2B: clean, p=0.25 and held-out-type success on 200 held-out tasks x 4 schedules, plus the luck-share diagnostic (16 tasks x 8 schedules x 8 samples)"
+}

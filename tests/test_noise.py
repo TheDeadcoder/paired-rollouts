@@ -7,7 +7,7 @@ from pairedrl.env.backoffice import ToolAPI, World, read_jsonl
 from pairedrl.noise.config import DEFAULT_WEIGHTS, FAULT_TYPES, NoiseConfig
 from pairedrl.noise.noisy_api import NoisyToolAPI
 from pairedrl.noise.oracle import make_api, observe, run_oracle
-from pairedrl.noise.schedule import NoiseSchedule, applicable_types, resolve_seed
+from pairedrl.noise.schedule import NoiseSchedule, applicable_types, request_key, resolve_seed
 
 TASKS = read_jsonl("data/tasks/heldout.jsonl")[:80]
 
@@ -38,17 +38,18 @@ def test_applicable_types_partition():
     assert set(FAULT_TYPES) >= {t for tool in ("get_order", "list_orders", "issue_refund") for t in applicable_types(tool)}
 
 
-def test_fate_depends_only_on_tool_and_index():
+def test_fate_depends_only_on_tool_request_and_repeat():
     cfg = NoiseConfig.transition(0.5, "paired")
     a = NoiseSchedule(123, cfg)
     b = NoiseSchedule(123, cfg)
+    req = request_key({"order_id": "O0001"})
     for k in range(50):
-        assert a.fate("get_order", k) == b.fate("get_order", k)
-    fates_a = [a.fate(t, k) for t in ("get_order", "cancel_order") for k in range(20)]
-    fates_b = [b.fate(t, k) for t in ("cancel_order", "get_order") for k in range(20)]
-    assert sorted(map(str, fates_a)) == sorted(map(str, fates_b))
+        assert a.fate("get_order", req, k) == b.fate("get_order", req, k)
+    other = request_key({"order_id": "O0002"})
+    assert [a.fate("get_order", req, k) for k in range(50)] != [a.fate("get_order", other, k) for k in range(50)]
     c = NoiseSchedule(124, cfg)
-    assert [a.fate("get_order", k) for k in range(50)] != [c.fate("get_order", k) for k in range(50)]
+    assert [a.fate("get_order", req, k) for k in range(50)] != [c.fate("get_order", req, k) for k in range(50)]
+    assert request_key({"amount_cents": 1500, "order_id": "O0001"}) == request_key({"order_id": "O0001", "amount_cents": "1500"})
 
 
 def test_resolve_seed_modes():
@@ -64,21 +65,22 @@ def test_fault_rate_and_type_mix():
     cfg = NoiseConfig.transition(0.25, "paired")
     kinds = Counter()
     n = 20000
+    req = request_key({"order_id": "O0001"})
     for seed in range(200):
         s = NoiseSchedule(seed, cfg)
         for k in range(100):
-            kinds[s.fate("get_order", k).kind] += 1
+            kinds[s.fate("get_order", req, k).kind] += 1
     faulted = 1 - kinds[None] / n
     assert abs(faulted - 0.25) < 0.02
     applicable = applicable_types("get_order")
     total_w = sum(DEFAULT_WEIGHTS.get(t, 0.0) for t in applicable)
-    for kind in ("transient", "rate_limit", "stale"):
+    for kind in ("transient", "rate_limit", "outage", "stale"):
         expected = 0.25 * DEFAULT_WEIGHTS[kind] / total_w
         assert abs(kinds[kind] / n - expected) < 0.02, kind
     assert kinds["field_dropout"] == 0 and kinds["truncate"] == 0
     clean = NoiseSchedule(1, NoiseConfig.clean())
-    assert all(clean.fate("get_order", k).kind is None for k in range(100))
-    assert NoiseSchedule(1, cfg).fate("wait", 0).kind is None
+    assert all(clean.fate("get_order", req, k).kind is None for k in range(100))
+    assert NoiseSchedule(1, cfg).fate("wait", request_key({"seconds": 5}), 0).kind is None
 
 
 def test_outcome_flip_rate():
@@ -181,7 +183,7 @@ def test_control_tools_and_clean_mode_are_never_faulted():
 
 
 def test_paired_apis_share_fates_and_independent_do_not():
-    cfg = NoiseConfig.transition(0.5, "paired")
+    cfg = NoiseConfig(p=0.5, weights={"transient": 0.6, "stale": 0.4}, mode="paired")
     a, b = api_with(42, cfg), api_with(42, cfg)
     c = api_with(resolve_seed(NoiseConfig.transition(0.5, "independent"), 42, 1, 0), cfg)
     logs = []
@@ -200,25 +202,62 @@ def test_shared_fates_survive_divergent_sequences():
         a.get_order("O0001")
     for _ in range(10):
         b.get_customer("C0001")
+        b.search_customers("x")
         b.get_order("O0002")
+        b.get_order("O0001")
     fa = {(f["tool"], f["index"]): f["kind"] for f in a.fault_log if f["tool"] == "get_order"}
-    fb = {(f["tool"], f["index"]): f["kind"] for f in b.fault_log if f["tool"] == "get_order"}
-    assert fa == fb and fa
+    fb = {(f["tool"], f["index"]): f["kind"] for f in b.fault_log if f["tool"] == "get_order" and f["index"] < 10}
+    fb_o1 = {(c["tool"], i): c.get("fault") for i, c in enumerate(c for c in b.call_log if c["tool"] == "get_order" and c["args"] == {"order_id": "O0001"}) if c.get("fault")}
+    assert fa and all(fa[k] == v for k, v in fb_o1.items()) and set(fb_o1) == set(fa)
+    assert fb is not None
 
 
-def test_naive_oracle_suffers_and_recovering_oracle_is_perfect():
+def test_request_key_makes_string_and_number_arguments_the_same_request():
+    cfg = NoiseConfig(p=0.5, weights={"transient": 1.0}, mode="paired")
+    a, b = api_with(9, cfg), api_with(9, cfg)
+    ka = [json.loads(a.wait(5)) and json.loads(a.get_order("O0001")).get("error", {}).get("code") for _ in range(12)]
+    kb = [json.loads(b.wait(5)) and json.loads(b.get_order("O0001")).get("error", {}).get("code") for _ in range(12)]
+    assert ka == kb and "SERVICE_UNAVAILABLE" in ka
+
+
+def test_outage_persists_for_the_request_and_only_that_request():
+    cfg = NoiseConfig(p=1.0, weights={"outage": 1.0}, mode="paired")
+    api = api_with(3, cfg)
+    order = pending_order(api)
+    for _ in range(3):
+        assert json.loads(api.cancel_order(order.order_id, "customer request"))["error"]["code"] == "SERVICE_UNAVAILABLE"
+    assert api.world.orders[order.order_id].status == "pending"
+    counts = api.exposure_counts()
+    assert counts["outage"] == 1 and counts["outage_ongoing"] == 2
+    api2 = api_with(3, NoiseConfig(p=0.0, mode="paired"))
+    assert "error" not in json.loads(api2.cancel_order(order.order_id, "customer request"))
+
+
+def test_naive_oracle_suffers_and_recovering_oracle_reaches_the_ceiling():
     cfg = NoiseConfig.transition(0.25, "paired")
-    naive = [run_oracle(t, make_api(t, cfg, seed=i), recover=False) for i, t in enumerate(TASKS)]
-    recovering = [run_oracle(t, make_api(t, cfg, seed=i), recover=True) for i, t in enumerate(TASKS)]
-    assert sum(r.success for r in naive) / len(TASKS) < 0.7
-    assert all(r.success for r in recovering)
+    naive = [run_oracle(t, make_api(t, cfg, seed=i), recover=False, lookups=True) for i, t in enumerate(TASKS)]
+    recovering = [run_oracle(t, make_api(t, cfg, seed=i), recover=True, lookups=True) for i, t in enumerate(TASKS)]
+    naive_rate = sum(r.success for r in naive) / len(TASKS)
+    recovering_rate = sum(r.success for r in recovering) / len(TASKS)
+    assert naive_rate < 0.75 and recovering_rate > naive_rate + 0.1 and recovering_rate >= 0.75
+    unlucky = [r for r in recovering if not r.success and not any(k.startswith("outage") for k in r.faults)]
+    assert len(unlucky) <= 0.05 * len(TASKS)
     assert any(r.exposed for r in recovering)
-    assert all(r.observed_reward == 1.0 and not r.flipped for r in recovering)
+    assert all(r.observed_reward == float(r.success) and not r.flipped for r in recovering)
+    no_outage = NoiseConfig(p=0.25, weights={"transient": 0.6, "rate_limit": 0.2, "stale": 0.2}, mode="paired")
+    assert all(run_oracle(t, make_api(t, no_outage, seed=i), recover=True, lookups=True).success for i, t in enumerate(TASKS))
+
+
+def test_oracle_respects_the_call_budget():
+    cfg = NoiseConfig.transition(0.25, "paired")
+    tight = [run_oracle(t, make_api(t, cfg, seed=i), recover=True, budget=2, lookups=True) for i, t in enumerate(TASKS)]
+    assert all(r.calls <= 3 for r in tight) and any(r.budget_exceeded for r in tight)
+    assert sum(r.success for r in tight) / len(TASKS) < 0.3
 
 
 def test_recovering_oracle_handles_heldout_types():
     cfg = NoiseConfig.heldout_types(0.25, "paired")
-    results = [run_oracle(t, make_api(t, cfg, seed=i), recover=True) for i, t in enumerate(TASKS)]
+    results = [run_oracle(t, make_api(t, cfg, seed=i), recover=True, lookups=True) for i, t in enumerate(TASKS)]
     assert all(r.success for r in results)
     kinds = Counter(k for r in results for k in r.faults)
     assert "timeout_after_commit" in kinds

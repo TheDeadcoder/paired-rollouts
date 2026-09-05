@@ -16,7 +16,7 @@ Business rules the tools enforce: a shipping address can change only before ship
 
 Tool responses are compact JSON. A failed call returns an object with an "error" field containing "code" and "message". Codes you may see: NOT_FOUND, INVALID_ARGUMENT, INVALID_STATE, RULE_VIOLATION, SERVICE_UNAVAILABLE (a temporary failure; the request was not applied), RATE_LIMITED (too many requests; the response includes retry_after_seconds and every call fails until you wait that long with the wait tool), TIMEOUT (the request may or may not have been applied), BUDGET_EXCEEDED (no more calls are accepted). Reads are eventually consistent: a read issued right after a write may still show the old state. List responses are pages; when next_offset is not null, more results follow at that offset, and a page may be marked truncated.
 
-You have a limited budget of tool calls for each task. Make exactly the requested changes and nothing else. When every requested change is done, call finish with a one-sentence summary."""
+You have a limited budget of tool calls for each task. A request that fails with SERVICE_UNAVAILABLE more than once may stay unavailable for the whole task; do not spend the budget retrying it forever. Make exactly the requested changes and nothing else. When every requested change is done, call finish with a one-sentence summary."""
 
 
 def make_prompt(task: Task) -> list[dict]:

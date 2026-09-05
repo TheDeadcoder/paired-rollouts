@@ -17,10 +17,12 @@ Arms.
 - blocking (NoisyAgent-style baseline): each task appears twice per step, once as a clean group and once as an independent-noise group, each normalized within its own group, at an equal total rollout budget.
 
 Noise.
-- Transition noise, rate p per tool call, a mixture of: transient failure (error response; the next identical call succeeds), rate limit (error with retry-after; a wait tool exists), stale read (a read issued within d calls after a write returns the pre-write state), truncation (a list response is cut and requires pagination). The mixture weights are SET AT v1.
+- Transition noise, rate p per tool call, a mixture of: transient failure (error response; a retry draws a fresh fate), rate limit (error with retry-after; a wait tool exists and every call fails until the wait is over), outage (the same logical request fails for the rest of the episode; a write hit by an outage cannot be completed, so outages are the irreducible part of the luck), stale read (a read issued after a write returns the pre-write state), truncation (a list response is cut and requires pagination). Training mixture weights, fixed at calibration on 2026-09-05: transient 0.45, rate limit 0.15, outage 0.10, stale 0.15, truncation 0.15. Two further types are used only in evaluation (section 6): timeout after commit (a write is applied but reported as TIMEOUT) and field dropout (a read loses one field).
 - Outcome noise, rate q per episode: the grader returns failure for a correct end state.
 
-Schedule. A seeded random stream keyed by (tool name, per-tool call index), plus one episode-level draw used for outcome noise. Two rollouts making the same k-th call to the same tool meet the same fate under the same schedule.
+Schedule. A seeded random stream keyed by the logical request (tool name, canonical arguments, repeat index), plus one episode-level draw used for outcome noise. Two rollouts issuing the same request for the k-th time meet the same fate under the same schedule, whatever else they did before. This is the common-random-numbers synchronization: the same random number serves the same purpose in every rollout of a group.
+
+Budget. Every episode may make at most 7 + 2 n tool calls (n = number of write calls in the task's oracle plan), capped at 21; finish is free. Calls beyond the budget are refused and the episode ends. The competent scripted policy (one customer lookup, one read per order, the writes, retries and waits as needed) uses 6.6 calls on average on the clean held-out tasks and never exceeds the budget there (`registers/oracle_reference.json`).
 
 Luck share. For a fixed policy and task, with K schedules and M policy samples per schedule and rewards r[k, m]:
 - MS_between = M / (K - 1) * sum_k (mean_k - mean)^2
@@ -29,7 +31,7 @@ Luck share. For a fixed policy and task, with K schedules and M policy samples p
 - sigma2_pol = MS_within
 - lambda_task = sigma2_env / (sigma2_env + sigma2_pol), undefined when the denominator is 0
 - lambda = mean of lambda_task over tasks where it is defined
-Diagnostic design: 16 fixed tasks, K = 8, M = 8, measured at step 0 and every 20 steps.
+Diagnostic design: 16 fixed held-out tasks with 2 to 4 write calls each (chosen by that structural rule, not by model performance, so that success is not saturated), K = 8, M = 8, measured at step 0 and at the steps listed in the run spec. Reported for the true outcome and for the observed reward.
 
 Spurious-variance group. Under outcome noise, a group whose noise-free graded outcomes are all equal but whose observed rewards are not all equal. The environment records both the noise-free grade and the observed reward for every episode. The closed-form rate for an all-correct group of size G under independent outcome noise q is 1 - (1 - q)^G - q^G, which is 0.34 at q = 0.05 and 0.57 at q = 0.10 for G = 8.
 
@@ -83,6 +85,8 @@ On the BFCL turn-episode environment with transition noise (Qwen3.5-4B, 2 seeds 
 | P10 | BFCL: paired minus independent between 3 and 8 points at the final step | 0.55 |
 | P11 | Census: 10 to 30 percent of instances show at least one flip in 10 runs; among those the median per-run flake rate is 10 to 20 percent | 0.50 |
 | P12 | Zero-shot luck share at p = 0.25 for Qwen3.5-2B is at least 0.15 before any calibration change | 0.60 |
+
+P12 outcome (2026-09-05, run calib-qwen3.5-2b at commit 8fa9475, 1024 diagnostic episodes, `registers/calibration_env_v1.json`): lambda = 0.030 over 12 of 16 diagnostic tasks. The prediction failed. Three causes were identified from the episode logs: (1) the original diagnostic tasks were saturated (11 of 16 had success 0.94 or higher, 3 had 0.00 because of a tool-interface defect, see below), leaving no variance to decompose; (2) the original fault mix (transient, rate limit, stale, truncation, keyed by per-tool call index) was recoverable by the zero-shot policy with a two-point success drop at p = 0.25 (0.499 clean, 0.480 noisy), so the schedule explained almost none of the outcome variance; (3) a tool-interface defect made `update_shipping_address` reject numeric postal codes, so the address-change template failed 98 percent of the time for reasons unrelated to skill. The calibration changes recorded in section 2 (request-keyed schedule, outage fault type, tighter budget, numeric arguments accepted, diagnostic tasks restricted to 2 to 4 write calls, task mix shifted toward multi-request tasks) respond to these findings and are made before the freeze; the luck share is re-measured before v1 and the re-measured value is the one reported.
 
 ## 5. Run matrix
 

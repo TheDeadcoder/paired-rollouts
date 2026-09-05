@@ -41,7 +41,7 @@ TEMPLATE_WEIGHTS = {
     "open_ticket_no_order": 0.6,
 }
 SPLIT_SEED_RANGES = {"train": (0, 100_000), "heldout": (100_000, 200_000)}
-SUBTASK_COUNT_WEIGHTS = ((1, 50), (2, 35), (3, 15))
+SUBTASK_COUNT_WEIGHTS = ((1, 20), (2, 40), (3, 40))
 STREETS = ("Lake Avenue", "Green Road", "Harbor Drive", "Elm Street", "Market Street", "River Road")
 CITIES = ("Dhaka", "Sylhet", "Khulna", "Rajshahi", "Chattogram", "Rangpur")
 
