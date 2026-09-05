@@ -1,0 +1,21 @@
+{
+  "app": "pairedrl-train",
+  "commit": "a6fd4f44233542fd7bea0ef7bac3d1bf879a3a5e",
+  "entries": [
+    {
+      "call_id": "fc-01M1RB2P9GK53S9QBMRSP7YPDX",
+      "dashboard_url": "https://modal.com/id/fc-01M1RB2P9GK53S9QBMRSP7YPDX",
+      "run_id": "calib-v2-qwen3.5-2b",
+      "spawned_utc": "2026-09-05T08:31:06+00:00",
+      "spec_path": "configs/calib-v2-qwen3.5-2b.json"
+    },
+    {
+      "call_id": "fc-01M1RB2PM23JF6JGZK3G9GRZ73",
+      "dashboard_url": "https://modal.com/id/fc-01M1RB2PM23JF6JGZK3G9GRZ73",
+      "run_id": "calib-v2-qwen3.5-4b",
+      "spawned_utc": "2026-09-05T08:31:06+00:00",
+      "spec_path": "configs/calib-v2-qwen3.5-4b.json"
+    }
+  ],
+  "launched_utc": "2026-09-05T08:31:04+00:00"
+}
