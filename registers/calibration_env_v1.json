@@ -1,0 +1,114 @@
+{
+  "entries": [
+    {
+      "clean_band": [
+        0.2,
+        0.5
+      ],
+      "clean_in_band": true,
+      "completions": {
+        "diag": {
+          "call_frequency": 11.3173828125,
+          "clipped_ratio": 0.12109375,
+          "failure_frequency": 0.0069573983491864055,
+          "max_length": 5497.0,
+          "mean_length": 1807.390625,
+          "reward": 0.716796875,
+          "runtime_s": 1875.1097
+        },
+        "final_clean": {
+          "call_frequency": 10.315848214285714,
+          "clipped_ratio": 0.19084821428571427,
+          "failure_frequency": 0.014137830851333482,
+          "max_length": 5567.428571428572,
+          "mean_length": 2334.8984375,
+          "reward": 0.47544642857142855,
+          "runtime_s": 1478.3166
+        },
+        "final_heldout_types": {
+          "call_frequency": 11.756696428571429,
+          "clipped_ratio": 0.2421875,
+          "failure_frequency": 0.010205242516739028,
+          "max_length": 5659.142857142857,
+          "mean_length": 2684.9386160714284,
+          "reward": 0.4408482142857143,
+          "runtime_s": 1664.4784
+        },
+        "final_noisy": {
+          "call_frequency": 15.439732142857142,
+          "clipped_ratio": 0.17745535714285715,
+          "failure_frequency": 0.0061108093442661425,
+          "max_length": 5393.571428571428,
+          "mean_length": 2588.777901785714,
+          "reward": 0.45870535714285715,
+          "runtime_s": 1795.0467
+        }
+      },
+      "episodes": 3424,
+      "estimated_cost_usd": 7.63,
+      "git_commit": "8fa9475e0aa44d3a6e00867feea71ff560dc6184",
+      "luck_share": {
+        "lam": 0.030136906016534015,
+        "sigma2_env_mean": 0.003208705357142856,
+        "sigma2_pol_mean": 0.049107142857142856,
+        "tasks": 16,
+        "tasks_defined": 12
+      },
+      "luck_share_observed": {
+        "lam": 0.030136906016534015,
+        "sigma2_env_mean": 0.003208705357142856,
+        "sigma2_pol_mean": 0.049107142857142856,
+        "tasks": 16,
+        "tasks_defined": 12
+      },
+      "luck_share_ok": false,
+      "model": "Qwen/Qwen3.5-2B",
+      "peak_mem_gb": 53.61,
+      "run_id": "calib-qwen3.5-2b",
+      "sets": {
+        "clean": {
+          "budget_exceeded_frac": 0.13625,
+          "episodes": 800,
+          "exposed_frac": 0.0,
+          "finished_frac": 0.755,
+          "flipped_frac": 0.0,
+          "mean_calls": 8.91,
+          "observed_reward": 0.49875,
+          "recovery_success": null,
+          "true_success": 0.49875
+        },
+        "heldout_types": {
+          "budget_exceeded_frac": 0.18125,
+          "episodes": 800,
+          "exposed_frac": 0.86625,
+          "finished_frac": 0.68625,
+          "flipped_frac": 0.0,
+          "mean_calls": 10.245,
+          "observed_reward": 0.46,
+          "recovery_success": 0.43722943722943725,
+          "true_success": 0.46
+        },
+        "noisy": {
+          "budget_exceeded_frac": 0.36375,
+          "episodes": 800,
+          "exposed_frac": 0.94625,
+          "finished_frac": 0.6075,
+          "flipped_frac": 0.0,
+          "mean_calls": 12.93375,
+          "observed_reward": 0.48,
+          "recovery_success": 0.45970937912813736,
+          "true_success": 0.48
+        }
+      },
+      "status": "COMPLETE",
+      "versions": {
+        "peft": "0.20.0",
+        "torch": "2.13.0",
+        "transformers": "5.16.1",
+        "trl": "1.12.0",
+        "vllm": "0.27.1"
+      },
+      "wall_time_s": 6954.4
+    }
+  ]
+}

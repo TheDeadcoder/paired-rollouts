@@ -50,6 +50,8 @@ def calibration_entry(run_dir) -> dict:
             sets[condition.replace("eval:", "")] = agg
     tables = luck_share_tables(records)
     luck = luck_share_over_tasks(tables) if tables else {"tasks": 0, "tasks_defined": 0, "lam": None}
+    observed_tables = luck_share_tables(records, field="observed_reward")
+    luck_observed = luck_share_over_tasks(observed_tables) if observed_tables else {"tasks": 0, "tasks_defined": 0, "lam": None}
     model = manifest["spec"]["model"]
     band = CALIBRATION_BANDS.get(model)
     clean = sets.get("clean", {}).get("true_success")
@@ -66,6 +68,7 @@ def calibration_entry(run_dir) -> dict:
         "sets": sets,
         "completions": completion_stats(history),
         "luck_share": luck,
+        "luck_share_observed": luck_observed,
         "clean_band": list(band) if band else None,
         "clean_in_band": (band is not None and clean is not None and band[0] <= clean <= band[1]),
         "luck_share_ok": (luck.get("lam") is not None and luck["lam"] >= MIN_LUCK_SHARE),
@@ -106,6 +109,7 @@ def format_calibration(register: dict) -> str:
         luck = e["luck_share"]
         lines.append(
             f"  luck share lam={_fmt(luck.get('lam'))} over {luck.get('tasks_defined')} of {luck.get('tasks')} tasks"
+            f" (observed reward: {_fmt(e['luck_share_observed'].get('lam'))})"
         )
         lines.append(
             f"  clean in band {e['clean_band']}: {e['clean_in_band']}; "

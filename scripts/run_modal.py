@@ -1,7 +1,14 @@
-"""Train or evaluate one run spec on Modal. One container per run; outputs land on the pairedrl-runs volume."""
+"""Deployed Modal app that trains or evaluates one run spec per container.
+
+Deploy once per commit with `modal deploy scripts/run_modal.py`, spawn runs with `scripts/launch_modal.py`, and
+collect them with `scripts/collect_modal.py`. Runs never depend on the launching machine: they are spawned onto the
+deployed app, write everything to the pairedrl-runs volume, and checkpoint after every evaluation phase and every
+few training steps.
+"""
 
 import datetime as dt
 import json
+import os
 import pathlib
 import subprocess
 import time
@@ -9,9 +16,24 @@ import time
 import modal
 
 APP_NAME = "pairedrl-train"
+FUNCTION_NAME = "run"
 HF_CACHE = "/cache/hf"
 RUNS = "/runs"
+RUNS_VOLUME = "pairedrl-runs"
 H100_USD_PER_HOUR = 3.95
+CHECKPOINT_EVERY_STEPS = 10
+
+
+def local_commit() -> str:
+    """HEAD of the deploying checkout, suffixed with -dirty when the tree has uncommitted changes."""
+    if not modal.is_local():
+        return os.environ.get("PAIREDRL_GIT_COMMIT", "")
+    head = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=False).stdout.strip()
+    dirty = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, check=False).stdout.strip()
+    if not head:
+        return "unknown"
+    return head + ("-dirty" if dirty else "")
+
 
 image = (
     modal.Image.debian_slim(python_version="3.12")
@@ -27,19 +49,41 @@ image = (
         "pydantic>=2.7",
         "pyyaml>=6.0",
     )
-    .env({"HF_HOME": HF_CACHE, "TRL_EXPERIMENTAL_SILENCE": "1", "TOKENIZERS_PARALLELISM": "false"})
+    .env({
+        "HF_HOME": HF_CACHE,
+        "TRL_EXPERIMENTAL_SILENCE": "1",
+        "TOKENIZERS_PARALLELISM": "false",
+        "PAIREDRL_GIT_COMMIT": local_commit(),
+    })
     .add_local_python_source("pairedrl")
     .add_local_dir("data/tasks", remote_path="/root/data/tasks")
 )
 app = modal.App(APP_NAME)
 hf_cache = modal.Volume.from_name("pairedrl-hf-cache", create_if_missing=True)
-runs_volume = modal.Volume.from_name("pairedrl-runs", create_if_missing=True)
+runs_volume = modal.Volume.from_name(RUNS_VOLUME, create_if_missing=True)
+
+
+def utc_now() -> str:
+    return dt.datetime.now(dt.UTC).isoformat(timespec="seconds")
+
+
+def vllm_facts(trainer) -> dict:
+    try:
+        cfg = trainer.vllm_generation.llm.llm_engine.vllm_config
+        return {
+            "enable_prefix_caching": cfg.cache_config.enable_prefix_caching,
+            "max_num_batched_tokens": cfg.scheduler_config.max_num_batched_tokens,
+            "max_num_seqs": cfg.scheduler_config.max_num_seqs,
+            "max_model_len": cfg.model_config.max_model_len,
+        }
+    except Exception as e:  # noqa: BLE001
+        return {"error": f"{type(e).__name__}: {e}"}
 
 
 @app.function(
     image=image,
     gpu="H100",
-    timeout=8 * 3600,
+    timeout=24 * 3600,
     volumes={HF_CACHE: hf_cache, RUNS: runs_volume},
     single_use_containers=True,
 )
@@ -63,22 +107,50 @@ def run(spec_dict: dict, git_commit: str) -> dict:
     log_path = out_dir / "episodes.jsonl"
     if log_path.exists():
         log_path.unlink()
+    deployed_commit = os.environ.get("PAIREDRL_GIT_COMMIT", "")
     manifest = {
         "run_id": spec.run_id,
         "spec": spec.to_dict(),
         "git_commit": git_commit,
-        "started_utc": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
+        "deployed_commit": deployed_commit,
+        "started_utc": utc_now(),
         "gpu": torch.cuda.get_device_name(0),
         "versions": {p: md.version(p) for p in ["torch", "transformers", "trl", "vllm", "peft"]},
         "status": "RUNNING",
+        "eval_timings": [],
+        "vllm": {},
     }
-    (out_dir / "run_manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     t0 = time.perf_counter()
     trainer = None
     schedule = None
+
+    def count_episodes() -> int:
+        if not log_path.exists():
+            return 0
+        with open(log_path, encoding="utf-8") as f:
+            return sum(1 for line in f if line.strip())
+
+    def write_state() -> None:
+        manifest["progress_utc"] = utc_now()
+        manifest["wall_time_s"] = round(time.perf_counter() - t0, 1)
+        manifest["estimated_cost_usd"] = round(manifest["wall_time_s"] / 3600 * H100_USD_PER_HOUR, 2)
+        manifest["eval_timings"] = schedule.timings if schedule is not None else []
+        manifest["episodes_logged"] = count_episodes()
+        manifest["peak_mem_gb"] = round(torch.cuda.max_memory_allocated() / 1e9, 2)
+        history = list(trainer.state.log_history) if trainer is not None else []
+        manifest["train_steps_logged"] = sum(1 for h in history if "loss" in h)
+        (out_dir / "trainer_log_history.json").write_text(json.dumps(history, indent=1) + "\n")
+        (out_dir / "run_manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+        runs_volume.commit()
+
+    write_state()
     try:
+        if git_commit != deployed_commit or git_commit.endswith("-dirty"):
+            raise RuntimeError(f"provenance: launched with commit {git_commit!r} but the deployed image is {deployed_commit!r}")
         trainer, splits, periodic = build_trainer(spec, "/root/data/tasks", out_dir / "trainer", log_path)
-        schedule = EvalSchedule(spec, trainer, splits, periodic)
+        manifest["vllm"] = vllm_facts(trainer)
+        schedule = EvalSchedule(spec, trainer, splits, periodic, on_checkpoint=write_state, checkpoint_every=CHECKPOINT_EVERY_STEPS)
+        write_state()
         if spec.eval_only:
             schedule.run_final(splits)
             schedule.run_diagnostic(0)
@@ -101,45 +173,13 @@ def run(spec_dict: dict, git_commit: str) -> dict:
         manifest["status"] = "FAILED"
         manifest["error"] = f"{type(e).__name__}: {e}"
         manifest["traceback"] = traceback.format_exc()[-8000:]
-    wall = time.perf_counter() - t0
-    manifest["finished_utc"] = dt.datetime.now(dt.UTC).isoformat(timespec="seconds")
-    manifest["wall_time_s"] = round(wall, 1)
-    manifest["estimated_cost_usd"] = round(wall / 3600 * H100_USD_PER_HOUR, 2)
-    manifest["eval_timings"] = schedule.timings if schedule else []
-    manifest["peak_mem_gb"] = round(torch.cuda.max_memory_allocated() / 1e9, 2)
-    history = getattr(trainer.state, "log_history", []) if trainer is not None else []
-    (out_dir / "trainer_log_history.json").write_text(json.dumps(history, indent=1) + "\n")
+    manifest["finished_utc"] = utc_now()
     records = read_episode_log(log_path)
     summary = {
         "episodes_logged": len(records),
         "by_phase_condition": summarize_episodes(records),
         "luck_share_tables": len(luck_share_tables(records)),
-        "step_times_s": [h["step_time"] for h in history if "step_time" in h][:200],
     }
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n")
-    (out_dir / "run_manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
-    runs_volume.commit()
+    write_state()
     return {"manifest": manifest, "summary": summary}
-
-
-@app.local_entrypoint()
-def main(specs: str, download: bool = True):
-    paths = [pathlib.Path(p.strip()) for p in specs.split(",") if p.strip()]
-    spec_dicts = [json.loads(p.read_text(encoding="utf-8")) for p in paths]
-    commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=False).stdout.strip()
-    results = list(run.map(spec_dicts, [commit] * len(spec_dicts)))
-    for result in results:
-        run_id = result["manifest"]["run_id"]
-        local = pathlib.Path("outputs") / "runs" / run_id
-        local.mkdir(parents=True, exist_ok=True)
-        (local / "summary.json").write_text(json.dumps(result["summary"], indent=2, sort_keys=True) + "\n")
-        (local / "run_manifest.json").write_text(json.dumps(result["manifest"], indent=2, sort_keys=True) + "\n")
-        m = result["manifest"]
-        print(f"{run_id}: {m['status']} wall {m['wall_time_s']} s est {m['estimated_cost_usd']} USD peak {m['peak_mem_gb']} GB")
-        if m["status"] != "COMPLETE":
-            print(m.get("error"))
-        for key, agg in result["summary"]["by_phase_condition"].items():
-            print(f"  {key}: n={agg['episodes']} true={agg['true_success']:.3f} obs={agg['observed_reward']:.3f} "
-                  f"recov={agg['recovery_success']} exposed={agg['exposed_frac']:.2f} calls={agg['mean_calls']:.1f}")
-        if download:
-            subprocess.run(["modal", "volume", "get", "pairedrl-runs", f"{run_id}", str(local.parent), "--force"], check=False)

@@ -151,12 +151,12 @@ def summarize_episodes(records: list[dict]) -> dict:
     return out
 
 
-def luck_share_tables(records: list[dict]) -> list[list[list[float]]]:
+def luck_share_tables(records: list[dict], field: str = "true_success") -> list[list[list[float]]]:
     """Group diagnostic episodes into K x M reward tables per task, keyed by (task_id, schedule_seed)."""
     by_task: dict[str, dict[int, list[float]]] = defaultdict(lambda: defaultdict(list))
     for r in records:
         if r.get("condition") == "diag":
-            by_task[r["task_id"]][r["schedule_seed"]].append(float(r["true_success"]))
+            by_task[r["task_id"]][r["schedule_seed"]].append(float(r[field]))
     tables = []
     for task_id in sorted(by_task):
         rows = [samples for _, samples in sorted(by_task[task_id].items())]
@@ -257,9 +257,13 @@ def build_trainer(spec: RunSpec, data_dir, out_dir, log_path):
 
 
 class EvalSchedule:
-    """Runs the periodic evaluations and diagnostics at the requested steps from a TrainerCallback."""
+    """Runs the periodic evaluations and diagnostics at the requested steps from a TrainerCallback.
 
-    def __init__(self, spec: RunSpec, trainer, splits, periodic):
+    `on_checkpoint` is called after every evaluation phase and every `checkpoint_every` training steps so the
+    caller can persist partial outputs; a run that dies later still leaves everything up to the last checkpoint.
+    """
+
+    def __init__(self, spec: RunSpec, trainer, splits, periodic, on_checkpoint=None, checkpoint_every: int = 10):
         from datasets import Dataset
         from transformers import TrainerCallback
 
@@ -268,6 +272,8 @@ class EvalSchedule:
         self.periodic = {name: Dataset.from_list(rows) for name, rows in periodic.items()}
         self.diagnostic = Dataset.from_list(assemble_diagnostic_rows(spec, splits["diagnostic"]))
         self.timings: list[dict] = []
+        self.on_checkpoint = on_checkpoint
+        self.checkpoint_every = checkpoint_every
         runner = self
 
         class Callback(TrainerCallback):
@@ -277,27 +283,33 @@ class EvalSchedule:
                     runner.run_periodic(step)
                 if step in runner.spec.diagnostic_steps and step < runner.spec.steps:
                     runner.run_diagnostic(step)
+                if step % runner.checkpoint_every == 0:
+                    runner.checkpoint()
 
         self.callback = Callback()
 
+    def checkpoint(self) -> None:
+        if self.on_checkpoint is not None:
+            self.on_checkpoint()
+
+    def _evaluate(self, step: int, what: str, dataset) -> None:
+        t0 = time.perf_counter()
+        self.trainer.evaluate(eval_dataset=dataset, metric_key_prefix=what)
+        self.timings.append({"step": step, "what": what, "seconds": round(time.perf_counter() - t0, 1)})
+        self.checkpoint()
+
     def run_periodic(self, step: int) -> None:
         for name, ds in self.periodic.items():
-            t0 = time.perf_counter()
-            self.trainer.evaluate(eval_dataset=ds, metric_key_prefix=f"eval_{name}")
-            self.timings.append({"step": step, "what": f"eval_{name}", "seconds": round(time.perf_counter() - t0, 1)})
+            self._evaluate(step, f"eval_{name}", ds)
 
     def run_diagnostic(self, step: int) -> None:
-        t0 = time.perf_counter()
-        self.trainer.evaluate(eval_dataset=self.diagnostic, metric_key_prefix="diag")
-        self.timings.append({"step": step, "what": "diag", "seconds": round(time.perf_counter() - t0, 1)})
+        self._evaluate(step, "diag", self.diagnostic)
 
     def run_final(self, splits) -> None:
         from datasets import Dataset
 
         for name, rows in assemble_eval_sets(self.spec, splits["heldout"], final=True).items():
-            t0 = time.perf_counter()
-            self.trainer.evaluate(eval_dataset=Dataset.from_list(rows), metric_key_prefix=f"final_{name}")
-            self.timings.append({"step": self.spec.steps, "what": f"final_{name}", "seconds": round(time.perf_counter() - t0, 1)})
+            self._evaluate(self.spec.steps, f"final_{name}", Dataset.from_list(rows))
 
 
 def read_episode_log(path) -> list[dict]:
