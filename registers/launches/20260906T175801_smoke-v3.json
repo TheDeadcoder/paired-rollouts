@@ -1,0 +1,14 @@
+{
+  "app": "pairedrl-train",
+  "commit": "67b296f74c3233984bcdc994b31e3eeb138fb568",
+  "entries": [
+    {
+      "call_id": "fc-01M1VXXG9789E24AQHVBMAFYXG",
+      "dashboard_url": "https://modal.com/id/fc-01M1VXXG9789E24AQHVBMAFYXG",
+      "run_id": "smoke-v3-train",
+      "spawned_utc": "2026-09-06T17:58:02+00:00",
+      "spec_path": "configs/smoke-v3-train.json"
+    }
+  ],
+  "launched_utc": "2026-09-06T17:58:01+00:00"
+}
