@@ -13,6 +13,7 @@ from pairedrl.train.dataset import (
     build_diagnostic_rows,
     build_eval_rows,
     build_training_rows,
+    eval_schedule_seed,
     make_row,
 )
 from pairedrl.train.env_adapter import BackOfficeEnv, budget_for, make_env_factory
@@ -168,17 +169,54 @@ def test_blocking_rows_pair_clean_and_noisy_groups():
         assert NoiseConfig.from_dict(json.loads(clean["noise"])).is_clean
         assert NoiseConfig.from_dict(json.loads(noisy["noise"])) == cfg
         assert clean["condition"] == "B2:clean" and noisy["condition"] == "B2:noisy"
+    paired_rows = build_blocking_rows(TASKS, NoiseConfig.transition(0.25, "paired"), "B2", 4, 1)
+    assert json.loads(paired_rows[1]["noise"])["mode"] == "paired" and paired_rows[1]["condition"] == "B2:noisy"
     with pytest.raises(ValueError):
-        build_blocking_rows(TASKS, NoiseConfig.transition(0.25, "paired"), "B2", 4, 1)
+        build_blocking_rows(TASKS, NoiseConfig.clean(), "B2", 4, 1)
 
 
 def test_eval_and_diagnostic_rows():
     cfg = NoiseConfig.transition(0.25, "paired")
-    rows = build_eval_rows(TASKS[:10], cfg, "eval", schedule_seeds=[1, 2, 3, 4])
-    assert len(rows) == 40 and [r["schedule_seed"] for r in rows[:4]] == [1, 2, 3, 4]
+    rows = build_eval_rows(TASKS[:10], cfg, "eval", schedule_indices=[1, 2, 3, 4])
+    assert len(rows) == 40 and len({r["schedule_seed"] for r in rows}) == 40
+    assert [r["schedule_seed"] for r in rows[:4]] == [eval_schedule_seed(TASKS[0].task_id, k) for k in (1, 2, 3, 4)]
     diag = build_diagnostic_rows(TASKS[:16], cfg, "diag", n_schedules=8, base_seed=0)
     assert len(diag) == 128 and len({r["schedule_seed"] for r in diag}) == 128
     assert diag == build_diagnostic_rows(TASKS[:16], cfg, "diag", n_schedules=8, base_seed=0)
+
+
+def test_training_phase_labels_and_evaluation_does_not_shift_training_draws(tmp_path):
+    cfg = NoiseConfig.transition(0.25, "independent")
+    env = make_env_factory(TASK_PATHS, log_path=tmp_path / "log.jsonl")()
+    BackOfficeEnv.attempt = 2
+    try:
+        BackOfficeEnv.phase = "train:step3"
+        env.reset(**row_for(TASKS[0], cfg, seed=5))
+        first_train_seed = env.schedule.seed
+        env.get_reward()
+        assert env.last_episode["phase"] == "train:step3" and env.last_episode["attempt"] == 2
+        BackOfficeEnv.phase = "eval_clean:step3"
+        env.reset(**row_for(TASKS[1], cfg, seed=5))
+        env.get_reward()
+        BackOfficeEnv.phase = "train:step4"
+        env.reset(**row_for(TASKS[0], cfg, seed=5))
+        second_train_seed = env.schedule.seed
+        env.get_order(TASKS[0].order_ids[0])
+        env.get_reward()
+        assert all("event" in c and "repeat" in c for c in env.last_episode["tool_sequence"])
+    finally:
+        BackOfficeEnv.phase = "train"
+        BackOfficeEnv.attempt = 1
+    other = make_env_factory(TASK_PATHS, log_path=tmp_path / "log2.jsonl")()
+    other.slot = env.slot
+    BackOfficeEnv.phase = "train:step0"
+    try:
+        other.reset(**row_for(TASKS[0], cfg, seed=5))
+        assert other.schedule.seed == first_train_seed
+        other.reset(**row_for(TASKS[0], cfg, seed=5))
+        assert other.schedule.seed == second_train_seed
+    finally:
+        BackOfficeEnv.phase = "train"
 
 
 def test_budget_formula():

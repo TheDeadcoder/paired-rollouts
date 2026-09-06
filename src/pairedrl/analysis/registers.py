@@ -3,8 +3,8 @@
 import json
 import pathlib
 
-from pairedrl.analysis.diagnostics import luck_share_over_tasks
-from pairedrl.train.runner import luck_share_tables, read_episode_log, summarize_episodes
+from pairedrl.analysis.diagnostics import luck_share_over_tasks, luck_share_pooled
+from pairedrl.train.runner import luck_share_tables_by_phase, read_episode_log, summarize_episodes
 
 CALIBRATION_BANDS = {"Qwen/Qwen3.5-2B": (0.20, 0.50), "Qwen/Qwen3.5-4B": (0.40, 0.70)}
 MIN_LUCK_SHARE = 0.15
@@ -20,6 +20,11 @@ COMPLETION_KEYS = {
 
 def _load_json(path: pathlib.Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _phase_step(phase: str) -> int:
+    tail = phase.rsplit("step", 1)
+    return int(tail[1]) if len(tail) == 2 and tail[1].isdigit() else 0
 
 
 def completion_stats(history: list[dict]) -> dict:
@@ -48,10 +53,16 @@ def calibration_entry(run_dir) -> dict:
         phase, condition = key.split("|", 1)
         if phase.startswith("final_"):
             sets[condition.replace("eval:", "")] = agg
-    tables = luck_share_tables(records)
-    luck = luck_share_over_tasks(tables) if tables else {"tasks": 0, "tasks_defined": 0, "lam": None}
-    observed_tables = luck_share_tables(records, field="observed_reward")
-    luck_observed = luck_share_over_tasks(observed_tables) if observed_tables else {"tasks": 0, "tasks_defined": 0, "lam": None}
+    empty = {"tasks": 0, "tasks_defined": 0, "lam": None}
+    by_phase = luck_share_tables_by_phase(records)
+    by_phase_observed = luck_share_tables_by_phase(records, field="observed_reward")
+    luck_by_phase = {ph: (luck_share_over_tasks(t) if t else dict(empty)) for ph, t in by_phase.items()}
+    luck_by_phase_observed = {ph: (luck_share_over_tasks(t) if t else dict(empty)) for ph, t in by_phase_observed.items()}
+    for ph, t in by_phase.items():
+        luck_by_phase[ph]["lam_pooled"] = luck_share_pooled(t) if t else None
+    first = min(by_phase, key=_phase_step) if by_phase else None
+    luck = luck_by_phase[first] if first else dict(empty)
+    luck_observed = luck_by_phase_observed[first] if first else dict(empty)
     model = manifest["spec"]["model"]
     band = CALIBRATION_BANDS.get(model)
     clean = sets.get("clean", {}).get("true_success")
@@ -69,6 +80,8 @@ def calibration_entry(run_dir) -> dict:
         "completions": completion_stats(history),
         "luck_share": luck,
         "luck_share_observed": luck_observed,
+        "luck_share_by_phase": luck_by_phase,
+        "luck_share_by_phase_observed": luck_by_phase_observed,
         "clean_band": list(band) if band else None,
         "clean_in_band": (band is not None and clean is not None and band[0] <= clean <= band[1]),
         "luck_share_ok": (luck.get("lam") is not None and luck["lam"] >= MIN_LUCK_SHARE),
@@ -106,11 +119,13 @@ def format_calibration(register: dict) -> str:
                 f"clipped={_fmt(stats['clipped_ratio'])} calls/ep={_fmt(stats['call_frequency'], 1)} "
                 f"tool_fail={_fmt(stats['failure_frequency'])} runtime={_fmt(stats['runtime_s'], 0)} s"
             )
-        luck = e["luck_share"]
-        lines.append(
-            f"  luck share lam={_fmt(luck.get('lam'))} over {luck.get('tasks_defined')} of {luck.get('tasks')} tasks"
-            f" (observed reward: {_fmt(e['luck_share_observed'].get('lam'))})"
-        )
+        for phase in sorted(e["luck_share_by_phase"], key=_phase_step):
+            luck = e["luck_share_by_phase"][phase]
+            lines.append(
+                f"  luck share {phase}: lam={_fmt(luck.get('lam'))} pooled={_fmt(luck.get('lam_pooled'))}"
+                f" over {luck.get('tasks_defined')} of {luck.get('tasks')} tasks"
+                f" (observed reward: {_fmt(e['luck_share_by_phase_observed'][phase].get('lam'))})"
+            )
         lines.append(
             f"  clean in band {e['clean_band']}: {e['clean_in_band']}; "
             f"luck share >= {MIN_LUCK_SHARE}: {e['luck_share_ok']}"

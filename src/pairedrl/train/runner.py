@@ -8,7 +8,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 
 from pairedrl.env.backoffice.tasks import Task, read_jsonl
-from pairedrl.noise.config import NoiseConfig
+from pairedrl.noise.config import DEFAULT_WEIGHTS, TRANSITION_TYPES, NoiseConfig
 from pairedrl.train.dataset import (
     build_blocking_rows,
     build_diagnostic_rows,
@@ -16,9 +16,11 @@ from pairedrl.train.dataset import (
     build_training_rows,
 )
 
-ARMS = ("paired", "independent", "clean", "blocking")
-EVAL_SEEDS_PERIODIC = [1, 2]
-EVAL_SEEDS_FINAL = [1, 2, 3, 4]
+ARMS = ("paired", "independent", "clean", "blocking", "blocking_paired")
+EVAL_SCHEDULES_PERIODIC = [1, 2]
+EVAL_SCHEDULES_FINAL = [1, 2, 3, 4]
+EVAL_SCHEDULES_CHALLENGE = [1]
+FINAL_TRANSITION_LEVELS = (0.10, 0.25)
 
 
 @dataclass
@@ -38,9 +40,11 @@ class RunSpec:
     max_completion_length: int = 6144
     max_tool_calling_iterations: int = 24
     vllm_max_model_length: int = 12288
+    fault_weights: dict[str, float] | None = None
     scale_rewards: str = "group"
     loss_type: str = "dapo"
     eval_every: int = 20
+    checkpoint_steps: int = 20
     eval_tasks: int = 100
     final_eval_tasks: int = 200
     diagnostic_steps: list[int] = field(default_factory=lambda: [0, 50, 100])
@@ -64,6 +68,10 @@ class RunSpec:
             raise ValueError("the clean arm has p = q = 0")
         if self.arm != "clean" and self.p == 0 and self.q == 0:
             raise ValueError("a noisy arm needs p > 0 or q > 0")
+        if self.fault_weights is not None:
+            unknown = set(self.fault_weights) - set(TRANSITION_TYPES)
+            if unknown or any(w < 0 for w in self.fault_weights.values()) or sum(self.fault_weights.values()) <= 0:
+                raise ValueError(f"fault_weights must be non-negative over {TRANSITION_TYPES} with a positive sum")
         if self.scale_rewards not in ("group", "none"):
             raise ValueError("scale_rewards must be 'group' or 'none'")
         if self.eval_only and self.train_only:
@@ -86,52 +94,73 @@ class RunSpec:
     def from_dict(cls, data: dict) -> "RunSpec":
         return cls(**data)
 
+    def weights(self) -> dict[str, float]:
+        """Training fault mixture: the calibrated default, or the run's own (for instance outage-free)."""
+        return dict(self.fault_weights or DEFAULT_WEIGHTS)
+
     def training_noise(self) -> NoiseConfig:
         if self.arm == "clean":
             return NoiseConfig.clean()
-        mode = "independent" if self.arm == "blocking" else self.arm
-        return NoiseConfig(p=self.p, q=self.q, mode=mode)
+        mode = {"blocking": "independent", "blocking_paired": "paired"}.get(self.arm, self.arm)
+        return NoiseConfig(p=self.p, q=self.q, weights=self.weights(), mode=mode)
 
     def eval_noise(self) -> NoiseConfig:
         """Evaluation always pairs: fixed schedules shared by every arm and checkpoint."""
-        return NoiseConfig(p=self.p, q=self.q, mode="paired") if self.arm != "clean" else NoiseConfig.clean()
+        if self.arm == "clean":
+            return NoiseConfig.clean()
+        return NoiseConfig(p=self.p, q=self.q, weights=self.weights(), mode="paired")
 
 
 def assemble_training_rows(spec: RunSpec, tasks: list[Task]) -> list[dict]:
     n_rows = spec.steps * spec.prompts_per_step
     config = spec.training_noise()
-    if spec.arm == "blocking":
+    if spec.arm in ("blocking", "blocking_paired"):
         return build_blocking_rows(tasks, config, spec.condition, n_rows, spec.seed)
     return build_training_rows(tasks, config, spec.condition, n_rows, spec.seed)
 
 
-def assemble_eval_sets(spec: RunSpec, heldout: list[Task], final: bool) -> dict[str, list[dict]]:
+def assemble_eval_sets(spec: RunSpec, tasks: list[Task], final: bool) -> dict[str, list[dict]]:
+    """Periodic sets (validation tasks): clean, at-training-noise and the matched challenge (every write fails
+    once; deterministic, so one schedule). Final sets (test tasks): clean, every transition level at the default
+    mixture, the held-out fault types, the challenge (all identical for every arm and condition), plus the run's own
+    training noise when it is not already one of those (outcome noise, outage-free mixtures)."""
     n = spec.final_eval_tasks if final else spec.eval_tasks
-    seeds = EVAL_SEEDS_FINAL if final else EVAL_SEEDS_PERIODIC
-    tasks = heldout[:n]
-    sets = {"clean": build_eval_rows(tasks, NoiseConfig.clean(), "eval:clean", seeds)}
-    if spec.arm != "clean":
-        sets["noisy"] = build_eval_rows(tasks, spec.eval_noise(), "eval:noisy", seeds)
-    else:
-        sets["noisy"] = build_eval_rows(tasks, NoiseConfig.transition(0.25, "paired"), "eval:noisy", seeds)
-    if final:
-        sets["heldout_types"] = build_eval_rows(
-            tasks, NoiseConfig.heldout_types(max(spec.p, 0.25), "paired"), "eval:heldout_types", seeds
-        )
+    indices = EVAL_SCHEDULES_FINAL if final else EVAL_SCHEDULES_PERIODIC
+    tasks = tasks[:n]
+    sets = {"clean": build_eval_rows(tasks, NoiseConfig.clean(), "eval:clean", indices)}
+    challenge = build_eval_rows(tasks, NoiseConfig.challenge_writes(), "eval:challenge", EVAL_SCHEDULES_CHALLENGE)
+    if not final:
+        noise = spec.eval_noise() if spec.arm != "clean" else NoiseConfig.transition(0.25, "paired")
+        sets["noisy"] = build_eval_rows(tasks, noise, "eval:noisy", indices)
+        sets["challenge"] = challenge
+        return sets
+    shared = {f"noisy_p{round(level * 100):03d}": NoiseConfig.transition(level, "paired") for level in FINAL_TRANSITION_LEVELS}
+    shared["heldout_types"] = NoiseConfig.heldout_types(0.25, "paired")
+    own = spec.eval_noise()
+    if spec.arm != "clean" and own not in shared.values():
+        shared["at_training"] = own
+    for name, config in shared.items():
+        sets[name] = build_eval_rows(tasks, config, f"eval:{name}", indices)
+    sets["challenge"] = challenge
     return sets
 
 
 def assemble_diagnostic_rows(spec: RunSpec, diagnostic: list[Task]) -> list[dict]:
     """K schedules x M samples per task; identical rows share a schedule seed, so M samples pair exactly."""
     p = spec.p if spec.p > 0 else 0.25
-    config = NoiseConfig.transition(p, "paired")
+    config = NoiseConfig.transition(p, "paired", spec.weights())
     base = build_diagnostic_rows(diagnostic, config, "diag", spec.diagnostic_schedules, base_seed=spec.seed)
     return [dict(row) for row in base for _ in range(spec.diagnostic_samples)]
 
 
+SPLITS = ("train", "heldout", "diagnostic", "test")
+
+
 def load_task_splits(data_dir) -> dict[str, list[Task]]:
+    """train: training tasks; heldout: validation (periodic curves, calibration); test: final evaluation only;
+    diagnostic: the luck-share tasks."""
     data_dir = pathlib.Path(data_dir)
-    return {name: read_jsonl(data_dir / f"{name}.jsonl") for name in ("train", "heldout", "diagnostic")}
+    return {name: read_jsonl(data_dir / f"{name}.jsonl") for name in SPLITS}
 
 
 def summarize_episodes(records: list[dict]) -> dict:
@@ -157,19 +186,100 @@ def summarize_episodes(records: list[dict]) -> dict:
     return out
 
 
-def luck_share_tables(records: list[dict], field: str = "true_success") -> list[list[list[float]]]:
-    """Group diagnostic episodes into K x M reward tables per task, keyed by (task_id, schedule_seed)."""
-    by_task: dict[str, dict[int, list[float]]] = defaultdict(lambda: defaultdict(list))
+def luck_share_tables_by_phase(
+    records: list[dict], field: str = "true_success", schedules: int | None = None, samples: int | None = None
+) -> dict[str, list[list[list[float]]]]:
+    """K x M reward tables per diagnostic task, separately for every diagnostic phase (checkpoint).
+
+    Cells are never truncated or merged across checkpoints: when `schedules` and `samples` are given, every task
+    in a phase must have exactly that many schedules and samples per schedule, otherwise a ValueError names the
+    offending (phase, task)."""
+    by_phase: dict[str, dict[str, dict[int, list[float]]]] = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
     for r in records:
         if r.get("condition") == "diag":
-            by_task[r["task_id"]][r["schedule_seed"]].append(float(r[field]))
-    tables = []
-    for task_id in sorted(by_task):
-        rows = [samples for _, samples in sorted(by_task[task_id].items())]
-        m = min(len(s) for s in rows)
-        if len(rows) >= 2 and m >= 2:
-            tables.append([s[:m] for s in rows])
-    return tables
+            by_phase[r.get("phase", "diag")][r["task_id"]][r["schedule_seed"]].append(float(r[field]))
+    out = {}
+    for phase in sorted(by_phase):
+        tables = []
+        for task_id in sorted(by_phase[phase]):
+            rows = [cell for _, cell in sorted(by_phase[phase][task_id].items())]
+            if schedules is not None and len(rows) != schedules:
+                raise ValueError(f"{phase}/{task_id}: {len(rows)} schedules, expected {schedules}")
+            if samples is not None and any(len(cell) != samples for cell in rows):
+                raise ValueError(f"{phase}/{task_id}: samples per schedule {[len(c) for c in rows]}, expected {samples}")
+            if len(rows) >= 2 and min(len(cell) for cell in rows) >= 2:
+                tables.append(rows)
+        out[phase] = tables
+    return out
+
+
+def luck_share_tables(records: list[dict], field: str = "true_success", phase: str | None = None) -> list[list[list[float]]]:
+    """Tables for one diagnostic phase (the only phase when `phase` is None; an error if several exist)."""
+    by_phase = luck_share_tables_by_phase(records, field)
+    if phase is None:
+        if len(by_phase) > 1:
+            raise ValueError(f"several diagnostic phases present, pass one of {sorted(by_phase)}")
+        return next(iter(by_phase.values()), [])
+    return by_phase.get(phase, [])
+
+
+def training_group_records(
+    step: int, attempt: int, rows: list[dict], episodes: list[dict], rewards, advantages, num_generations: int,
+    scale: str = "group",
+) -> list[dict]:
+    """One record per generation group of the trainer's own batch: row i of the batch is served by environment i,
+    whose episode record was written by get_reward. Rows, episodes, rewards and advantages must line up exactly;
+    a mismatch between a row and its episode means the linkage is broken and raises rather than being logged."""
+    from pairedrl.analysis.diagnostics import summarize_group
+
+    n = len(rows)
+    if not (len(episodes) == len(rewards) == len(advantages) == n) or n % num_generations != 0:
+        raise ValueError(f"group register: {n} rows, {len(episodes)} episodes, {len(rewards)} rewards, "
+                         f"{len(advantages)} advantages, group size {num_generations}")
+    out = []
+    for g in range(n // num_generations):
+        idx = range(g * num_generations, (g + 1) * num_generations)
+        members = [episodes[i] for i in idx]
+        for i, e in zip(idx, members):
+            if e is None or e["task_id"] != rows[i]["task_id"] or abs(e["observed_reward"] - float(rewards[i])) > 1e-9:
+                raise ValueError(f"group register: row {i} ({rows[i]['task_id']}) does not match its episode")
+        observed = [float(rewards[i]) for i in idx]
+        true = [bool(e["true_success"]) for e in members]
+        summary = summarize_group(observed, true, scale=scale).to_dict()
+        out.append({
+            "step": step, "attempt": attempt, "group": g, "task_id": rows[idx[0]]["task_id"],
+            "condition": rows[idx[0]].get("condition"), "schedule_seed": int(rows[idx[0]].get("schedule_seed", 0)),
+            "resolved_seeds": [e.get("resolved_seed") for e in members],
+            "slots": [e.get("slot") for e in members], "episode_indices": [e.get("episode_index") for e in members],
+            "true_success": true, "observed_reward": observed, "flipped": [bool(e.get("flipped")) for e in members],
+            "exposed": [bool(e.get("exposed")) for e in members], "calls": [e.get("calls") for e in members],
+            "advantages": [float(advantages[i]) for i in idx],
+            "zero_variance": summary["zero_variance"], "spurious": summary["spurious"],
+            "max_abs_advantage": max(abs(float(advantages[i])) for i in idx),
+        })
+    return out
+
+
+def summarize_groups(records: list[dict]) -> dict:
+    """Training-group register totals: groups, zero-variance groups, all-correct groups and the spurious rate
+    among them (the quantity H1 compares with 1 - (1 - q)^G - q^G), per condition and overall."""
+    by_condition: dict[str, list[dict]] = defaultdict(list)
+    for r in records:
+        by_condition[str(r.get("condition"))].append(r)
+    out = {}
+    for condition, recs in sorted(by_condition.items()):
+        all_correct = [r for r in recs if all(r["true_success"])]
+        out[condition] = {
+            "groups": len(recs),
+            "steps": sorted({r["step"] for r in recs}),
+            "zero_variance_frac": sum(r["zero_variance"] for r in recs) / len(recs),
+            "all_correct_groups": len(all_correct),
+            "spurious_among_all_correct": (
+                sum(r["spurious"] for r in all_correct) / len(all_correct) if all_correct else None
+            ),
+            "mean_max_abs_advantage": sum(r["max_abs_advantage"] for r in recs) / len(recs),
+        }
+    return out
 
 
 def vllm_engine_overrides(spec: RunSpec) -> dict:
@@ -199,7 +309,7 @@ def patch_vllm_engine(overrides: dict) -> None:
     vg.LLM = PatchedLLM
 
 
-def build_trainer(spec: RunSpec, data_dir, out_dir, log_path):
+def build_trainer(spec: RunSpec, data_dir, out_dir, log_path, group_log_path=None):
     """Construct the TRL trainer. Imports TRL lazily so the rest of the module stays importable on any machine."""
     from datasets import Dataset
     from peft import LoraConfig, PeftModel
@@ -210,7 +320,7 @@ def build_trainer(spec: RunSpec, data_dir, out_dir, log_path):
 
     patch_vllm_engine(vllm_engine_overrides(spec))
     splits = load_task_splits(data_dir)
-    task_paths = [str(pathlib.Path(data_dir) / f"{n}.jsonl") for n in ("train", "heldout", "diagnostic")]
+    task_paths = [str(pathlib.Path(data_dir) / f"{n}.jsonl") for n in SPLITS]
     train_rows = assemble_training_rows(spec, splits["train"]) if not spec.eval_only else []
     periodic = assemble_eval_sets(spec, splits["heldout"], final=False)
     per_device = spec.prompts_per_step * spec.num_generations
@@ -227,7 +337,9 @@ def build_trainer(spec: RunSpec, data_dir, out_dir, log_path):
         learning_rate=spec.learning_rate,
         bf16=True,
         logging_steps=1,
-        save_strategy="no",
+        save_strategy="no" if spec.eval_only else "steps",
+        save_steps=spec.checkpoint_steps,
+        save_total_limit=2,
         eval_strategy="no",
         report_to="none",
         max_completion_length=spec.max_completion_length,
@@ -280,6 +392,21 @@ def build_trainer(spec: RunSpec, data_dir, out_dir, log_path):
             self._prepare_inputs(inputs)
             return torch.zeros((), device=self.accelerator.device), None, None
 
+        def _generate_and_score_completions(self, inputs):
+            output = super()._generate_and_score_completions(inputs)
+            if group_log_path is not None and self.model.training and self.environments:
+                n = len(inputs)
+                name = self.reward_func_names[0]
+                records = training_group_records(
+                    self.state.global_step, BackOfficeEnv.attempt, list(inputs),
+                    [env.last_episode for env in self.environments[:n]],
+                    list(self._logs["rewards"][name])[-n:], output["advantages"].tolist(),
+                    spec.num_generations, scale=spec.scale_rewards,
+                )
+                with open(group_log_path, "a", encoding="utf-8") as f:
+                    f.writelines(json.dumps(record, sort_keys=True) + "\n" for record in records)
+            return output
+
     trainer = PhasedTrainer(
         model=model,
         args=config,
@@ -301,6 +428,8 @@ class EvalSchedule:
         from datasets import Dataset
         from transformers import TrainerCallback
 
+        from pairedrl.train.env_adapter import BackOfficeEnv
+
         self.spec = spec
         self.trainer = trainer
         self.periodic = {name: Dataset.from_list(rows) for name, rows in periodic.items()}
@@ -311,12 +440,17 @@ class EvalSchedule:
         runner = self
 
         class Callback(TrainerCallback):
+            def on_step_begin(self, args, state, control, **kwargs):
+                BackOfficeEnv.phase = f"train:step{state.global_step}"
+
             def on_step_end(self, args, state, control, **kwargs):
                 step = state.global_step
-                if step % runner.spec.eval_every == 0 and step < runner.spec.steps:
-                    runner.run_periodic(step)
-                if step in runner.spec.diagnostic_steps and step < runner.spec.steps:
-                    runner.run_diagnostic(step)
+                if not runner.spec.train_only:
+                    if step % runner.spec.eval_every == 0 or step == runner.spec.steps:
+                        runner.run_periodic(step)
+                    if step in runner.spec.diagnostic_steps and step < runner.spec.steps:
+                        runner.run_diagnostic(step)
+                BackOfficeEnv.phase = f"train:step{step}"
                 if step % runner.checkpoint_every == 0:
                     runner.checkpoint()
 
@@ -342,8 +476,9 @@ class EvalSchedule:
     def run_final(self, splits) -> None:
         from datasets import Dataset
 
-        for name, rows in assemble_eval_sets(self.spec, splits["heldout"], final=True).items():
-            self._evaluate(self.spec.steps, f"final_{name}", Dataset.from_list(rows))
+        for name, rows in assemble_eval_sets(self.spec, splits["test"], final=True).items():
+            if rows:
+                self._evaluate(self.spec.steps, f"final_{name}", Dataset.from_list(rows))
 
 
 def read_episode_log(path) -> list[dict]:

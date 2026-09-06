@@ -1,6 +1,7 @@
-"""Seeded fault schedules keyed by the logical request (tool, canonical arguments, repeat index), plus one
-episode-level draw. Two rollouts that issue the same request under the same schedule meet the same fate, whatever
-else they did before: this is the common-random-numbers synchronization the paired design relies on."""
+"""Seeded fault schedules keyed by the fault event (tool, semantic resource key, repeat index), plus one
+episode-level draw. Two rollouts that touch the same resource through the same tool for the k-th time meet the same
+fate under the same schedule, whatever else they did before and however they word free-text arguments: this is the
+common-random-numbers synchronization the paired design relies on."""
 
 import hashlib
 import json
@@ -24,9 +25,39 @@ class Fate:
         return self.kind is not None
 
 
+FAULT_KEY_FIELDS = {
+    "search_customers": (),
+    "get_customer": ("customer_id",),
+    "list_orders": ("customer_id",),
+    "get_order": ("order_id",),
+    "check_inventory": ("sku",),
+    "update_shipping_address": ("order_id",),
+    "cancel_order": ("order_id",),
+    "issue_refund": ("order_id",),
+    "reserve_stock": ("order_id", "sku"),
+    "schedule_shipment": ("order_id",),
+    "create_ticket": ("customer_id",),
+}
+
+
+def _canonical(value) -> str:
+    if isinstance(value, bool):
+        return str(value).lower()
+    if isinstance(value, float) and value.is_integer():
+        value = int(value)
+    return str(value).strip()
+
+
 def request_key(kwargs: dict) -> str:
-    """Canonical form of a call's arguments; numbers and their string forms are the same request."""
-    return json.dumps({k: str(v) for k, v in kwargs.items()}, sort_keys=True, separators=(",", ":"))
+    """Canonical form of all of a call's arguments; numbers and their string forms are the same request."""
+    return json.dumps({k: _canonical(v) for k, v in kwargs.items()}, sort_keys=True, separators=(",", ":"))
+
+
+def fault_key(tool: str, kwargs: dict) -> str:
+    """The exogenous process a fault belongs to: the tool and the resource it touches. Free text (reasons,
+    summaries, search queries) never changes the key, so rewording a request cannot dodge its fate."""
+    fields = FAULT_KEY_FIELDS.get(tool, ())
+    return json.dumps({f: _canonical(kwargs.get(f)) for f in fields}, sort_keys=True, separators=(",", ":"))
 
 
 def applicable_types(tool: str) -> tuple[str, ...]:
@@ -47,10 +78,13 @@ def derive_seed(*parts) -> int:
     return int.from_bytes(hashlib.sha256(text.encode("utf-8")).digest()[:8], "big")
 
 
-def resolve_seed(config: NoiseConfig, schedule_seed: int, instance_slot: int, episode_index: int) -> int:
-    """Paired: every rollout of the row shares schedule_seed. Independent: each rollout gets its own."""
+def resolve_seed(config: NoiseConfig, schedule_seed: int, instance_slot: int, episode_index: int, phase: str = "train") -> int:
+    """Paired: every rollout of the row shares schedule_seed. Independent: each rollout gets its own, derived from
+    the row's seed, the environment instance and that instance's episode counter within the phase family
+    (training counters ignore evaluation episodes, so evaluation frequency never changes training draws)."""
     if config.mode == "independent":
-        return derive_seed("independent", schedule_seed, instance_slot, episode_index)
+        family = "train" if phase.startswith("train") else "eval"
+        return derive_seed("independent", schedule_seed, instance_slot, episode_index, family)
     return int(schedule_seed)
 
 
@@ -62,12 +96,14 @@ class NoiseSchedule:
     def _rng(self, *key) -> random.Random:
         return random.Random(derive_seed(self.seed, *key))
 
-    def fate(self, tool: str, request: str, repeat: int) -> Fate:
-        """Fate of the `repeat`-th issue of `request` (a `request_key`) to `tool` under this schedule."""
+    def fate(self, tool: str, event: str, repeat: int) -> Fate:
+        """Fate of the `repeat`-th occurrence of the fault event (`tool`, `event` = a `fault_key`) under this schedule."""
+        if self.config.challenge == "writes_once":
+            return Fate("transient") if tool in WRITE_TOOLS and repeat == 0 else Fate(None)
         types = applicable_types(tool)
         if self.config.is_clean or self.config.p <= 0 or not types:
             return Fate(None)
-        rng = self._rng("request", tool, request, repeat)
+        rng = self._rng("event", tool, event, repeat)
         u = rng.random()
         retry_after = rng.choice(RETRY_AFTER_CHOICES)
         dropped = rng.randrange(0, 1_000_000)

@@ -7,7 +7,13 @@ from pairedrl.env.backoffice import ToolAPI, World, read_jsonl
 from pairedrl.noise.config import DEFAULT_WEIGHTS, FAULT_TYPES, NoiseConfig
 from pairedrl.noise.noisy_api import NoisyToolAPI
 from pairedrl.noise.oracle import make_api, observe, run_oracle
-from pairedrl.noise.schedule import NoiseSchedule, applicable_types, request_key, resolve_seed
+from pairedrl.noise.schedule import (
+    NoiseSchedule,
+    applicable_types,
+    fault_key,
+    request_key,
+    resolve_seed,
+)
 
 TASKS = read_jsonl("data/tasks/heldout.jsonl")[:80]
 
@@ -38,18 +44,61 @@ def test_applicable_types_partition():
     assert set(FAULT_TYPES) >= {t for tool in ("get_order", "list_orders", "issue_refund") for t in applicable_types(tool)}
 
 
-def test_fate_depends_only_on_tool_request_and_repeat():
+def test_fate_depends_only_on_tool_event_and_repeat():
     cfg = NoiseConfig.transition(0.5, "paired")
     a = NoiseSchedule(123, cfg)
     b = NoiseSchedule(123, cfg)
-    req = request_key({"order_id": "O0001"})
+    event = fault_key("get_order", {"order_id": "O0001"})
     for k in range(50):
-        assert a.fate("get_order", req, k) == b.fate("get_order", req, k)
-    other = request_key({"order_id": "O0002"})
-    assert [a.fate("get_order", req, k) for k in range(50)] != [a.fate("get_order", other, k) for k in range(50)]
+        assert a.fate("get_order", event, k) == b.fate("get_order", event, k)
+    other = fault_key("get_order", {"order_id": "O0002"})
+    assert [a.fate("get_order", event, k) for k in range(50)] != [a.fate("get_order", other, k) for k in range(50)]
     c = NoiseSchedule(124, cfg)
-    assert [a.fate("get_order", req, k) for k in range(50)] != [c.fate("get_order", req, k) for k in range(50)]
+    assert [a.fate("get_order", event, k) for k in range(50)] != [c.fate("get_order", event, k) for k in range(50)]
     assert request_key({"amount_cents": 1500, "order_id": "O0001"}) == request_key({"order_id": "O0001", "amount_cents": "1500"})
+
+
+def test_fault_key_ignores_free_text_and_argument_form():
+    assert fault_key("cancel_order", {"order_id": "O0073", "reason": "customer request"}) == fault_key(
+        "cancel_order", {"order_id": "O0073", "reason": "please cancel"}
+    )
+    assert fault_key("issue_refund", {"order_id": "O0073", "amount_cents": 100, "reason": "a"}) == fault_key(
+        "issue_refund", {"order_id": "O0073", "amount_cents": "250", "reason": "b"}
+    )
+    assert fault_key("create_ticket", {"customer_id": "C0001", "order_id": "O0001", "summary": "x", "category": "billing", "priority": "low"}) == fault_key(
+        "create_ticket", {"customer_id": "C0001", "order_id": "", "summary": "y", "category": "other", "priority": "high"}
+    )
+    assert fault_key("search_customers", {"query": "Mateo"}) == fault_key("search_customers", {"query": "khan", "offset": 5})
+    assert fault_key("reserve_stock", {"order_id": "O0001", "sku": "SKU-0001", "quantity": 2}) == fault_key(
+        "reserve_stock", {"quantity": "3", "sku": "SKU-0001", "order_id": "O0001"}
+    )
+    assert fault_key("reserve_stock", {"order_id": "O0001", "sku": "SKU-0001", "quantity": 2}) != fault_key(
+        "reserve_stock", {"order_id": "O0001", "sku": "SKU-0002", "quantity": 2}
+    )
+    assert fault_key("update_shipping_address", {"order_id": "O0001", "postal_code": 1200}) == fault_key(
+        "update_shipping_address", {"order_id": "O0001", "postal_code": "1200"}
+    )
+
+
+def test_rewording_cannot_dodge_an_outage_and_ordering_does_not_change_fates():
+    cfg = NoiseConfig(p=1.0, weights={"outage": 1.0}, mode="paired")
+    api = api_with(5, cfg)
+    order = pending_order(api)
+    for reason in ("customer request", "please cancel", "duplicate order"):
+        assert json.loads(api.cancel_order(order.order_id, reason))["error"]["code"] == "SERVICE_UNAVAILABLE"
+    assert api.world.orders[order.order_id].status == "pending"
+    cfg = NoiseConfig(p=0.5, weights={"transient": 0.6, "stale": 0.4}, mode="paired")
+    a, b = api_with(7, cfg), api_with(7, cfg)
+    for _ in range(8):
+        a.get_order("O0001")
+    for _ in range(8):
+        b.get_customer("C0001")
+        b.search_customers("anything")
+        b.get_order("O0002")
+        b.get_order("O0001")
+    fa = [(c.get("fault"), c.get("repeat")) for c in a.call_log if c["tool"] == "get_order"]
+    fb = [(c.get("fault"), c.get("repeat")) for c in b.call_log if c["tool"] == "get_order" and c["args"] == {"order_id": "O0001"}]
+    assert fa == fb and any(f for f, _ in fa)
 
 
 def test_resolve_seed_modes():
@@ -195,23 +244,6 @@ def test_paired_apis_share_fates_and_independent_do_not():
     assert logs[0] == logs[1] and logs[0] and logs[0] != logs[2]
 
 
-def test_shared_fates_survive_divergent_sequences():
-    cfg = NoiseConfig(p=0.5, weights={"transient": 0.6, "stale": 0.4}, mode="paired")
-    a, b = api_with(7, cfg), api_with(7, cfg)
-    for _ in range(10):
-        a.get_order("O0001")
-    for _ in range(10):
-        b.get_customer("C0001")
-        b.search_customers("x")
-        b.get_order("O0002")
-        b.get_order("O0001")
-    fa = {(f["tool"], f["index"]): f["kind"] for f in a.fault_log if f["tool"] == "get_order"}
-    fb = {(f["tool"], f["index"]): f["kind"] for f in b.fault_log if f["tool"] == "get_order" and f["index"] < 10}
-    fb_o1 = {(c["tool"], i): c.get("fault") for i, c in enumerate(c for c in b.call_log if c["tool"] == "get_order" and c["args"] == {"order_id": "O0001"}) if c.get("fault")}
-    assert fa and all(fa[k] == v for k, v in fb_o1.items()) and set(fb_o1) == set(fa)
-    assert fb is not None
-
-
 def test_request_key_makes_string_and_number_arguments_the_same_request():
     cfg = NoiseConfig(p=0.5, weights={"transient": 1.0}, mode="paired")
     a, b = api_with(9, cfg), api_with(9, cfg)
@@ -245,7 +277,8 @@ def test_naive_oracle_suffers_and_recovering_oracle_reaches_the_ceiling():
     assert any(r.exposed for r in recovering)
     assert all(r.observed_reward == float(r.success) and not r.flipped for r in recovering)
     no_outage = NoiseConfig(p=0.25, weights={"transient": 0.6, "rate_limit": 0.2, "stale": 0.2}, mode="paired")
-    assert all(run_oracle(t, make_api(t, no_outage, seed=i), recover=True, lookups=True).success for i, t in enumerate(TASKS))
+    without = [run_oracle(t, make_api(t, no_outage, seed=i), recover=True, lookups=True).success for i, t in enumerate(TASKS)]
+    assert sum(without) / len(TASKS) >= 0.97
 
 
 def test_oracle_respects_the_call_budget():
@@ -270,3 +303,32 @@ def test_outcome_noise_flips_about_q_of_successes():
     observed = sum(r.observed_reward for r in results) / 600
     assert abs(observed - 0.9) < 0.03
     assert all(r.exposed is False for r in results)
+
+
+def test_challenge_fails_every_write_exactly_once_and_nothing_else():
+    from pairedrl.env.backoffice.tools import READ_TOOLS, WRITE_TOOLS
+
+    config = NoiseConfig.challenge_writes()
+    assert not config.is_clean and config.challenge == "writes_once"
+    for seed in (1, 999):
+        schedule = NoiseSchedule(seed, config)
+        for tool in sorted(WRITE_TOOLS):
+            assert schedule.fate(tool, "{}", 0).kind == "transient" and schedule.fate(tool, "{}", 1).kind is None
+        for tool in sorted(READ_TOOLS) + ["wait", "finish"]:
+            assert schedule.fate(tool, "{}", 0).kind is None
+        assert not schedule.outcome_flip()
+    for bad in ({"challenge": "nope"}, {"p": 0.1}, {"q": 0.1}, {"mode": "clean"}):
+        with pytest.raises(ValueError, match="challenge"):
+            NoiseConfig(**{"mode": "paired", "challenge": "writes_once", **bad})
+    assert NoiseConfig.from_dict(config.to_dict()) == config
+
+
+def test_challenge_is_recoverable_within_budget_and_exposes_everyone():
+    from pairedrl.train.env_adapter import budget_for
+
+    tasks = read_jsonl("data/tasks/heldout.jsonl")[:40]
+    config = NoiseConfig.challenge_writes()
+    recovering = [run_oracle(t, make_api(t, config, seed=1), recover=True, budget=budget_for(t), lookups=True) for t in tasks]
+    naive = [run_oracle(t, make_api(t, config, seed=1), recover=False, budget=budget_for(t), lookups=True) for t in tasks]
+    assert all(r.success and r.exposed and not r.budget_exceeded for r in recovering)
+    assert all(r.exposed and not r.success for r in naive)

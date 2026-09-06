@@ -4,10 +4,11 @@ import random
 import pytest
 
 from pairedrl.analysis.diagnostics import (
-    effective_group_size,
+    contrast_precision_equivalent,
     grpo_advantages,
     luck_share,
     luck_share_over_tasks,
+    luck_share_pooled,
     spurious_rate_all_correct,
     std_ddof1,
     summarize_group,
@@ -96,8 +97,13 @@ def test_luck_share_edge_cases():
     assert summary["tasks"] == 2 and summary["tasks_defined"] == 1 and summary["lam"] == 0.0
 
 
-def test_effective_group_size():
-    assert effective_group_size(8, 0.0) == 8
-    assert math.isclose(effective_group_size(8, 0.5), 16)
+def test_contrast_precision_equivalent_and_pooled_share():
+    assert contrast_precision_equivalent(8, 0.0) == 8
+    assert math.isclose(contrast_precision_equivalent(8, 0.5), 16)
     with pytest.raises(ValueError):
-        effective_group_size(8, 1.0)
+        contrast_precision_equivalent(8, 1.0)
+    flat = [[[1.0, 1.0], [1.0, 1.0]], [[0.0, 0.0], [0.0, 0.0]]]
+    assert luck_share_pooled(flat) is None
+    mixed = [[[1.0, 1.0, 1.0, 1.0], [0.0, 0.0, 0.0, 0.0]], [[1.0, 0.0, 1.0, 0.0], [0.0, 1.0, 0.0, 1.0]]]
+    pooled = luck_share_pooled(mixed)
+    assert pooled is not None and 0.0 < pooled < 1.0

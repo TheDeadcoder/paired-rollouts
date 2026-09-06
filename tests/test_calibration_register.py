@@ -64,6 +64,7 @@ def test_calibration_entry_fields(tmp_path):
     assert entry["sets"]["noisy"]["recovery_success"] == pytest.approx(0.0)
     assert entry["clean_band"] == list(CALIBRATION_BANDS["Qwen/Qwen3.5-2B"]) and entry["clean_in_band"]
     assert entry["luck_share"]["tasks"] == 2 and entry["luck_share"]["lam"] is not None
+    assert 0.0 <= entry["luck_share"]["lam_pooled"] <= 1.0
     assert entry["luck_share_ok"] == (entry["luck_share"]["lam"] >= 0.15)
     assert set(entry["completions"]) == {"final_clean", "diag"}
     assert entry["completions"]["diag"]["clipped_ratio"] == pytest.approx(0.2)
@@ -84,7 +85,7 @@ def test_build_and_format(tmp_path):
     assert json.loads(out.read_text())["entries"][0]["run_id"] == "calib-test"
     text = format_calibration(register)
     assert "calib-test (Qwen/Qwen3.5-2B): status COMPLETE, 30 episodes" in text
-    assert "clean          true=0.500" in text and "luck share lam=" in text
+    assert "clean          true=0.500" in text and "luck share diag:step0: lam=" in text and "pooled=" in text
     assert "diag           mean_len=1100 max_len=6144 clipped=0.200" in text
 
 

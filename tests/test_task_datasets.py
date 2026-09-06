@@ -22,13 +22,14 @@ def manifest():
 
 @pytest.fixture(scope="module")
 def datasets():
-    return {name: read_jsonl(DATA / f"{name}.jsonl") for name in ("train", "heldout", "diagnostic")}
+    return {name: read_jsonl(DATA / f"{name}.jsonl") for name in ("train", "heldout", "diagnostic", "test")}
 
 
 def test_counts_and_ids(datasets):
     assert len(datasets["train"]) == 2000
     assert len(datasets["heldout"]) == 300
     assert len(datasets["diagnostic"]) == 16
+    assert len(datasets["test"]) == 300
     for name, tasks in datasets.items():
         assert [t.task_id for t in tasks] == [f"{name}-{i:05d}" for i in range(len(tasks))]
         assert all(t.split == name for t in tasks)
@@ -61,13 +62,13 @@ def test_generator_code_unchanged_since_build(manifest):
 
 
 def test_template_coverage(datasets):
-    for name in ("train", "heldout"):
+    for name in ("train", "heldout", "test"):
         templates = {t for task in datasets[name] for t in task.templates}
         assert templates == set(TEMPLATES), name
 
 
 def test_oracle_plans_execute_cleanly(datasets):
-    sample = datasets["heldout"] + datasets["diagnostic"] + datasets["train"][::10]
+    sample = datasets["heldout"] + datasets["diagnostic"] + datasets["test"][::3] + datasets["train"][::10]
     for task in sample:
         _, outcomes = simulate_plan(task.world_seed, task.oracle_plan)
         assert all(o["ok"] for o in outcomes), task.task_id

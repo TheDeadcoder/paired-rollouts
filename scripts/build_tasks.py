@@ -10,7 +10,7 @@ import pairedrl
 from pairedrl.env.backoffice import Task, generate_tasks, write_jsonl
 
 GENERATOR_SEED = 20260904
-SPECS = {"train": ("train", 2000, 60), "heldout": ("heldout", 300, 0), "diagnostic": ("heldout", 16, 0)}
+SPECS = {"train": ("train", 2000, 60), "heldout": ("heldout", 300, 0), "diagnostic": ("heldout", 16, 0), "test": ("heldout", 300, 0)}
 DIAGNOSTIC_SUBGOALS = (2, 4)
 CODE_FILES = ("world.py", "tools.py", "tasks.py", "grader.py")
 
@@ -50,13 +50,17 @@ def relabel(tasks: list[Task], split: str) -> list[Task]:
 def build(out_dir: pathlib.Path) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
     used: set[int] = set()
-    heldout_pool = dedupe(generate_tasks(360, "heldout", GENERATOR_SEED), used)
+    heldout_pool = dedupe(generate_tasks(700, "heldout", GENERATOR_SEED), used)
     train_pool = dedupe(generate_tasks(2060, "train", GENERATOR_SEED), used)
-    diagnostic_pool = [t for t in heldout_pool[300:] if DIAGNOSTIC_SUBGOALS[0] <= t.n_subgoals <= DIAGNOSTIC_SUBGOALS[1]]
+    diagnostic_pool = [t for t in heldout_pool[300:360] if DIAGNOSTIC_SUBGOALS[0] <= t.n_subgoals <= DIAGNOSTIC_SUBGOALS[1]]
+    diagnostic = diagnostic_pool[:16]
+    diagnostic_seeds = {t.world_seed for t in diagnostic}
+    test_pool = [t for t in heldout_pool[360:] if t.world_seed not in diagnostic_seeds]
     datasets = {
         "train": relabel(train_pool[:2000], "train"),
         "heldout": relabel(heldout_pool[:300], "heldout"),
-        "diagnostic": relabel(diagnostic_pool[:16], "diagnostic"),
+        "diagnostic": relabel(diagnostic, "diagnostic"),
+        "test": relabel(test_pool[:300], "test"),
     }
     manifest = {
         "generator_seed": GENERATOR_SEED,

@@ -14,10 +14,36 @@ One entry per working day. Fields are mandatory. Spend is cumulative in USD by p
 
 ## Entries
 
+Spend figures are the sum of `estimated_cost_usd` over the run manifests (wall time x 3.95 USD/h for an H100 on Modal); they exclude image builds and container start-up, so the dashboard balance is the authority and is entered by hand at the freeze.
+
 ### 2026-09-02, day 0: freeze and scaffold
 
-- Commits: (fill in after committing)
+- Commits: a14f5c6 init
 - Spend to date: Modal 0.00 | DigitalOcean 0.00 | GCP 0.00 | Daytona 0.00 | API 0.00
-- Checks passed: (fill in)
+- Checks passed: repository scaffold PASS; pre-registration v0 drafted PASS; freeze deferred to after calibration (see DEVIATIONS)
 - Deviations: none
 - Notes: Solo submission under the ICLR 2027 reciprocal-reviewing exemption (no qualifying author; one submission cap). No co-author will be added.
+
+### 2026-09-04, day 2: environment, noise layer, trainer integration, stack check
+
+- Commits: 708672f modal integration check; a6d3908 world state and tool API; 2ca3da8 task generator and grader; ca2616c task datasets; 8c6e16d noise layer; 32e839b group diagnostics; a45e11c TRL environment adapter; fa63c84 run specification, trainer, evaluation schedule, Modal entry point
+- Spend to date: Modal 0.30 | DigitalOcean 0.00 | GCP 0.00 | Daytona 0.00 | API 0.00
+- Checks passed: Modal stack check Qwen3.5-2B (3 toy steps, vLLM colocate, tool mask) PASS; Qwen3-1.7B stack check FAIL (fallback list closed); unit tests PASS
+- Deviations: model fallback (DEVIATIONS 2026-09-04)
+- Notes: TRL 1.12.0, vLLM 0.27.1, transformers 5.16.1, torch 2.13.0, peft 0.20.0 pinned in the train extra.
+
+### 2026-09-05, day 3: calibration v1 and v2, detached launches, speed checks
+
+- Commits: 2483d32 evaluation memory guard and calibration register; 8fa9475 bf16 policy and one-sequence log-prob chunks after the OOM; d6ec810 detached Modal protocol (deploy, spawn, collect, checkpoint to the volume) and the v1 calibration register; a6fd4f4 environment v2; 40d262d v2 calibration register; f9cf41b vLLM engine overrides, speed-check specs, retries, 24 tool iterations; 14c3ba7 speed checks launched
+- Spend to date: Modal about 42 (two OOM attempts, calib v1 2B 7.63, calib v1 4B cancelled by the client disconnect, calib v2 2B 12.47, calib v2 4B 11.09, speed checks 3.43) | DigitalOcean 0.00 | GCP 0.00 | Daytona 0.00 | API 0.00
+- Checks passed: calibration completes end to end PASS (second attempt); P12 (lambda at least 0.15) FAIL on v1 (0.030), PASS on v2 (0.222 for 2B, 0.581 for 4B); detached launch survives a client disconnect PASS; speed checks A/B/C indistinguishable (230 to 336 s per 128 episodes) PASS
+- Deviations: OOM relaunch and launch protocol; environment v1 to v2 (DEVIATIONS 2026-09-05)
+- Notes: generation time is set by the longest episode's decode; prefix caching and batched-token limits do not help. Modal preempted the v2 2B container once and retried it by itself; retries are now explicit and attempt-preserving.
+
+### 2026-09-06, day 4: speed register, gate-1 specs, external review, environment v3
+
+- Commits: bd2bf4e speed-check register and gate-1 specs at 100 steps; (this commit) review fixes: per-task evaluation schedules, resource-keyed fault events, per-checkpoint luck tables, training-group register, trainer checkpoints with resume and attempt directories, test pool, C2r mixture, matched challenge set, theory v2, pre-registration v0.2
+- Spend to date: Modal about 42 | DigitalOcean 0.00 | GCP 0.00 | Daytona 0.00 | API 0.00
+- Checks passed: review defects reproduced and fixed with regression tests PASS; scripted-reference register rebuilt on both pools under the frozen evaluation schedules PASS; unit tests and ruff PASS
+- Deviations: environment v3 and protocol fixes; run matrix and budget (DEVIATIONS 2026-09-06)
+- Notes: numbers measured before this commit were produced under the old fault keying and evaluation seeds and are not compared with v3 numbers. Next: v3 zero-shot calibration (eval only), gate 1 at this commit if not already running, gradient probe, then the v1 freeze.

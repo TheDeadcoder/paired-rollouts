@@ -7,6 +7,8 @@ import pytest
 
 from pairedrl.ops.ledger import LEDGER_HEADER
 
+pytest.importorskip("modal", reason="cloud scripts need the optional modal package (pip install -e '.[cloud]')")
+
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 

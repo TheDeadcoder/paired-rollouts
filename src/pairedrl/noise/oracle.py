@@ -11,7 +11,7 @@ from pairedrl.noise.config import NoiseConfig
 from pairedrl.noise.noisy_api import NoisyToolAPI
 from pairedrl.noise.schedule import NoiseSchedule
 
-MAX_ATTEMPTS = 4
+MAX_ATTEMPTS = 5
 MAX_VERIFY_READS = 2
 
 

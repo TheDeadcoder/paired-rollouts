@@ -8,6 +8,7 @@ HELDOUT_TYPES = ("timeout_after_commit", "field_dropout")
 FAULT_TYPES = TRANSITION_TYPES + HELDOUT_TYPES
 DEFAULT_WEIGHTS = {"transient": 0.45, "rate_limit": 0.15, "outage": 0.10, "stale": 0.15, "truncate": 0.15}
 RETRY_AFTER_CHOICES = (15, 30, 45, 60)
+CHALLENGES = ("writes_once",)
 
 
 @dataclass(frozen=True)
@@ -18,10 +19,15 @@ class NoiseConfig:
     q: float = 0.0
     weights: dict[str, float] = field(default_factory=lambda: dict(DEFAULT_WEIGHTS))
     mode: str = "clean"
+    challenge: str | None = None
 
     def __post_init__(self):
         if self.mode not in MODES:
             raise ValueError(f"mode must be one of {MODES}, got {self.mode!r}")
+        if self.challenge is not None and (
+            self.challenge not in CHALLENGES or self.p > 0 or self.q > 0 or self.mode == "clean"
+        ):
+            raise ValueError(f"challenge must be one of {CHALLENGES} with p = q = 0 and a non-clean mode")
         if not 0.0 <= self.p <= 1.0 or not 0.0 <= self.q <= 1.0:
             raise ValueError("p and q must lie in [0, 1]")
         unknown = set(self.weights) - set(FAULT_TYPES)
@@ -34,7 +40,7 @@ class NoiseConfig:
 
     @property
     def is_clean(self) -> bool:
-        return self.mode == "clean" or (self.p == 0.0 and self.q == 0.0)
+        return self.mode == "clean" or (self.p == 0.0 and self.q == 0.0 and self.challenge is None)
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -54,6 +60,11 @@ class NoiseConfig:
     @classmethod
     def outcome(cls, q: float, mode: str) -> "NoiseConfig":
         return cls(p=0.0, q=q, weights=dict(DEFAULT_WEIGHTS), mode=mode)
+
+    @classmethod
+    def challenge_writes(cls, mode: str = "paired") -> "NoiseConfig":
+        """Matched challenge: the first attempt of every write request fails transiently, nothing else does."""
+        return cls(p=0.0, q=0.0, weights=dict(DEFAULT_WEIGHTS), mode=mode, challenge="writes_once")
 
     @classmethod
     def heldout_types(cls, p: float, mode: str) -> "NoiseConfig":

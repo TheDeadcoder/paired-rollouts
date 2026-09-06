@@ -55,6 +55,7 @@ class BackOfficeEnv:
     _slot_counter: ClassVar[int] = 0
     _slot_lock: ClassVar[threading.Lock] = threading.Lock()
     phase: ClassVar[str] = "train"
+    attempt: ClassVar[int] = 1
 
     def __init__(self, task_paths, log_path: str | os.PathLike | None = None):
         with BackOfficeEnv._slot_lock:
@@ -63,6 +64,7 @@ class BackOfficeEnv:
         self.task_paths = [str(p) for p in task_paths]
         self.log_path = pathlib.Path(log_path) if log_path else None
         self.episode_index = -1
+        self.train_episode_index = -1
         self.task: Task | None = None
         self.api: NoisyToolAPI | None = None
         self.schedule: NoiseSchedule | None = None
@@ -77,10 +79,13 @@ class BackOfficeEnv:
     def reset(self, **kwargs):
         tasks = load_tasks(self.task_paths)
         self.episode_index += 1
+        if BackOfficeEnv.phase.startswith("train"):
+            self.train_episode_index += 1
         self.row = {k: v for k, v in kwargs.items() if k != "prompt"}
         self.task = tasks[kwargs["task_id"]]
         self.config = parse_noise(kwargs["noise"])
-        seed = resolve_seed(self.config, int(kwargs["schedule_seed"]), self.slot, self.episode_index)
+        draw_index = self.train_episode_index if BackOfficeEnv.phase.startswith("train") else self.episode_index
+        seed = resolve_seed(self.config, int(kwargs["schedule_seed"]), self.slot, draw_index, BackOfficeEnv.phase)
         self.schedule = None if self.config.is_clean else NoiseSchedule(seed, self.config)
         world = World.generate(self.task.world_seed)
         self.api = NoisyToolAPI(world, self.schedule)
@@ -115,6 +120,7 @@ class BackOfficeEnv:
         record = {
             "task_id": self.task.task_id,
             "phase": BackOfficeEnv.phase,
+            "attempt": BackOfficeEnv.attempt,
             "condition": self.row.get("condition"),
             "mode": self.config.mode if self.config else "clean",
             "schedule_seed": int(self.row.get("schedule_seed", 0)),
@@ -133,7 +139,8 @@ class BackOfficeEnv:
             "changed_from_initial": result.changed_from_initial,
             "diffs": result.diffs[:5],
             "tool_sequence": [
-                {"tool": c["tool"], "ok": c["ok"], "code": c["code"]} for c in self.api.call_log
+                {"tool": c["tool"], "ok": c["ok"], "code": c["code"], "event": c.get("event"), "repeat": c.get("repeat")}
+                for c in self.api.call_log
             ],
             "failed_calls": [
                 {"tool": c["tool"], "code": c["code"], "args": json.dumps(c["args"], sort_keys=True, default=str)[:200]}

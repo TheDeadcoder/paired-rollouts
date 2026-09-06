@@ -10,6 +10,7 @@ import datetime as dt
 import json
 import os
 import pathlib
+import shutil
 import subprocess
 import time
 
@@ -67,6 +68,24 @@ def utc_now() -> str:
     return dt.datetime.now(dt.UTC).isoformat(timespec="seconds")
 
 
+def preserve_previous_attempt(out_dir: pathlib.Path) -> tuple[int, pathlib.Path | None]:
+    """A retried container must not overwrite the previous attempt's evidence: its manifest and logs move to
+    attempt<n>/, and the newest trainer checkpoint (if any) is returned so training can resume from it."""
+    manifest_path = out_dir / "run_manifest.json"
+    if not manifest_path.exists():
+        return 1, None
+    previous = json.loads(manifest_path.read_text(encoding="utf-8"))
+    n = int(previous.get("attempt", 1))
+    keep = out_dir / f"attempt{n}"
+    keep.mkdir(exist_ok=True)
+    for name in ("run_manifest.json", "summary.json", "trainer_log_history.json", "episodes.jsonl", "groups.jsonl"):
+        src = out_dir / name
+        if src.exists():
+            shutil.move(str(src), str(keep / name))
+    checkpoints = sorted((out_dir / "trainer").glob("checkpoint-*"), key=lambda c: int(c.name.split("-")[1]))
+    return n + 1, (checkpoints[-1] if checkpoints else None)
+
+
 def vllm_facts(trainer) -> dict:
     try:
         cfg = trainer.vllm_generation.llm.llm_engine.vllm_config
@@ -93,27 +112,34 @@ def run(spec_dict: dict, git_commit: str) -> dict:
 
     import torch
 
+    from pairedrl.train.env_adapter import BackOfficeEnv
     from pairedrl.train.runner import (
         EvalSchedule,
         RunSpec,
         build_trainer,
-        luck_share_tables,
+        luck_share_tables_by_phase,
         read_episode_log,
         summarize_episodes,
+        summarize_groups,
     )
 
     spec = RunSpec.from_dict(spec_dict)
     out_dir = pathlib.Path(RUNS) / spec.run_id
     out_dir.mkdir(parents=True, exist_ok=True)
-    log_path = out_dir / "episodes.jsonl"
-    if log_path.exists():
-        log_path.unlink()
     deployed_commit = os.environ.get("PAIREDRL_GIT_COMMIT", "")
+    provenance_ok = git_commit == deployed_commit and not git_commit.endswith("-dirty")
+    attempt, checkpoint = (preserve_previous_attempt(out_dir) if provenance_ok else (1, None))
+    checkpoint = checkpoint if (checkpoint is not None and not spec.eval_only) else None
+    BackOfficeEnv.attempt = attempt
+    log_path = out_dir / "episodes.jsonl"
+    group_log_path = out_dir / "groups.jsonl"
     manifest = {
         "run_id": spec.run_id,
         "spec": spec.to_dict(),
         "git_commit": git_commit,
         "deployed_commit": deployed_commit,
+        "attempt": attempt,
+        "resumed_from_checkpoint": str(checkpoint) if checkpoint else None,
         "started_utc": utc_now(),
         "gpu": torch.cuda.get_device_name(0),
         "versions": {p: md.version(p) for p in ["torch", "transformers", "trl", "vllm", "peft"]},
@@ -125,10 +151,10 @@ def run(spec_dict: dict, git_commit: str) -> dict:
     trainer = None
     schedule = None
 
-    def count_episodes() -> int:
-        if not log_path.exists():
+    def count_lines(path: pathlib.Path) -> int:
+        if not path.exists():
             return 0
-        with open(log_path, encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             return sum(1 for line in f if line.strip())
 
     def write_state() -> None:
@@ -136,7 +162,8 @@ def run(spec_dict: dict, git_commit: str) -> dict:
         manifest["wall_time_s"] = round(time.perf_counter() - t0, 1)
         manifest["estimated_cost_usd"] = round(manifest["wall_time_s"] / 3600 * H100_USD_PER_HOUR, 2)
         manifest["eval_timings"] = schedule.timings if schedule is not None else []
-        manifest["episodes_logged"] = count_episodes()
+        manifest["episodes_logged"] = count_lines(log_path)
+        manifest["groups_logged"] = count_lines(group_log_path)
         manifest["peak_mem_gb"] = round(torch.cuda.max_memory_allocated() / 1e9, 2)
         history = list(trainer.state.log_history) if trainer is not None else []
         manifest["train_steps_logged"] = sum(1 for h in history if "loss" in h)
@@ -146,9 +173,11 @@ def run(spec_dict: dict, git_commit: str) -> dict:
 
     write_state()
     try:
-        if git_commit != deployed_commit or git_commit.endswith("-dirty"):
+        if not provenance_ok:
             raise RuntimeError(f"provenance: launched with commit {git_commit!r} but the deployed image is {deployed_commit!r}")
-        trainer, splits, periodic = build_trainer(spec, "/root/data/tasks", out_dir / "trainer", log_path)
+        trainer, splits, periodic = build_trainer(
+            spec, "/root/data/tasks", out_dir / "trainer", log_path, group_log_path=group_log_path
+        )
         manifest["vllm"] = vllm_facts(trainer)
         schedule = EvalSchedule(spec, trainer, splits, periodic, on_checkpoint=write_state, checkpoint_every=CHECKPOINT_EVERY_STEPS)
         write_state()
@@ -157,12 +186,12 @@ def run(spec_dict: dict, git_commit: str) -> dict:
             if 0 in spec.diagnostic_steps:
                 schedule.run_diagnostic(0)
         else:
-            if not spec.train_only:
+            if not spec.train_only and checkpoint is None:
                 schedule.run_periodic(0)
                 if 0 in spec.diagnostic_steps:
                     schedule.run_diagnostic(0)
             trainer.add_callback(schedule.callback)
-            trainer.train()
+            trainer.train(resume_from_checkpoint=str(checkpoint) if checkpoint else None)
             if not spec.train_only:
                 schedule.run_final(splits)
                 if spec.steps in spec.diagnostic_steps:
@@ -179,8 +208,10 @@ def run(spec_dict: dict, git_commit: str) -> dict:
     records = read_episode_log(log_path)
     summary = {
         "episodes_logged": len(records),
+        "attempt": attempt,
         "by_phase_condition": summarize_episodes(records),
-        "luck_share_tables": len(luck_share_tables(records)),
+        "luck_share_tables": {phase: len(tables) for phase, tables in luck_share_tables_by_phase(records).items()},
+        "training_groups": summarize_groups(read_episode_log(group_log_path)),
     }
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n")
     write_state()

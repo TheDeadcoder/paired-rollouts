@@ -54,9 +54,10 @@ def build_training_rows(
 def build_blocking_rows(
     tasks: list[Task], noisy_config: NoiseConfig, condition: str, n_rows: int, run_seed: int
 ) -> list[dict]:
-    """NoisyAgent-style blocking baseline: every task appears as a clean group and as a noisy group."""
-    if noisy_config.mode != "independent":
-        raise ValueError("the blocking baseline pairs a clean group with an independent-noise group")
+    """Fixed-mixture blocking baseline (inspired by NoisyAgent): every task appears as a clean group and as a
+    noisy group, each normalized within itself. The noisy group is independent or paired per `noisy_config.mode`."""
+    if noisy_config.mode not in ("independent", "paired"):
+        raise ValueError("the blocking baseline needs an independent or paired noisy group")
     base = build_training_rows(tasks, noisy_config, condition, n_rows // 2, run_seed)
     clean = NoiseConfig.clean()
     rows = []
@@ -66,14 +67,19 @@ def build_blocking_rows(
     return rows
 
 
+def eval_schedule_seed(task_id: str, index: int) -> int:
+    """Frozen evaluation schedule for (task, index): distinct across tasks, identical across arms and checkpoints."""
+    return derive_seed("eval", task_id, index) % (2**31)
+
+
 def build_eval_rows(
-    tasks: list[Task], config: NoiseConfig, condition: str, schedule_seeds: list[int]
+    tasks: list[Task], config: NoiseConfig, condition: str, schedule_indices: list[int]
 ) -> list[dict]:
-    """Paired evaluation: every task under every fixed schedule seed, identical across arms and checkpoints."""
+    """Paired evaluation: every task under every fixed schedule index, identical across arms and checkpoints."""
     return [
-        make_row(task, seed, config, condition)
+        make_row(task, eval_schedule_seed(task.task_id, index), config, condition)
         for task in tasks
-        for seed in schedule_seeds
+        for index in schedule_indices
     ]
 
 

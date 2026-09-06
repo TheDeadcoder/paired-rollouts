@@ -106,8 +106,18 @@ def luck_share_over_tasks(tables) -> dict:
     }
 
 
-def effective_group_size(group_size: int, lam: float) -> float:
-    """Independent rollouts needed to match the contrast precision of `group_size` paired ones."""
+def luck_share_pooled(tables) -> float | None:
+    """Ratio of the averaged variance components across tasks (less clipping bias than the mean of task ratios)."""
+    shares = [luck_share(t) for t in tables]
+    env = _mean([s.sigma2_env for s in shares]) if shares else 0.0
+    pol = _mean([s.sigma2_pol for s in shares]) if shares else 0.0
+    return env / (env + pol) if env + pol > 0 else None
+
+
+def contrast_precision_equivalent(group_size: int, lam: float) -> float:
+    """Independent rollouts whose within-group reward contrasts are as precise as those of `group_size` paired
+    ones: 2(sigma2_env + sigma2_pol) / (2 sigma2_pol) = 1 / (1 - lambda) per rollout. A statement about reward
+    contrasts only; it is not an effective sample size for the policy gradient (see docs/THEORY.md, section 3)."""
     if not 0.0 <= lam < 1.0:
         raise ValueError("lam must lie in [0, 1)")
     return group_size / (1.0 - lam)

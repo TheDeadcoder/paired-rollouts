@@ -53,6 +53,35 @@
         "7": 4
       }
     },
+    "test": {
+      "count": 300,
+      "path": "data/tasks/test.jsonl",
+      "requests_per_task": {
+        "1": 53,
+        "2": 135,
+        "3": 112
+      },
+      "sha256": "ce49f8bf9fe0ad8679106f92ce33ff7f0fa2b1c9ebc609b41754f2d727e7bb10",
+      "templates": {
+        "address_change": 160,
+        "cancel_paid_refund": 61,
+        "cancel_pending": 63,
+        "open_ticket": 131,
+        "open_ticket_no_order": 50,
+        "partial_refund_delivered": 93,
+        "reserve_and_ship": 49,
+        "ship_reserved": 52
+      },
+      "write_calls_per_task": {
+        "1": 40,
+        "2": 105,
+        "3": 91,
+        "4": 36,
+        "5": 15,
+        "6": 11,
+        "7": 2
+      }
+    },
     "train": {
       "count": 2000,
       "path": "data/tasks/train.jsonl",

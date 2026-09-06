@@ -1,0 +1,15 @@
+{
+  "run_id": "calib-v3-qwen3.5-2b-c2-diag",
+  "model": "Qwen/Qwen3.5-2B",
+  "condition": "C2",
+  "arm": "paired",
+  "p": 0.25,
+  "q": 0.0,
+  "seed": 0,
+  "eval_only": true,
+  "final_eval_tasks": 0,
+  "diagnostic_steps": [
+    0
+  ],
+  "notes": "environment v3 luck-share diagnostic of Qwen/Qwen3.5-2B under the default p=0.25 mixture with outages (16 tasks x 8 schedules x 8 samples); the shared evaluation sets are measured once by calib-v3-qwen3.5-2b-c2r; not pre-registered"
+}
