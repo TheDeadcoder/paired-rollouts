@@ -41,14 +41,16 @@ class FakeCall:
 
 class FakeEntry:
     def __init__(self, path, size):
-        self.path, self.size = path, size
+        from modal.volume import FileEntryType
+
+        self.path, self.size, self.type = path, size, FileEntryType.FILE
 
 
 class FakeVolume:
     def __init__(self, files):
         self.files = files
 
-    def listdir(self, path):
+    def listdir(self, path, recursive=False):
         if not any(k.startswith(path + "/") for k in self.files):
             raise FileNotFoundError(path)
         return [FakeEntry(k, len(v)) for k, v in self.files.items() if k.startswith(path + "/")]
@@ -133,7 +135,7 @@ def test_collect_reports_downloads_and_updates_ledger(tmp_path, monkeypatch, cap
     monkeypatch.setattr(collect.modal.FunctionCall, "from_id", staticmethod(lambda call_id: calls[call_id]))
     monkeypatch.setattr(collect.modal.Volume, "from_name", staticmethod(lambda name: volume))
     downloaded = []
-    monkeypatch.setattr(collect, "download", lambda run_id, runs_dir: downloaded.append(run_id) or True)
+    monkeypatch.setattr(collect, "download", lambda volume, run_id, runs_dir, with_weights=False: downloaded.append(run_id) or True)
 
     monkeypatch.setattr(sys, "argv", ["collect_modal.py"])
     assert collect.main() == 1
@@ -173,3 +175,18 @@ def test_collect_uses_manifest_when_result_expired(tmp_path, monkeypatch, capsys
     monkeypatch.setattr(sys, "argv", ["collect_modal.py", "--no-download"])
     assert collect.main() == 0
     assert "calib-a: FAILED" in capsys.readouterr().out
+
+
+def test_download_skips_weights_unless_asked(tmp_path):
+    collect = load_script("collect_modal")
+    volume = FakeVolume({
+        "run-a/run_manifest.json": b"{}", "run-a/episodes.jsonl": b"{}\n", "run-a/groups.jsonl": b"{}\n",
+        "run-a/attempt1/episodes.jsonl": b"{}\n", "run-a/trainer/checkpoint-20/adapter_model.safetensors": b"w",
+        "run-a/adapter_final/adapter_model.safetensors": b"w",
+    })
+    assert collect.download(volume, "run-a", tmp_path)
+    got = sorted(str(p.relative_to(tmp_path / "run-a")) for p in (tmp_path / "run-a").rglob("*") if p.is_file())
+    assert got == ["attempt1/episodes.jsonl", "episodes.jsonl", "groups.jsonl", "run_manifest.json"]
+    assert collect.download(volume, "run-a", tmp_path / "full", with_weights=True)
+    assert (tmp_path / "full" / "run-a" / "trainer" / "checkpoint-20" / "adapter_model.safetensors").read_bytes() == b"w"
+    assert not collect.download(FakeVolume({}), "missing", tmp_path)

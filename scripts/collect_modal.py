@@ -7,11 +7,11 @@ states unless --cancel is given. Exit code 0 when every run in the register has 
 import argparse
 import json
 import pathlib
-import subprocess
 import sys
 
 import modal
 import modal.exception
+from modal.volume import FileEntryType
 
 from pairedrl.ops.ledger import TERMINAL, latest_launch_register, read_launch_register, set_status
 
@@ -44,10 +44,30 @@ def volume_view(volume, run_id: str) -> tuple[dict | None, int]:
     return json.loads(data.decode("utf-8")), episodes_bytes
 
 
-def download(run_id: str, runs_dir: pathlib.Path) -> bool:
-    runs_dir.mkdir(parents=True, exist_ok=True)
-    proc = subprocess.run(["modal", "volume", "get", RUNS_VOLUME, run_id, str(runs_dir), "--force"], check=False)
-    return proc.returncode == 0
+WEIGHT_DIRS = ("trainer/", "adapter_final/")
+
+
+def download(volume, run_id: str, runs_dir: pathlib.Path, with_weights: bool = False) -> bool:
+    """Copy the run's files from the volume; trainer checkpoints and the final adapter (hundreds of MB per run)
+    stay on the volume unless `with_weights` is given."""
+    try:
+        entries = volume.listdir(run_id, recursive=True)
+    except Exception as e:  # noqa: BLE001
+        print(f"  listdir failed: {type(e).__name__}: {e}")
+        return False
+    copied = 0
+    for entry in entries:
+        if getattr(entry, "type", FileEntryType.FILE) != FileEntryType.FILE:
+            continue
+        rel = entry.path[len(run_id) + 1:] if entry.path.startswith(run_id + "/") else entry.path
+        if not with_weights and rel.startswith(WEIGHT_DIRS):
+            continue
+        dest = runs_dir / run_id / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "wb") as f:
+            f.writelines(volume.read_file(f"{run_id}/{rel}"))
+        copied += 1
+    return copied > 0
 
 
 def main() -> int:
@@ -59,6 +79,7 @@ def main() -> int:
     parser.add_argument("--partial", action="store_true", help="also download runs that are still running")
     parser.add_argument("--cancel", action="store_true", help="cancel every run in the register that is still running")
     parser.add_argument("--no-download", action="store_true")
+    parser.add_argument("--with-weights", action="store_true", help="also download trainer checkpoints and the final adapter")
     args = parser.parse_args()
 
     register_path = pathlib.Path(args.register) if args.register else latest_launch_register(args.register_dir)
@@ -100,7 +121,7 @@ def main() -> int:
         if terminal:
             set_status(args.ledger, call_id, state)
         if not args.no_download and (terminal or args.partial) and manifest is not None:
-            ok = download(run_id, runs_dir)
+            ok = download(volume, run_id, runs_dir, with_weights=args.with_weights)
             print(f"  downloaded to {runs_dir / run_id}" if ok else "  download FAILED")
     return 0 if all_terminal else 1
 

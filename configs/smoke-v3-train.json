@@ -1,0 +1,18 @@
+{
+  "run_id": "smoke-v3-train",
+  "model": "Qwen/Qwen3.5-2B",
+  "condition": "C2",
+  "arm": "independent",
+  "p": 0.25,
+  "q": 0.0,
+  "seed": 0,
+  "steps": 3,
+  "prompts_per_step": 4,
+  "num_generations": 8,
+  "checkpoint_steps": 1,
+  "eval_every": 2,
+  "eval_tasks": 8,
+  "final_eval_tasks": 8,
+  "diagnostic_steps": [],
+  "notes": "smoke test of the v3 training path: three optimizer steps of 4 prompts x 8 rollouts with independent schedules, a trainer checkpoint after every step, periodic evaluation at steps 0, 2 and 3 and a small final evaluation; checks the training-group register, checkpoint saving and the per-step timing; exploratory, not pre-registered"
+}
