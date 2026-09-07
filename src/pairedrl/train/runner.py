@@ -393,7 +393,10 @@ def build_trainer(spec: RunSpec, data_dir, out_dir, log_path, group_log_path=Non
             return torch.zeros((), device=self.accelerator.device), None, None
 
         def _generate_and_score_completions(self, inputs):
+            t0 = time.perf_counter()
             output = super()._generate_and_score_completions(inputs)
+            if self.model.training:
+                self.generation_seconds = round(time.perf_counter() - t0, 1)
             if group_log_path is not None and self.model.training and self.environments:
                 n = len(inputs)
                 name = self.reward_func_names[0]
@@ -435,24 +438,47 @@ class EvalSchedule:
         self.periodic = {name: Dataset.from_list(rows) for name, rows in periodic.items()}
         self.diagnostic = Dataset.from_list(assemble_diagnostic_rows(spec, splits["diagnostic"]))
         self.timings: list[dict] = []
+        self.step_timings: list[dict] = []
         self.on_checkpoint = on_checkpoint
         self.checkpoint_every = checkpoint_every
         runner = self
+        clock = {"step_begin": None, "step_end": None}
 
         class Callback(TrainerCallback):
             def on_step_begin(self, args, state, control, **kwargs):
                 BackOfficeEnv.phase = f"train:step{state.global_step}"
+                clock["step_begin"] = time.perf_counter()
+                runner.trainer.generation_seconds = None
 
             def on_step_end(self, args, state, control, **kwargs):
                 step = state.global_step
+                now = time.perf_counter()
+                if clock["step_begin"] is not None:
+                    runner.step_timings.append({
+                        "step": step, "seconds": round(now - clock["step_begin"], 1),
+                        "generation_s": runner.trainer.generation_seconds,
+                    })
+                # Evaluations log through the trainer, which clears the flags the flow callback just set for
+                # this step and leaves the model in eval mode; both are restored so the step's loss and train
+                # metrics are logged under the right mode and its checkpoint is saved.
+                should_log, should_save = control.should_log, control.should_save
+                was_training = runner.trainer.model.training
                 if not runner.spec.train_only:
                     if step % runner.spec.eval_every == 0 or step == runner.spec.steps:
                         runner.run_periodic(step)
                     if step in runner.spec.diagnostic_steps and step < runner.spec.steps:
                         runner.run_diagnostic(step)
+                control.should_log, control.should_save = should_log, should_save
+                if was_training:
+                    runner.trainer.model.train()
                 BackOfficeEnv.phase = f"train:step{step}"
+                clock["step_end"] = time.perf_counter()
                 if step % runner.checkpoint_every == 0:
                     runner.checkpoint()
+
+            def on_save(self, args, state, control, **kwargs):
+                if runner.step_timings and clock["step_end"] is not None:
+                    runner.step_timings[-1]["save_s"] = round(time.perf_counter() - clock["step_end"], 1)
 
         self.callback = Callback()
 

@@ -102,7 +102,7 @@ P12 outcome (2026-09-05, run calib-qwen3.5-2b at commit 8fa9475, environment v1)
 
 ## 5. Run matrix
 
-Primary model Qwen3.5-2B. Training: TRL 1.12.0 GRPOTrainer with environment_factory, vLLM colocate, LoRA rank 32, 24 prompts x 8 rollouts per step, 100 steps, loss_type dapo (the trainer default; it is the DAPO token-level aggregation, not the DAPO algorithm's dynamic sampling), scale_rewards group unless stated, learning rate 1e-5, temperature 1.0, tool-result tokens masked from the loss. Every paired-versus-independent comparison runs on one provider and one stack; a condition is never split across providers. Runs are ordered by tier; the runs funded at the freeze are SET AT v1 from the gate-1 measured step time and the remaining credit; lower tiers are "run if budget allows" and are reported if run.
+Primary model Qwen3.5-2B. Training: TRL 1.12.0 GRPOTrainer with environment_factory, vLLM colocate, transformers 5.16.1 with the flash-linear-attention 0.5.2 kernels for the GatedDeltaNet layers, LoRA rank 32, 24 prompts x 8 rollouts per step, 100 steps, loss_type dapo (the trainer default; it is the DAPO token-level aggregation, not the DAPO algorithm's dynamic sampling), scale_rewards group unless stated, learning rate 1e-5, temperature 1.0, tool-result tokens masked from the loss. Every paired-versus-independent comparison runs on one provider and one stack; a condition is never split across providers. Runs are ordered by tier; the runs funded at the freeze are SET AT v1 from the gate-1 measured step time and the remaining credit; lower tiers are "run if budget allows" and are reported if run.
 
 | tier | condition | noise | arms | seeds | hypotheses |
 |---|---|---|---|---|---|

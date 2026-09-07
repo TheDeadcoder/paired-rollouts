@@ -7,6 +7,8 @@ few training steps.
 """
 
 import datetime as dt
+import importlib.metadata as md
+import importlib.util
 import json
 import os
 import pathlib
@@ -46,6 +48,7 @@ image = (
         "peft==0.20.0",
         "accelerate==1.14.0",
         "datasets==5.0.1",
+        "flash-linear-attention==0.5.2",
         "numpy>=1.26",
         "pydantic>=2.7",
         "pyyaml>=6.0",
@@ -62,6 +65,13 @@ image = (
 app = modal.App(APP_NAME)
 hf_cache = modal.Volume.from_name("pairedrl-hf-cache", create_if_missing=True)
 runs_volume = modal.Volume.from_name(RUNS_VOLUME, create_if_missing=True)
+
+
+def package_version(name: str) -> str | None:
+    try:
+        return md.version(name)
+    except md.PackageNotFoundError:
+        return None
 
 
 def utc_now() -> str:
@@ -108,8 +118,6 @@ def vllm_facts(trainer) -> dict:
     retries=modal.Retries(max_retries=3, backoff_coefficient=1.0, initial_delay=60.0),
 )
 def run(spec_dict: dict, git_commit: str) -> dict:
-    import importlib.metadata as md
-
     import torch
 
     from pairedrl.train.env_adapter import BackOfficeEnv
@@ -142,9 +150,11 @@ def run(spec_dict: dict, git_commit: str) -> dict:
         "resumed_from_checkpoint": str(checkpoint) if checkpoint else None,
         "started_utc": utc_now(),
         "gpu": torch.cuda.get_device_name(0),
-        "versions": {p: md.version(p) for p in ["torch", "transformers", "trl", "vllm", "peft"]},
+        "versions": {p: package_version(p) for p in ["torch", "transformers", "trl", "vllm", "peft", "flash-linear-attention"]},
+        "fla_importable": importlib.util.find_spec("fla") is not None,
         "status": "RUNNING",
         "eval_timings": [],
+        "step_timings": [],
         "vllm": {},
     }
     t0 = time.perf_counter()
@@ -162,6 +172,7 @@ def run(spec_dict: dict, git_commit: str) -> dict:
         manifest["wall_time_s"] = round(time.perf_counter() - t0, 1)
         manifest["estimated_cost_usd"] = round(manifest["wall_time_s"] / 3600 * H100_USD_PER_HOUR, 2)
         manifest["eval_timings"] = schedule.timings if schedule is not None else []
+        manifest["step_timings"] = schedule.step_timings if schedule is not None else []
         manifest["episodes_logged"] = count_lines(log_path)
         manifest["groups_logged"] = count_lines(group_log_path)
         manifest["peak_mem_gb"] = round(torch.cuda.max_memory_allocated() / 1e9, 2)

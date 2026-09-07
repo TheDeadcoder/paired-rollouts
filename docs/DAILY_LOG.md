@@ -47,3 +47,11 @@ Spend figures are the sum of `estimated_cost_usd` over the run manifests (wall t
 - Checks passed: review defects reproduced and fixed with regression tests PASS; scripted-reference register rebuilt on both pools under the frozen evaluation schedules PASS; unit tests and ruff PASS
 - Deviations: environment v3 and protocol fixes; run matrix and budget (DEVIATIONS 2026-09-06)
 - Notes: numbers measured before this commit were produced under the old fault keying and evaluation seeds and are not compared with v3 numbers. Next: v3 zero-shot calibration (eval only), gate 1 at this commit if not already running, gradient probe, then the v1 freeze.
+
+### 2026-09-07, day 5: smoke test of the v3 training path, kernel fix, step timings
+
+- Commits: 5c8b2ee review fixes (environment v3, protocol, theory v2, pre-registration v0.2); 67b296f smoke-test specs, collect skips weights; (this commit) per-step timings in the manifest, loss log and train mode restored across in-step evaluations, flash-linear-attention kernels in the training image
+- Spend to date: Modal about 44 (smoke-v3-train 1.78) | DigitalOcean 0.00 | GCP 0.00 | Daytona 0.00 | API 0.00
+- Checks passed: training-group register lines up with the trainer's batch (12 groups, TRL advantages to the last digit) PASS; trainer checkpoints saved every step PASS; run completes end to end (27 min) PASS; training loss logged at every step FAIL (1 of 3: in-step evaluations cleared the trainer's log flag; fixed in this commit); resume from a checkpoint NOT YET TESTED (smoke-v3-resume)
+- Deviations: none new
+- Notes: the three smoke steps of 32 rollouts took about 250 s each including their checkpoint save, far above the 90 s per step of training passes assumed for 192 rollouts. Likely cause: the image had no `fla` package, so transformers ran the Qwen3.5 GatedDeltaNet layers through its pure-torch chunked fallback during the training passes (vLLM has its own kernels, so generation was unaffected). flash-linear-attention 0.5.2 is added to the image and the train extra; the resume test measures the step time with it before gate 1 is launched. The manifest now records `fla_importable` and per-step `step_timings` (step seconds, generation seconds, save seconds). Gate 1 launches only after the step time is known; the clean gate-1 run follows the C2 run.
