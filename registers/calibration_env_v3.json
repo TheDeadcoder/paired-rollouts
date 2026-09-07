@@ -1,0 +1,195 @@
+{
+  "entries": [
+    {
+      "clean_band": [
+        0.2,
+        0.5
+      ],
+      "clean_in_band": false,
+      "completions": {
+        "diag": {
+          "call_frequency": 10.07421875,
+          "clipped_ratio": 0.0703125,
+          "failure_frequency": 0.003678623994346708,
+          "max_length": 5255.875,
+          "mean_length": 1813.36328125,
+          "reward": 0.671875,
+          "runtime_s": 1388.7137
+        },
+        "final_at_training": {
+          "call_frequency": 10.949776785714286,
+          "clipped_ratio": 0.08035714285714286,
+          "failure_frequency": 0.0023879704863897394,
+          "max_length": 5389.571428571428,
+          "mean_length": 2001.904017857143,
+          "reward": 0.5970982142857143,
+          "runtime_s": 1221.9491
+        },
+        "final_challenge": {
+          "call_frequency": 12.552083492279053,
+          "clipped_ratio": 0.1006944477558136,
+          "failure_frequency": 0.0005482456181198359,
+          "max_length": 5301.5,
+          "mean_length": 2218.98828125,
+          "reward": 0.5342881977558136,
+          "runtime_s": 360.1761
+        },
+        "final_clean": {
+          "call_frequency": 8.016741071428571,
+          "clipped_ratio": 0.029017857142857144,
+          "failure_frequency": 0.002345228916965425,
+          "max_length": 4961.285714285715,
+          "mean_length": 1488.497767857143,
+          "reward": 0.7845982142857143,
+          "runtime_s": 864.8344
+        },
+        "final_heldout_types": {
+          "call_frequency": 9.883928571428571,
+          "clipped_ratio": 0.0859375,
+          "failure_frequency": 0.003411195008084178,
+          "max_length": 5263.428571428572,
+          "mean_length": 1938.5714285714287,
+          "reward": 0.7008928571428571,
+          "runtime_s": 1068.5366
+        },
+        "final_noisy_p010": {
+          "call_frequency": 9.467633928571429,
+          "clipped_ratio": 0.052455357142857144,
+          "failure_frequency": 0.003102634850490306,
+          "max_length": 5265.714285714285,
+          "mean_length": 1737.161830357143,
+          "reward": 0.6941964285714286,
+          "runtime_s": 1054.4363
+        },
+        "final_noisy_p025": {
+          "call_frequency": 12.126116071428571,
+          "clipped_ratio": 0.09040178571428571,
+          "failure_frequency": 0.0036194273603281806,
+          "max_length": 5150.428571428572,
+          "mean_length": 2117.9118303571427,
+          "reward": 0.49107142857142855,
+          "runtime_s": 1286.2513
+        }
+      },
+      "episodes": 5224,
+      "estimated_cost_usd": 8.13,
+      "git_commit": "62caa40e84503377bf4ec9419ea8a3c26d1f0c25",
+      "luck_share": {
+        "lam": 0.2357948512084108,
+        "lam_pooled": 0.25119866583281214,
+        "sigma2_env_mean": 0.04202706473214285,
+        "sigma2_pol_mean": 0.12527901785714285,
+        "tasks": 16,
+        "tasks_defined": 15
+      },
+      "luck_share_by_phase": {
+        "diag:step0": {
+          "lam": 0.2357948512084108,
+          "lam_pooled": 0.25119866583281214,
+          "sigma2_env_mean": 0.04202706473214285,
+          "sigma2_pol_mean": 0.12527901785714285,
+          "tasks": 16,
+          "tasks_defined": 15
+        }
+      },
+      "luck_share_by_phase_observed": {
+        "diag:step0": {
+          "lam": 0.2357948512084108,
+          "sigma2_env_mean": 0.04202706473214285,
+          "sigma2_pol_mean": 0.12527901785714285,
+          "tasks": 16,
+          "tasks_defined": 15
+        }
+      },
+      "luck_share_observed": {
+        "lam": 0.2357948512084108,
+        "sigma2_env_mean": 0.04202706473214285,
+        "sigma2_pol_mean": 0.12527901785714285,
+        "tasks": 16,
+        "tasks_defined": 15
+      },
+      "luck_share_ok": true,
+      "model": "Qwen/Qwen3.5-2B",
+      "peak_mem_gb": 53.61,
+      "run_id": "calib-v3-qwen3.5-2b-c2r",
+      "sets": {
+        "at_training": {
+          "budget_exceeded_frac": 0.275,
+          "episodes": 800,
+          "exposed_frac": 0.79625,
+          "finished_frac": 0.7125,
+          "flipped_frac": 0.0,
+          "mean_calls": 9.505,
+          "observed_reward": 0.59,
+          "recovery_success": 0.5227629513343799,
+          "true_success": 0.59
+        },
+        "challenge": {
+          "budget_exceeded_frac": 0.345,
+          "episodes": 200,
+          "exposed_frac": 0.995,
+          "finished_frac": 0.645,
+          "flipped_frac": 0.0,
+          "mean_calls": 11.1,
+          "observed_reward": 0.54,
+          "recovery_success": 0.542713567839196,
+          "true_success": 0.54
+        },
+        "clean": {
+          "budget_exceeded_frac": 0.0375,
+          "episodes": 800,
+          "exposed_frac": 0.0,
+          "finished_frac": 0.9475,
+          "flipped_frac": 0.0,
+          "mean_calls": 6.96375,
+          "observed_reward": 0.78875,
+          "recovery_success": null,
+          "true_success": 0.78875
+        },
+        "heldout_types": {
+          "budget_exceeded_frac": 0.15625,
+          "episodes": 800,
+          "exposed_frac": 0.78125,
+          "finished_frac": 0.8125,
+          "flipped_frac": 0.0,
+          "mean_calls": 8.53125,
+          "observed_reward": 0.7025,
+          "recovery_success": 0.672,
+          "true_success": 0.7025
+        },
+        "noisy_p010": {
+          "budget_exceeded_frac": 0.1475,
+          "episodes": 800,
+          "exposed_frac": 0.475,
+          "finished_frac": 0.8375,
+          "flipped_frac": 0.0,
+          "mean_calls": 8.11375,
+          "observed_reward": 0.695,
+          "recovery_success": 0.5763157894736842,
+          "true_success": 0.695
+        },
+        "noisy_p025": {
+          "budget_exceeded_frac": 0.38125,
+          "episodes": 800,
+          "exposed_frac": 0.79375,
+          "finished_frac": 0.615,
+          "flipped_frac": 0.0,
+          "mean_calls": 9.9775,
+          "observed_reward": 0.50875,
+          "recovery_success": 0.4377952755905512,
+          "true_success": 0.50875
+        }
+      },
+      "status": "COMPLETE",
+      "versions": {
+        "flash-linear-attention": "0.5.2",
+        "peft": "0.20.0",
+        "torch": "2.13.0",
+        "transformers": "5.16.1",
+        "trl": "1.12.0",
+        "vllm": "0.27.1"
+      },
+      "wall_time_s": 7408.8
+    }
+  ]
+}
