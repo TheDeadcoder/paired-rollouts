@@ -39,7 +39,9 @@ def load_script(name):
 
 def test_remote_command_builders():
     assert ssh_command("root@h", "ls")[-2:] == ["root@h", "ls"]
-    assert checkout_command("/root/work/repo", "abc") == "cd /root/work/repo && git fetch -q origin && git checkout -q abc && git rev-parse HEAD"
+    assert checkout_command("/root/work/repo", "abc") == (
+        "cd /root/work/repo && git fetch -q origin && git status --porcelain && git checkout -q -f abc && git rev-parse HEAD"
+    )
     assert in_container(None, "echo hi") == "echo hi"
     assert in_container("pairedrl", "echo 'hi'") == "docker exec pairedrl bash -c 'echo '\"'\"'hi'\"'\"''"
     assert install_command("/work/repo", "pairedrl").startswith("docker exec pairedrl bash -c ")
@@ -150,7 +152,7 @@ def test_launch_remote_records_register_and_ledger(tmp_path, monkeypatch, capsys
     launch.main()
     out = capsys.readouterr().out
     assert "STARTED run-a on root@h" in out and "STARTED run-b on root@h" in out and "commit abc123" in out
-    assert any("git checkout -q abc123" in c for c in calls) and any("pip install -q -e ." in c for c in calls)
+    assert any("git checkout -q -f abc123" in c for c in calls) and any("pip install -q -e ." in c for c in calls)
     assert any("docker exec -d pairedrl" in c and "configs/run-a.json" in c and "configs/run-b.json" in c for c in calls)
     registers = list((tmp_path / "registers" / "launches").glob("*_do-a.json"))
     assert len(registers) == 1

@@ -10,7 +10,15 @@ def ssh_command(host: str, command: str) -> list[str]:
 
 
 def checkout_command(remote_repo: str, commit: str) -> str:
-    return f"cd {shlex.quote(remote_repo)} && git fetch -q origin && git checkout -q {shlex.quote(commit)} && git rev-parse HEAD"
+    """Move the remote checkout to `commit`. The checkout on a GPU host is a deployment target, never edited there,
+    but scripts run from it can leave files behind (a stack-check register later committed from the laptop, for
+    instance); `-f` lets the committed version replace an untracked file that is in the way instead of aborting.
+    Modified tracked files are listed first so the log shows what was discarded."""
+    repo = shlex.quote(remote_repo)
+    return (
+        f"cd {repo} && git fetch -q origin && git status --porcelain && git checkout -q -f {shlex.quote(commit)} "
+        f"&& git rev-parse HEAD"
+    )
 
 
 def in_container(container: str | None, command: str, detached: bool = False) -> str:

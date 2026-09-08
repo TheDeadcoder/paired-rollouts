@@ -79,3 +79,11 @@ Spend figures are the sum of `estimated_cost_usd` over the run manifests (wall t
 - Checks passed: second review reproduced where it applied (register reads the root files only; highest-numbered checkpoint chosen without a completeness check; provenance failure wrote into the run directory) and fixed with regression tests PASS; DigitalOcean list price 2.59 USD/h since 2026-08-01 confirmed on the pricing page, the account rate is what the launch records; unit tests and ruff PASS
 - Deviations: amendment A1 (H1(b) trajectories A and B, IID resampling, both estimators, exact inner products instead of a projection); test-pool exposure history (DEVIATIONS 2026-09-08)
 - Notes: launch order from here: C2 independent seed 0 alone on Modal first, the other four C2 runs once its first training steps are on the volume; the MI300X smoke on the existing droplet; then the C4 and C0 chains sized from the measured step time across the DigitalOcean accounts (chains of at most 40 hours each, weights collected and verified before any droplet is destroyed); the gradient probe on gate 1 (base, 80, 100) and later on t1-c2-paired-s1 (all five checkpoints).
+
+### 2026-09-09, day 8: remote checkout fix before the MI300X smoke
+
+- Commits: (this commit) `checkout_command` uses `git checkout -f` after listing modified tracked files
+- Spend to date: Modal about 119 | DigitalOcean about 4 | GCP 0.00 | Daytona 0.00 | API 0.00
+- Checks passed: the smoke launch (Instruction 36) was refused by the droplet's `git checkout` because `registers/stack_check_digitalocean_qwen3.5-2b.json`, written there by the stack check and committed later from the laptop, was untracked on the droplet and in the way of the commit that tracks it; nothing was launched and no local file changed. Unit tests and ruff PASS
+- Deviations: none
+- Notes: the smoke launch is repeated at this commit; the Modal staged launch follows.
