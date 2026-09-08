@@ -25,20 +25,34 @@ def install_command(repo: str, container: str | None) -> str:
     return in_container(container, f"cd {shlex.quote(repo)} && pip install -q -e .")
 
 
+CHAIN_MARKER = "scripts/run_local.py"
+
+
+def chain_status_command(container: str | None) -> str:
+    """Prints RUNNING when a job chain is alive where the jobs run, IDLE otherwise (one job per GPU at a time).
+    The bracketed first letter keeps pgrep from matching its own command line."""
+    pattern = f"[{CHAIN_MARKER[0]}]{CHAIN_MARKER[1:]}"
+    return in_container(container, f"pgrep -f {shlex.quote(pattern)} > /dev/null && echo RUNNING || echo IDLE")
+
+
 def run_chain_command(
     repo: str, spec_paths: list[str], runs_dir: str, provider: str, usd_per_hour: float, commit: str,
     hf_home: str, container: str | None,
 ) -> str:
-    """One detached shell that runs the specs one after another, each logging to <runs_dir>/<spec stem>.log."""
+    """One detached shell that runs the specs one after another, each logging to <runs_dir>/<spec stem>.log. A
+    spec whose job does not end COMPLETE is run a second time at once (the relaunch resumes from the newest complete
+    checkpoint; `attempt<n>/` keeps the first attempt), then the chain moves on whatever the outcome: the remote
+    host has no platform retries, so this is the whole retry policy, and `collect_remote` shows what happened."""
     env = ENV.format(hf_home=shlex.quote(hf_home))
     parts = []
     for path in spec_paths:
         stem = path.rsplit("/", 1)[-1].rsplit(".", 1)[0]
-        parts.append(
-            f"{env} python scripts/run_local.py --spec {shlex.quote(path)} --runs-dir {shlex.quote(runs_dir)} "
-            f"--provider {shlex.quote(provider)} --usd-per-hour {usd_per_hour} --commit {shlex.quote(commit)} "
-            f"> {shlex.quote(runs_dir)}/{stem}.log 2>&1"
+        job = (
+            f"{env} python {CHAIN_MARKER} --spec {shlex.quote(path)} --runs-dir {shlex.quote(runs_dir)} "
+            f"--provider {shlex.quote(provider)} --usd-per-hour {usd_per_hour} --commit {shlex.quote(commit)}"
         )
+        log = f"{shlex.quote(runs_dir)}/{stem}.log"
+        parts.append(f"{job} > {log} 2>&1 || {job} >> {log} 2>&1")
     chain = "; ".join(parts)
     inner = f"cd {shlex.quote(repo)} && mkdir -p {shlex.quote(runs_dir)} && ({chain})"
     if container is None:

@@ -1,0 +1,18 @@
+{
+  "run_id": "smoke-do-train",
+  "model": "Qwen/Qwen3.5-2B",
+  "condition": "C4",
+  "arm": "paired",
+  "p": 0.0,
+  "q": 0.1,
+  "seed": 0,
+  "steps": 3,
+  "prompts_per_step": 24,
+  "num_generations": 8,
+  "checkpoint_steps": 1,
+  "eval_every": 3,
+  "eval_tasks": 16,
+  "final_eval_tasks": 8,
+  "diagnostic_steps": [],
+  "notes": "production-shape smoke on the MI300X: three steps of 24 x 8 rollouts at the tier-1 sequence limits with the C4 outcome noise, checkpoints every step, small evaluation sets; measures the training step time; exploratory, not pre-registered"
+}

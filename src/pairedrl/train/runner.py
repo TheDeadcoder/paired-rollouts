@@ -59,6 +59,7 @@ class RunSpec:
     per_device_eval_batch_size: int = 128
     micro_batch: int = 2
     logprob_chunk: int = 1
+    extend_previous: bool = False
     notes: str = ""
 
     def __post_init__(self):
@@ -134,15 +135,44 @@ def assemble_eval_sets(spec: RunSpec, tasks: list[Task], final: bool) -> dict[st
         sets["noisy"] = build_eval_rows(tasks, noise, "eval:noisy", indices)
         sets["challenge"] = challenge
         return sets
+    for name, config in shared_final_configs(spec).items():
+        sets[name] = build_eval_rows(tasks, config, f"eval:{name}", indices)
+    sets["challenge"] = challenge
+    return sets
+
+
+def shared_final_configs(spec: RunSpec) -> dict[str, NoiseConfig]:
+    """The final noisy sets every run is evaluated on, plus the run's own training noise when it is none of them."""
     shared = {f"noisy_p{round(level * 100):03d}": NoiseConfig.transition(level, "paired") for level in FINAL_TRANSITION_LEVELS}
     shared["heldout_types"] = NoiseConfig.heldout_types(0.25, "paired")
     own = spec.eval_noise()
     if spec.arm != "clean" and own not in shared.values():
         shared["at_training"] = own
-    for name, config in shared.items():
-        sets[name] = build_eval_rows(tasks, config, f"eval:{name}", indices)
-    sets["challenge"] = challenge
-    return sets
+    return shared
+
+
+def expected_eval_sizes(spec: RunSpec) -> dict[str, dict[str, int]]:
+    """Episode counts a complete run shows in every periodic set (per evaluated step) and every final set, from
+    the spec alone; `assemble_eval_sets` on the real pools produces exactly these sizes."""
+    per_task = len(EVAL_SCHEDULES_PERIODIC)
+    periodic = {
+        "clean": spec.eval_tasks * per_task,
+        "noisy": spec.eval_tasks * per_task,
+        "challenge": spec.eval_tasks * len(EVAL_SCHEDULES_CHALLENGE),
+    }
+    final = {"clean": spec.final_eval_tasks * len(EVAL_SCHEDULES_FINAL)}
+    for name in shared_final_configs(spec):
+        final[name] = spec.final_eval_tasks * len(EVAL_SCHEDULES_FINAL)
+    final["challenge"] = spec.final_eval_tasks * len(EVAL_SCHEDULES_CHALLENGE)
+    return {"periodic": periodic, "final": final}
+
+
+def periodic_steps(spec: RunSpec) -> list[int]:
+    """Steps at which the periodic sets are evaluated: 0, every `eval_every`, and the last step."""
+    if spec.eval_only or spec.train_only:
+        return []
+    steps = {0, spec.steps} | set(range(spec.eval_every, spec.steps + 1, spec.eval_every))
+    return sorted(steps)
 
 
 def assemble_diagnostic_rows(spec: RunSpec, diagnostic: list[Task]) -> list[dict]:

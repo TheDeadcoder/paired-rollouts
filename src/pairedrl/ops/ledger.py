@@ -4,11 +4,14 @@ import datetime as dt
 import json
 import pathlib
 import re
+import subprocess
 
 from pairedrl.train.runner import RunSpec
 
 LEDGER_HEADER = "| run_id | launched_utc | provider | model | condition | arm | seed | steps | status | notes |"
-TERMINAL = ("COMPLETE", "FAILED", "INFRA_FAILED", "CANCELLED")
+TERMINAL = ("COMPLETE", "FAILED", "INFRA_FAILED", "CANCELLED", "REFUSED")
+OPEN = ("LAUNCHED", "RUNNING")
+LAUNCH_RECORD_PATHS = ("docs/RUN_LEDGER.md", "registers/launches/")
 
 
 def utc_now() -> str:
@@ -104,3 +107,54 @@ def latest_launch_register(register_dir) -> pathlib.Path:
     if not files:
         raise FileNotFoundError(f"no launch registers under {register_dir}")
     return files[-1]
+
+
+def dirty_paths(porcelain: str) -> list[str]:
+    """Paths of `git status --porcelain` that are not launch records. The ledger and the launch registers are
+    written by the launchers after each launch, so they are the one thing allowed to differ from HEAD when the next
+    launch of the same batch starts; the code that runs is still exactly HEAD."""
+    out = []
+    for line in porcelain.splitlines():
+        if not line.strip():
+            continue
+        path = line[3:].split(" -> ")[-1].strip()
+        if not path.startswith(LAUNCH_RECORD_PATHS):
+            out.append(path)
+    return out
+
+
+def git_state() -> tuple[str, list[str]]:
+    """HEAD and the paths that make the tree dirty for a launch (launch records excluded)."""
+    head = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=False).stdout.strip()
+    porcelain = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, check=False).stdout
+    return head or "unknown", dirty_paths(porcelain)
+
+
+def ledger_statuses(ledger_path, run_id: str) -> list[str]:
+    """Status cell of every ledger row of `run_id`, oldest first."""
+    path = pathlib.Path(ledger_path)
+    if not path.exists():
+        return []
+    out = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) == 10 and cells[0] == run_id and cells[8] != "status":
+            out.append(cells[8])
+    return out
+
+
+def refuse_duplicate_launches(ledger_path, specs: list[RunSpec], relaunch: bool = False) -> None:
+    """A run id whose ledger says COMPLETE is never launched again (a repeat is a new run id) unless the spec
+    extends the previous run; one with an open row (LAUNCHED or RUNNING, so possibly still on a GPU) needs
+    `relaunch`, which is the operator saying the previous job is known to be dead."""
+    for spec in specs:
+        statuses = ledger_statuses(ledger_path, spec.run_id)
+        if "COMPLETE" in statuses and not spec.extend_previous:
+            raise SystemExit(f"refusing to launch {spec.run_id}: the ledger records it as COMPLETE; a repeat needs a new run id")
+        if statuses and statuses[-1] in OPEN and not relaunch:
+            raise SystemExit(
+                f"refusing to launch {spec.run_id}: its newest ledger row is {statuses[-1]} (collect first; pass --relaunch "
+                "only when that job is known to be dead)"
+            )

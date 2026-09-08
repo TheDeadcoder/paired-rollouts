@@ -9,12 +9,15 @@ import importlib.util
 import json
 import pathlib
 import shutil
+import socket
 import time
 
 from pairedrl.train.runner import RunSpec
 
 STATE_FILES = ("run_manifest.json", "summary.json", "trainer_log_history.json", "episodes.jsonl", "groups.jsonl")
 VERSION_PACKAGES = ["torch", "transformers", "trl", "vllm", "peft", "flash-linear-attention"]
+CHECKPOINT_MARKER = "trainer_state.json"
+ADAPTER_FILES = ("adapter_model.safetensors", "adapter_model.bin", "model.safetensors", "pytorch_model.bin")
 
 
 def utc_now() -> str:
@@ -28,9 +31,32 @@ def package_version(name: str) -> str | None:
         return None
 
 
+def checkpoint_step(path: pathlib.Path) -> int:
+    return int(path.name.split("-")[1])
+
+
+def is_complete_checkpoint(path: pathlib.Path) -> bool:
+    """The trainer writes `trainer_state.json` last, after the adapter, optimizer, scheduler and RNG files; a
+    directory without it (or without adapter weights) is an interrupted save and is never resumed from."""
+    return (path / CHECKPOINT_MARKER).exists() and any((path / f).exists() for f in ADAPTER_FILES)
+
+
+def list_checkpoints(trainer_dir: pathlib.Path) -> tuple[list[pathlib.Path], list[pathlib.Path]]:
+    """(complete, incomplete) checkpoint directories under trainer/, each sorted by step."""
+    dirs = [c for c in trainer_dir.glob("checkpoint-*") if c.is_dir() and c.name.split("-")[-1].isdigit()]
+    complete = sorted((c for c in dirs if is_complete_checkpoint(c)), key=checkpoint_step)
+    incomplete = sorted((c for c in dirs if not is_complete_checkpoint(c)), key=checkpoint_step)
+    return complete, incomplete
+
+
+def newest_complete_checkpoint(trainer_dir: pathlib.Path) -> pathlib.Path | None:
+    complete, _ = list_checkpoints(trainer_dir)
+    return complete[-1] if complete else None
+
+
 def preserve_previous_attempt(out_dir: pathlib.Path) -> tuple[int, pathlib.Path | None]:
     """A relaunched run must not overwrite the previous attempt's evidence: its manifest and logs move to
-    attempt<n>/, and the newest trainer checkpoint (if any) is returned so training can resume from it."""
+    attempt<n>/, and the newest complete trainer checkpoint (if any) is returned so training can resume from it."""
     manifest_path = out_dir / "run_manifest.json"
     if not manifest_path.exists():
         return 1, None
@@ -42,8 +68,46 @@ def preserve_previous_attempt(out_dir: pathlib.Path) -> tuple[int, pathlib.Path 
         src = out_dir / name
         if src.exists():
             shutil.move(str(src), str(keep / name))
-    checkpoints = sorted((out_dir / "trainer").glob("checkpoint-*"), key=lambda c: int(c.name.split("-")[1]))
-    return n + 1, (checkpoints[-1] if checkpoints else None)
+    return n + 1, newest_complete_checkpoint(out_dir / "trainer")
+
+
+def refusal_reason(spec: RunSpec, out_dir: pathlib.Path, git_commit: str, deployed_commit: str) -> str | None:
+    """Why this invocation must not touch the run directory: a launch commit that is not the code's own, a repeat
+    of a COMPLETE run, or a relaunch under a run id whose previous attempt had a different spec. A spec with
+    `extend_previous` (smoke tests of the resume path) may continue a completed or differently specified run."""
+    if git_commit != deployed_commit or git_commit.endswith("-dirty"):
+        return f"provenance: launched with commit {git_commit!r} but the code is at {deployed_commit!r}"
+    manifest_path = out_dir / "run_manifest.json"
+    if not manifest_path.exists() or spec.extend_previous:
+        return None
+    previous = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if previous.get("status") == "COMPLETE":
+        return f"{spec.run_id} is already COMPLETE (attempt {previous.get('attempt')}); a repeat needs a new run id"
+    previous_spec = RunSpec.from_dict(previous["spec"]).to_dict()
+    current = spec.to_dict()
+    changed = sorted(k for k in set(previous_spec) | set(current) if previous_spec.get(k) != current.get(k))
+    if changed:
+        return f"{spec.run_id}: relaunched with a different spec (fields {changed}); a different protocol needs a new run id"
+    return None
+
+
+def write_refusal(spec: RunSpec, out_dir: pathlib.Path, reason: str, git_commit: str, deployed_commit: str, provider: str) -> dict:
+    """Record a refused invocation beside the run without touching its state files."""
+    record = {
+        "run_id": spec.run_id,
+        "spec": spec.to_dict(),
+        "git_commit": git_commit,
+        "deployed_commit": deployed_commit,
+        "provider": provider,
+        "status": "REFUSED",
+        "error": reason,
+        "refused_utc": utc_now(),
+    }
+    refused = out_dir / "refused"
+    refused.mkdir(parents=True, exist_ok=True)
+    stamp = record["refused_utc"].replace(":", "").replace("+0000", "Z")
+    (refused / f"{stamp}.json").write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return record
 
 
 def vllm_facts(trainer) -> dict:
@@ -76,10 +140,14 @@ def run_job(
     usd_per_hour: float,
     commit_fn=None,
     checkpoint_every: int = 10,
+    reraise_attempts: int = 0,
 ) -> dict:
     """Execute one run. `git_commit` is the launcher's commit and `deployed_commit` the code's own; they must be
-    equal and clean or the run refuses to start. `commit_fn` (optional) persists the run directory after every
-    state write, for volumes that need an explicit commit."""
+    equal and clean or the invocation is refused before the run directory is touched, as is a repeat of a COMPLETE
+    run or a relaunch with a different spec. `commit_fn` (optional) persists the run directory after every state
+    write, for volumes that need an explicit commit. A FAILED attempt numbered at most `reraise_attempts` re-raises
+    its error after recording it, so a platform retry policy (Modal) resumes it from the newest checkpoint; later
+    attempts return normally, which bounds the retries of a deterministic failure."""
     import torch
 
     from pairedrl.train.env_adapter import BackOfficeEnv
@@ -94,9 +162,15 @@ def run_job(
 
     out_dir = pathlib.Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    provenance_ok = git_commit == deployed_commit and not git_commit.endswith("-dirty")
-    attempt, checkpoint = (preserve_previous_attempt(out_dir) if provenance_ok else (1, None))
+    reason = refusal_reason(spec, out_dir, git_commit, deployed_commit)
+    if reason is not None:
+        record = write_refusal(spec, out_dir, reason, git_commit, deployed_commit, provider)
+        if commit_fn is not None:
+            commit_fn()
+        return {"manifest": record, "summary": {}}
+    attempt, checkpoint = preserve_previous_attempt(out_dir)
     checkpoint = checkpoint if (checkpoint is not None and not spec.eval_only) else None
+    _, incomplete = list_checkpoints(out_dir / "trainer")
     BackOfficeEnv.attempt = attempt
     log_path = out_dir / "episodes.jsonl"
     group_log_path = out_dir / "groups.jsonl"
@@ -109,7 +183,10 @@ def run_job(
         "usd_per_hour": usd_per_hour,
         "attempt": attempt,
         "resumed_from_checkpoint": str(checkpoint) if checkpoint else None,
+        "resumed_from_step": checkpoint_step(checkpoint) if checkpoint else None,
+        "incomplete_checkpoints_skipped": [c.name for c in incomplete],
         "started_utc": utc_now(),
+        "hostname": socket.gethostname(),
         "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
         "torch_backend": "hip" if getattr(torch.version, "hip", None) else "cuda",
         "torch_backend_version": getattr(torch.version, "hip", None) or torch.version.cuda,
@@ -142,12 +219,11 @@ def run_job(
 
     write_state()
     try:
-        if not provenance_ok:
-            raise RuntimeError(f"provenance: launched with commit {git_commit!r} but the code is at {deployed_commit!r}")
         trainer, splits, periodic = build_trainer(
             spec, data_dir, out_dir / "trainer", log_path, group_log_path=group_log_path
         )
         manifest["vllm"] = vllm_facts(trainer)
+        manifest["model_commit_hash"] = getattr(getattr(trainer.model, "config", None), "_commit_hash", None)
         schedule = EvalSchedule(spec, trainer, splits, periodic, on_checkpoint=write_state, checkpoint_every=checkpoint_every)
         write_state()
         if spec.eval_only:
@@ -184,4 +260,6 @@ def run_job(
     }
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     write_state()
+    if manifest["status"] == "FAILED" and attempt <= reraise_attempts:
+        raise RuntimeError(f"attempt {attempt} failed and is handed to the platform retry policy: {manifest['error']}")
     return {"manifest": manifest, "summary": summary}

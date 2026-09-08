@@ -77,5 +77,5 @@ def run(spec_dict: dict, git_commit: str) -> dict:
     return run_job(
         spec, pathlib.Path(RUNS) / spec.run_id, "/root/data/tasks", git_commit,
         os.environ.get("PAIREDRL_GIT_COMMIT", ""), provider="modal", usd_per_hour=H100_USD_PER_HOUR,
-        commit_fn=runs_volume.commit, checkpoint_every=CHECKPOINT_EVERY_STEPS,
+        commit_fn=runs_volume.commit, checkpoint_every=CHECKPOINT_EVERY_STEPS, reraise_attempts=1,
     )

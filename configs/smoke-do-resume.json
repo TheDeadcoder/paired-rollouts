@@ -1,0 +1,19 @@
+{
+  "run_id": "smoke-do-train",
+  "model": "Qwen/Qwen3.5-2B",
+  "condition": "C4",
+  "arm": "paired",
+  "p": 0.0,
+  "q": 0.1,
+  "seed": 0,
+  "steps": 5,
+  "prompts_per_step": 24,
+  "num_generations": 8,
+  "checkpoint_steps": 1,
+  "eval_every": 3,
+  "eval_tasks": 16,
+  "final_eval_tasks": 8,
+  "diagnostic_steps": [],
+  "notes": "smoke of the resume path on the MI300X: relaunched under the same run_id after smoke-do-train completed, so the previous attempt moves to attempt1/ and training resumes from checkpoint-3 for two more steps; exploratory, not pre-registered",
+  "extend_previous": true
+}

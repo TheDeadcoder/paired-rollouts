@@ -14,20 +14,22 @@ import subprocess
 
 from pairedrl.ops.ledger import (
     append_rows,
+    git_state,
     launch_register_path,
     ledger_row,
     preregistration_note,
+    refuse_duplicate_launches,
     utc_now,
     write_launch_register,
 )
-from pairedrl.ops.remote import checkout_command, install_command, run_chain_command, ssh_command
+from pairedrl.ops.remote import (
+    chain_status_command,
+    checkout_command,
+    install_command,
+    run_chain_command,
+    ssh_command,
+)
 from pairedrl.train.runner import RunSpec
-
-
-def git_state() -> tuple[str, bool]:
-    head = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=False).stdout.strip()
-    dirty = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, check=False).stdout.strip()
-    return head or "unknown", bool(dirty)
 
 
 def remote(host: str, command: str) -> str:
@@ -53,18 +55,23 @@ def main() -> None:
     parser.add_argument("--ledger", default="docs/RUN_LEDGER.md")
     parser.add_argument("--register-dir", default="registers/launches")
     parser.add_argument("--preregistration", default=None, help="label of the frozen pre-registration these specs belong to (for instance v1); every spec's notes must carry 'pre-registered <label>'; omit for exploratory runs")
+    parser.add_argument("--relaunch", action="store_true", help="launch a run id whose newest ledger row is still LAUNCHED or RUNNING (only when that job is known to be dead)")
     args = parser.parse_args()
 
     head, dirty = git_state()
     if dirty:
-        raise SystemExit("refusing to launch: the working tree has uncommitted changes; commit and push first")
+        raise SystemExit(f"refusing to launch: the working tree has uncommitted changes in {dirty}; commit and push first")
     container = None if args.container == "none" else args.container
     repo_in_job = args.remote_repo if container is None else args.container_repo
     spec_paths = [p.strip() for p in args.specs.split(",") if p.strip()]
     specs = [RunSpec.from_dict(json.loads(pathlib.Path(p).read_text(encoding="utf-8"))) for p in spec_paths]
     for spec in specs:
         preregistration_note(spec, args.preregistration)
+    refuse_duplicate_launches(args.ledger, specs, relaunch=args.relaunch)
 
+    status = remote(args.host, chain_status_command(container))
+    if status.splitlines()[-1] != "IDLE":
+        raise SystemExit(f"refusing to launch: a job chain is already running on {args.host} ({status}); one chain per GPU")
     remote_head = remote(args.host, checkout_command(args.remote_repo, head))
     if remote_head.splitlines()[-1] != head:
         raise SystemExit(f"remote checkout is at {remote_head}, expected {head}")

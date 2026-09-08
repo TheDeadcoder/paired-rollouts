@@ -4,12 +4,16 @@ import pytest
 
 from pairedrl.ops.ledger import (
     LEDGER_HEADER,
+    TERMINAL,
     append_rows,
+    dirty_paths,
     latest_launch_register,
     launch_register_path,
     ledger_row,
+    ledger_statuses,
     preregistration_note,
     read_launch_register,
+    refuse_duplicate_launches,
     set_status,
     write_launch_register,
 )
@@ -81,3 +85,33 @@ def test_launch_register_round_trip(tmp_path):
     assert latest_launch_register(reg_dir) == second
     with pytest.raises(FileNotFoundError):
         latest_launch_register(tmp_path / "empty")
+
+
+def test_dirty_paths_ignore_launch_records_only():
+    porcelain = " M docs/RUN_LEDGER.md\n?? registers/launches/20260908T120000_x.json\n"
+    assert dirty_paths(porcelain) == []
+    assert dirty_paths(porcelain + " M src/pairedrl/ops/job.py\n") == ["src/pairedrl/ops/job.py"]
+    assert dirty_paths("?? registers/runs/new.json\nR  a.py -> b.py\n") == ["registers/runs/new.json", "b.py"]
+    assert dirty_paths("") == []
+
+
+def test_ledger_statuses_and_duplicate_guard(tmp_path):
+    path = make_ledger(tmp_path)
+    spec = RunSpec(run_id="r", model="m", condition="C2", arm="paired", p=0.25)
+    other = RunSpec(run_id="s", model="m", condition="C2", arm="paired", p=0.25)
+    assert ledger_statuses(path, "r") == [] and "REFUSED" in TERMINAL
+    refuse_duplicate_launches(path, [spec, other])
+    append_rows(path, [ledger_row(spec, "t1", "fc-1", "LAUNCHED")])
+    assert ledger_statuses(path, "r") == ["LAUNCHED"] and ledger_statuses(path, "s") == []
+    with pytest.raises(SystemExit, match="LAUNCHED"):
+        refuse_duplicate_launches(path, [other, spec])
+    refuse_duplicate_launches(path, [spec], relaunch=True)
+    set_status(path, "fc-1", "FAILED")
+    refuse_duplicate_launches(path, [spec])
+    append_rows(path, [ledger_row(spec, "t2", "fc-2", "LAUNCHED")])
+    set_status(path, "fc-2", "COMPLETE")
+    assert ledger_statuses(path, "r") == ["FAILED", "COMPLETE"]
+    with pytest.raises(SystemExit, match="COMPLETE"):
+        refuse_duplicate_launches(path, [spec], relaunch=True)
+    extension = RunSpec(run_id="r", model="m", condition="C2", arm="paired", p=0.25, steps=120, extend_previous=True)
+    refuse_duplicate_launches(path, [extension])

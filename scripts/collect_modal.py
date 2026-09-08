@@ -95,13 +95,18 @@ def main() -> int:
         state, detail = call_state(call_id)
         manifest, episodes_bytes = volume_view(volume, run_id)
         status = manifest.get("status", "?") if manifest else "?"
-        if state in ("RUNNING", "EXPIRED") and status in TERMINAL:
+        retry_pending = state == "RUNNING" and status == "FAILED"
+        if state == "EXPIRED" and status in TERMINAL:
+            state = status
+        if state == "INFRA_FAILED" and status in TERMINAL:
             state = status
         if state == "RUNNING" and args.cancel:
             modal.FunctionCall.from_id(call_id).cancel(terminate_containers=True)
             state = "CANCELLED"
         phases = [t["what"] for t in manifest.get("eval_timings", [])] if manifest else []
         line = f"{run_id}: {state}"
+        if retry_pending:
+            line += f" (attempt {manifest.get('attempt')} FAILED, platform retry pending)"
         if manifest:
             line += (
                 f" | manifest {status} | episodes {manifest.get('episodes_logged', 0)} | train steps "

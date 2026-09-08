@@ -7,9 +7,17 @@ import sys
 
 import pytest
 
-from pairedrl.ops.job import count_lines, preserve_previous_attempt
+from pairedrl.ops.job import (
+    count_lines,
+    is_complete_checkpoint,
+    list_checkpoints,
+    preserve_previous_attempt,
+    refusal_reason,
+    write_refusal,
+)
 from pairedrl.ops.ledger import LEDGER_HEADER
 from pairedrl.ops.remote import (
+    chain_status_command,
     checkout_command,
     in_container,
     install_command,
@@ -17,6 +25,7 @@ from pairedrl.ops.remote import (
     run_chain_command,
     ssh_command,
 )
+from pairedrl.train.runner import RunSpec
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
@@ -40,24 +49,65 @@ def test_remote_command_builders():
                   "--provider digitalocean", "--usd-per-hour 1.99", "--commit abc", "HF_HOME=/work/hf"):
         assert piece in chain
     assert chain.index("configs/a.json") < chain.index("configs/b.json")
+    assert chain.count("--spec configs/a.json") == 2 and "|| " in chain and ">> " in chain
+    assert chain.index("configs/a.json", chain.index("configs/a.json") + 1) < chain.index("configs/b.json")
     native = run_chain_command("/root/repo", ["configs/a.json"], "/root/runs", "local", 0.0, "abc", "/root/hf", None)
     assert native.startswith("nohup bash -c ") and native.endswith("&")
+    status = chain_status_command("pairedrl")
+    assert status.startswith("docker exec pairedrl bash -c ") and "[s]cripts/run_local.py" in status and "echo IDLE" in status
+    assert subprocess.run(["bash", "-c", chain_status_command(None)], capture_output=True, text=True, check=False).stdout.strip() == "IDLE"
     cmd = rsync_command("root@h", "/root/work/runs/r1", "outputs/runs/r1")
     assert cmd[0] == "rsync" and "--exclude" in cmd and "trainer/" in cmd and cmd[-2:] == ["root@h:/root/work/runs/r1/", "outputs/runs/r1/"]
     assert "--exclude" not in rsync_command("root@h", "/a", "/b", with_weights=True)
 
 
-def test_preserve_previous_attempt_moves_state_and_finds_checkpoint(tmp_path):
+def make_checkpoint(path, complete=True):
+    path.mkdir(parents=True)
+    (path / "adapter_model.safetensors").write_text("w")
+    (path / "optimizer.pt").write_text("o")
+    if complete:
+        (path / "trainer_state.json").write_text("{}")
+
+
+def test_preserve_previous_attempt_moves_state_and_finds_the_newest_complete_checkpoint(tmp_path):
     assert preserve_previous_attempt(tmp_path) == (1, None)
     for name in ("run_manifest.json", "episodes.jsonl", "groups.jsonl"):
         (tmp_path / name).write_text('{"attempt": 2}\n' if name.endswith("json") else "{}\n")
-    (tmp_path / "trainer" / "checkpoint-20").mkdir(parents=True)
-    (tmp_path / "trainer" / "checkpoint-100").mkdir()
+    make_checkpoint(tmp_path / "trainer" / "checkpoint-20")
+    make_checkpoint(tmp_path / "trainer" / "checkpoint-80")
+    make_checkpoint(tmp_path / "trainer" / "checkpoint-100", complete=False)
+    (tmp_path / "trainer" / "checkpoint-60").mkdir()
+    assert is_complete_checkpoint(tmp_path / "trainer" / "checkpoint-80") and not is_complete_checkpoint(tmp_path / "trainer" / "checkpoint-100")
+    complete, incomplete = list_checkpoints(tmp_path / "trainer")
+    assert [c.name for c in complete] == ["checkpoint-20", "checkpoint-80"] and [c.name for c in incomplete] == ["checkpoint-60", "checkpoint-100"]
     attempt, checkpoint = preserve_previous_attempt(tmp_path)
-    assert attempt == 3 and checkpoint == tmp_path / "trainer" / "checkpoint-100"
+    assert attempt == 3 and checkpoint == tmp_path / "trainer" / "checkpoint-80"
     assert sorted(p.name for p in (tmp_path / "attempt2").iterdir()) == ["episodes.jsonl", "groups.jsonl", "run_manifest.json"]
     assert not (tmp_path / "episodes.jsonl").exists()
     assert count_lines(tmp_path / "attempt2" / "episodes.jsonl") == 1 and count_lines(tmp_path / "missing") == 0
+
+
+def test_refusal_reasons_leave_the_run_directory_untouched(tmp_path):
+    spec = RunSpec(run_id="r", model="m", condition="C2", arm="paired", p=0.25, steps=100)
+    assert refusal_reason(spec, tmp_path, "abc", "abc") is None
+    assert "provenance" in refusal_reason(spec, tmp_path, "abc-dirty", "abc-dirty")
+    assert "provenance" in refusal_reason(spec, tmp_path, "abc", "def")
+    manifest = {"run_id": "r", "status": "FAILED", "attempt": 1, "spec": spec.to_dict()}
+    (tmp_path / "run_manifest.json").write_text(json.dumps(manifest))
+    (tmp_path / "episodes.jsonl").write_text("{}\n")
+    assert refusal_reason(spec, tmp_path, "abc", "abc") is None
+    changed = RunSpec(run_id="r", model="m", condition="C2", arm="paired", p=0.25, steps=100, learning_rate=2e-5)
+    assert "different spec" in refusal_reason(changed, tmp_path, "abc", "abc") and "learning_rate" in refusal_reason(changed, tmp_path, "abc", "abc")
+    (tmp_path / "run_manifest.json").write_text(json.dumps(dict(manifest, status="COMPLETE")))
+    assert "already COMPLETE" in refusal_reason(spec, tmp_path, "abc", "abc")
+    extension = RunSpec(run_id="r", model="m", condition="C2", arm="paired", p=0.25, steps=120, extend_previous=True)
+    assert refusal_reason(extension, tmp_path, "abc", "abc") is None
+    record = write_refusal(spec, tmp_path, "already COMPLETE", "abc", "abc", "digitalocean")
+    assert record["status"] == "REFUSED" and record["error"] == "already COMPLETE"
+    refused = list((tmp_path / "refused").glob("*.json"))
+    assert len(refused) == 1 and json.loads(refused[0].read_text())["run_id"] == "r"
+    assert json.loads((tmp_path / "run_manifest.json").read_text())["status"] == "COMPLETE"
+    assert (tmp_path / "episodes.jsonl").read_text() == "{}\n" and not (tmp_path / "attempt1").exists()
 
 
 def test_collect_remote_describe_and_stale():
@@ -87,12 +137,13 @@ def test_launch_remote_records_register_and_ledger(tmp_path, monkeypatch, capsys
             "run_id": run_id, "model": "Qwen/Qwen3.5-2B", "condition": "C2", "arm": "paired", "p": 0.25, "steps": 100, "notes": "x",
         }))
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr(launch, "git_state", lambda: ("abc123", False))
+    monkeypatch.setattr(launch, "git_state", lambda: ("abc123", []))
     calls = []
 
     def fake_run(cmd, capture_output=False, text=False, check=False):
         calls.append(cmd[-1])
-        return subprocess.CompletedProcess(cmd, 0, stdout="abc123\n", stderr="")
+        out = "IDLE\n" if "pgrep" in cmd[-1] else "abc123\n"
+        return subprocess.CompletedProcess(cmd, 0, stdout=out, stderr="")
 
     monkeypatch.setattr(launch.subprocess, "run", fake_run)
     monkeypatch.setattr(sys, "argv", ["launch_remote.py", "--host", "root@h", "--specs", "configs/run-a.json,configs/run-b.json", "--label", "do-a"])
@@ -108,12 +159,27 @@ def test_launch_remote_records_register_and_ledger(tmp_path, monkeypatch, capsys
     assert register["entries"][0]["host_run_dir"] == "/root/work/runs/run-a" and register["entries"][0]["call_id"] == "root@h:run-a"
     text = ledger.read_text()
     assert "| run-a |" in text and "| digitalocean |" in text and "call root@h:run-a" in text
+    assert calls.index(next(c for c in calls if "pgrep" in c)) < calls.index(next(c for c in calls if "git checkout" in c))
+
+    # the same specs again: their ledger rows are still open
+    with pytest.raises(SystemExit, match="LAUNCHED"):
+        launch.main()
+
+    # a chain already running on the host
+    def busy_run(cmd, capture_output=False, text=False, check=False):
+        out = "RUNNING\n" if "pgrep" in cmd[-1] else "abc123\n"
+        return subprocess.CompletedProcess(cmd, 0, stdout=out, stderr="")
+
+    monkeypatch.setattr(launch.subprocess, "run", busy_run)
+    monkeypatch.setattr(sys, "argv", ["launch_remote.py", "--host", "root@h", "--specs", "configs/run-a.json", "--label", "do-b", "--relaunch"])
+    with pytest.raises(SystemExit, match="already running"):
+        launch.main()
 
 
 def test_launch_remote_refuses_dirty_tree(tmp_path, monkeypatch):
     launch = load_script("launch_remote")
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr(launch, "git_state", lambda: ("abc123", True))
+    monkeypatch.setattr(launch, "git_state", lambda: ("abc123", ["src/x.py"]))
     monkeypatch.setattr(sys, "argv", ["launch_remote.py", "--host", "root@h", "--specs", "configs/x.json", "--label", "l"])
     with pytest.raises(SystemExit, match="uncommitted"):
         launch.main()

@@ -11,9 +11,11 @@ from pairedrl.train.runner import (
     assemble_diagnostic_rows,
     assemble_eval_sets,
     assemble_training_rows,
+    expected_eval_sizes,
     load_task_splits,
     luck_share_tables,
     luck_share_tables_by_phase,
+    periodic_steps,
     read_episode_log,
     summarize_episodes,
     summarize_groups,
@@ -238,3 +240,19 @@ def test_training_group_records_refuse_broken_linkage():
         training_group_records(0, 1, rows, good, [1.0], [1.0, -1.0], 2)
     with pytest.raises(ValueError, match="group size"):
         training_group_records(0, 1, rows, good, [1.0, 0.0], [1.0, -1.0], 3)
+
+
+def test_expected_eval_sizes_match_assembled_sets_and_periodic_steps():
+    for s in (spec(eval_tasks=64, final_eval_tasks=200), spec(condition="C4", p=0.0, q=0.10, eval_tasks=64, final_eval_tasks=200),
+              spec(condition="C0", arm="clean", p=0.0, eval_tasks=64, final_eval_tasks=200)):
+        sizes = expected_eval_sizes(s)
+        periodic = assemble_eval_sets(s, SPLITS["heldout"], final=False)
+        final = assemble_eval_sets(s, SPLITS["test"], final=True)
+        assert {k: len(v) for k, v in periodic.items()} == sizes["periodic"]
+        assert {k: len(v) for k, v in final.items()} == sizes["final"]
+    assert sum(expected_eval_sizes(spec(eval_tasks=64)).get("periodic").values()) == 320
+    c2, c4 = expected_eval_sizes(spec(final_eval_tasks=200)), expected_eval_sizes(spec(condition="C4", p=0.0, q=0.10, final_eval_tasks=200))
+    assert sum(c2["final"].values()) == 3400 and sum(c4["final"].values()) == 4200 and "at_training" in c4["final"]
+    assert periodic_steps(spec(steps=100, eval_every=20)) == [0, 20, 40, 60, 80, 100]
+    assert periodic_steps(spec(steps=5, eval_every=2)) == [0, 2, 4, 5]
+    assert periodic_steps(spec(eval_only=True)) == [] and periodic_steps(spec(train_only=True)) == []

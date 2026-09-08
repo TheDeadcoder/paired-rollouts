@@ -83,7 +83,7 @@ def test_launch_writes_register_and_ledger(tmp_path, monkeypatch):
             spawned.append((spec_dict["run_id"], commit))
             return FakeCall(f"fc-{len(spawned)}")
 
-    monkeypatch.setattr(launch, "git_state", lambda: ("abc1234", False))
+    monkeypatch.setattr(launch, "git_state", lambda: ("abc1234", []))
     monkeypatch.setattr(launch.modal.Function, "from_name", staticmethod(lambda app, name: FakeFunction()))
     monkeypatch.setattr(sys, "argv", ["launch_modal.py", "--specs", "configs/calib-a.json,configs/calib-b.json", "--label", "calib 3"])
     launch.main()
@@ -94,12 +94,18 @@ def test_launch_writes_register_and_ledger(tmp_path, monkeypatch):
     assert register["commit"] == "abc1234" and [e["call_id"] for e in register["entries"]] == ["fc-1", "fc-2"]
     rows = [line for line in ledger.read_text().splitlines() if line.startswith("| calib-")]
     assert len(rows) == 2 and all("| LAUNCHED |" in r for r in rows) and "call fc-2" in rows[1]
+    with pytest.raises(SystemExit, match="LAUNCHED"):
+        launch.main()
+    assert len(spawned) == 2
+    monkeypatch.setattr(sys, "argv", ["launch_modal.py", "--specs", "configs/calib-a.json", "--label", "again", "--relaunch"])
+    launch.main()
+    assert len(spawned) == 3
 
 
 def test_launch_refuses_dirty_tree(tmp_path, monkeypatch):
     setup_repo(tmp_path, monkeypatch)
     launch = load_script("launch_modal")
-    monkeypatch.setattr(launch, "git_state", lambda: ("abc1234", True))
+    monkeypatch.setattr(launch, "git_state", lambda: ("abc1234", ["scripts/run_modal.py"]))
     monkeypatch.setattr(sys, "argv", ["launch_modal.py", "--specs", "configs/calib-a.json", "--label", "x"])
     with pytest.raises(SystemExit):
         launch.main()
@@ -116,7 +122,7 @@ def test_collect_reports_downloads_and_updates_ledger(tmp_path, monkeypatch, cap
             calls[call.object_id] = call
             return call
 
-    monkeypatch.setattr(launch, "git_state", lambda: ("abc1234", False))
+    monkeypatch.setattr(launch, "git_state", lambda: ("abc1234", []))
     monkeypatch.setattr(launch.modal.Function, "from_name", staticmethod(lambda app, name: FakeFunction()))
     monkeypatch.setattr(sys, "argv", ["launch_modal.py", "--specs", "configs/calib-a.json,configs/calib-b.json", "--label", "x"])
     launch.main()
@@ -157,6 +163,15 @@ def test_collect_reports_downloads_and_updates_ledger(tmp_path, monkeypatch, cap
     collect.main()
     out = capsys.readouterr().out
     assert "calib-b: INFRA_FAILED" in out and "FunctionTimeoutError" in out
+
+    # a failed attempt whose call is still open is a platform retry in progress, not a terminal state
+    calls["fc-calib-b"].running, calls["fc-calib-b"].error = True, None
+    volume.files["calib-b/run_manifest.json"] = json.dumps(dict(running_manifest, status="FAILED", attempt=1, error="boom")).encode()
+    assert collect.main() == 1
+    out = capsys.readouterr().out
+    assert "calib-b: RUNNING (attempt 1 FAILED, platform retry pending)" in out
+    rows = {line.split("|")[1].strip(): line.split("|")[9].strip() for line in ledger.read_text().splitlines() if line.startswith("| calib-")}
+    assert rows["calib-b"] == "INFRA_FAILED"  # a non-terminal pass leaves the ledger as the previous pass set it
 
 
 def test_collect_uses_manifest_when_result_expired(tmp_path, monkeypatch, capsys):

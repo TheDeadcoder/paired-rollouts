@@ -8,15 +8,16 @@ and the run manifest both record the commit.
 import argparse
 import json
 import pathlib
-import subprocess
 
 import modal
 
 from pairedrl.ops.ledger import (
     append_rows,
+    git_state,
     launch_register_path,
     ledger_row,
     preregistration_note,
+    refuse_duplicate_launches,
     utc_now,
     write_launch_register,
 )
@@ -24,12 +25,6 @@ from pairedrl.train.runner import RunSpec
 
 APP_NAME = "pairedrl-train"
 FUNCTION_NAME = "run"
-
-
-def git_state() -> tuple[str, bool]:
-    head = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=False).stdout.strip()
-    dirty = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, check=False).stdout.strip()
-    return head or "unknown", bool(dirty)
 
 
 def main() -> None:
@@ -40,16 +35,18 @@ def main() -> None:
     parser.add_argument("--register-dir", default="registers/launches")
     parser.add_argument("--allow-dirty", action="store_true", help="launch even with uncommitted changes (the run will be refused by the provenance check)")
     parser.add_argument("--preregistration", default=None, help="label of the frozen pre-registration these specs belong to (for instance v1); every spec's notes must carry 'pre-registered <label>'; omit for exploratory runs")
+    parser.add_argument("--relaunch", action="store_true", help="launch a run id whose newest ledger row is still LAUNCHED or RUNNING (only when that job is known to be dead)")
     args = parser.parse_args()
 
     head, dirty = git_state()
     if dirty and not args.allow_dirty:
-        raise SystemExit("refusing to launch: the working tree has uncommitted changes; commit and deploy first")
+        raise SystemExit(f"refusing to launch: the working tree has uncommitted changes in {dirty}; commit and deploy first")
     commit = head + ("-dirty" if dirty else "")
     paths = [pathlib.Path(p.strip()) for p in args.specs.split(",") if p.strip()]
     specs = [RunSpec.from_dict(json.loads(p.read_text(encoding="utf-8"))) for p in paths]
     for spec in specs:
         preregistration_note(spec, args.preregistration)
+    refuse_duplicate_launches(args.ledger, specs, relaunch=args.relaunch)
 
     run = modal.Function.from_name(APP_NAME, FUNCTION_NAME)
     launched_utc = utc_now()
