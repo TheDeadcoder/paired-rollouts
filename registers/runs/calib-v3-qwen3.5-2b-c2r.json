@@ -1,0 +1,172 @@
+{
+  "arm": "paired",
+  "attempt": 1,
+  "auc": {
+    "challenge": null,
+    "clean": null,
+    "noisy": null
+  },
+  "condition": "C2r",
+  "curves": {
+    "challenge": [],
+    "clean": [],
+    "noisy": []
+  },
+  "episodes": 5224,
+  "estimated_cost_usd": 8.13,
+  "eval_timings": [
+    {
+      "seconds": 864.9,
+      "step": 100,
+      "what": "final_clean"
+    },
+    {
+      "seconds": 1054.5,
+      "step": 100,
+      "what": "final_noisy_p010"
+    },
+    {
+      "seconds": 1286.3,
+      "step": 100,
+      "what": "final_noisy_p025"
+    },
+    {
+      "seconds": 1068.6,
+      "step": 100,
+      "what": "final_heldout_types"
+    },
+    {
+      "seconds": 1222.0,
+      "step": 100,
+      "what": "final_at_training"
+    },
+    {
+      "seconds": 360.2,
+      "step": 100,
+      "what": "final_challenge"
+    },
+    {
+      "seconds": 1388.7,
+      "step": 0,
+      "what": "diag"
+    }
+  ],
+  "fault_weights": {
+    "rate_limit": 0.16666666666666666,
+    "stale": 0.16666666666666666,
+    "transient": 0.5,
+    "truncate": 0.16666666666666666
+  },
+  "final": {
+    "at_training": {
+      "budget_exceeded_frac": 0.275,
+      "episodes": 800,
+      "exposed_frac": 0.79625,
+      "finished_frac": 0.7125,
+      "flipped_frac": 0.0,
+      "mean_calls": 9.505,
+      "observed_reward": 0.59,
+      "recovery_success": 0.5227629513343799,
+      "step": 0,
+      "true_success": 0.59
+    },
+    "challenge": {
+      "budget_exceeded_frac": 0.345,
+      "episodes": 200,
+      "exposed_frac": 0.995,
+      "finished_frac": 0.645,
+      "flipped_frac": 0.0,
+      "mean_calls": 11.1,
+      "observed_reward": 0.54,
+      "recovery_success": 0.542713567839196,
+      "step": 0,
+      "true_success": 0.54
+    },
+    "clean": {
+      "budget_exceeded_frac": 0.0375,
+      "episodes": 800,
+      "exposed_frac": 0.0,
+      "finished_frac": 0.9475,
+      "flipped_frac": 0.0,
+      "mean_calls": 6.96375,
+      "observed_reward": 0.78875,
+      "recovery_success": null,
+      "step": 0,
+      "true_success": 0.78875
+    },
+    "heldout_types": {
+      "budget_exceeded_frac": 0.15625,
+      "episodes": 800,
+      "exposed_frac": 0.78125,
+      "finished_frac": 0.8125,
+      "flipped_frac": 0.0,
+      "mean_calls": 8.53125,
+      "observed_reward": 0.7025,
+      "recovery_success": 0.672,
+      "step": 0,
+      "true_success": 0.7025
+    },
+    "noisy_p010": {
+      "budget_exceeded_frac": 0.1475,
+      "episodes": 800,
+      "exposed_frac": 0.475,
+      "finished_frac": 0.8375,
+      "flipped_frac": 0.0,
+      "mean_calls": 8.11375,
+      "observed_reward": 0.695,
+      "recovery_success": 0.5763157894736842,
+      "step": 0,
+      "true_success": 0.695
+    },
+    "noisy_p025": {
+      "budget_exceeded_frac": 0.38125,
+      "episodes": 800,
+      "exposed_frac": 0.79375,
+      "finished_frac": 0.615,
+      "flipped_frac": 0.0,
+      "mean_calls": 9.9775,
+      "observed_reward": 0.50875,
+      "recovery_success": 0.4377952755905512,
+      "step": 0,
+      "true_success": 0.50875
+    }
+  },
+  "git_commit": "62caa40e84503377bf4ec9419ea8a3c26d1f0c25",
+  "loss_type": "dapo",
+  "luck_share": {
+    "diag:step0": {
+      "lam": 0.2357948512084108,
+      "lam_pooled": 0.25119866583281214,
+      "sigma2_env_mean": 0.04202706473214285,
+      "sigma2_pol_mean": 0.12527901785714285,
+      "tables": 16,
+      "tasks": 16,
+      "tasks_defined": 15
+    }
+  },
+  "num_generations": 8,
+  "p": 0.25,
+  "peak_mem_gb": 53.61,
+  "prompts_per_step": 24,
+  "provider": "modal",
+  "q": 0.0,
+  "run_id": "calib-v3-qwen3.5-2b-c2r",
+  "scale_rewards": "group",
+  "seed": 0,
+  "status": "COMPLETE",
+  "steps": 100,
+  "steps_to_threshold": null,
+  "threshold": 0.617,
+  "timing": {},
+  "training_curve": [],
+  "training_groups": {},
+  "versions": {
+    "flash-linear-attention": "0.5.2",
+    "peft": "0.20.0",
+    "torch": "2.13.0",
+    "transformers": "5.16.1",
+    "trl": "1.12.0",
+    "vllm": "0.27.1"
+  },
+  "wall_time_s": 7408.8
+}
