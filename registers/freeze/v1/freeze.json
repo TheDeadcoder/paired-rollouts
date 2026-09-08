@@ -1,0 +1,21 @@
+{
+  "document": "docs/PREREGISTRATION.md",
+  "version": "v1",
+  "sha256": "6dc709de6f36f008da3a9f04e7de447f862e039afe39db550fda8a341430c2cf",
+  "frozen_on_utc": "2026-09-08T12:33:49Z",
+  "tokens": [
+    {
+      "file": "prereg_freetsa.tsr",
+      "status": "Granted.",
+      "time_stamp": "Sep  8 12:34:39 2026 GMT",
+      "tsa": "https://freetsa.org/tsr"
+    },
+    {
+      "file": "prereg_digicert.tsr",
+      "status": "Granted.",
+      "time_stamp": "Sep  8 12:34:40 2026 GMT",
+      "tsa": "http://timestamp.digicert.com"
+    }
+  ],
+  "commit": "pending: the commit whose message begins 'Freeze pre-registration v1'; filled in by the following commit"
+}

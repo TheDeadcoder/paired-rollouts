@@ -2,7 +2,7 @@
 
 Paired rollouts for group-relative RL of LLM agents in stochastic environments.
 
-Version: v0.3 (draft, not frozen; v0.2 of 2026-09-06 revised on 2026-09-08 with the gate-1 and v3 calibration results). This document becomes v1 and is frozen, with RFC 3161 timestamps and a pushed commit, before any pre-registered run starts; the gradient probe on the gate-1 checkpoints runs after the freeze under the protocol of H1(b). Items marked SET AT v1 are filled in then and nowhere else. The changes from v0 are listed in section 11; the environment and evaluation defects that motivated them are recorded in `docs/DEVIATIONS.md`.
+Version: v1, frozen on 2026-09-08T12:33:49Z (UTC) before any pre-registered run started; the SHA-256 of this file and two RFC 3161 timestamps over it are in `registers/freeze/v1/` (section 10). From this point the document is not edited; every departure from it is recorded in `docs/DEVIATIONS.md` at the time it happens. The gradient probe on the gate-1 checkpoints runs after the freeze under the protocol of H1(b). The history of the draft (v0 of 2026-09-02, v0.2 of 2026-09-06, v0.3 of 2026-09-08) is in sections 11 and 12; the environment and evaluation defects that motivated the changes are in `docs/DEVIATIONS.md`.
 
 ## 1. Thesis
 
@@ -45,7 +45,7 @@ Recovery. Two measures, always reported together: (a) success on the matched cha
 
 Learning curve and area. The at-training-noise validation set is evaluated at steps 0, 20, 40, 60, 80 and 100. AUC is the trapezoidal mean of true success over those steps (a number in [0, 1], the average success along the run).
 
-Steps-to-threshold (secondary). The first evaluation step at which the at-training-noise validation true success reaches T, linearly interpolated; a run that never reaches T is censored (reported as "> 100", never imputed, and never entered into a ratio). T is SET AT v1 as the midpoint between the zero-shot at-training-noise success and the gate-1 C2 paired run's final at-training-noise success on the validation set, so that it is reachable under noise. Gate-1 values (2026-09-08, `registers/runs/gate1-c2-paired-s0.json`): 0.570 at step 0 and 0.664 at step 100, midpoint 0.617; the paired gate-1 curve crossed it before step 20, so steps-to-threshold is expected to separate arms only if the independent arm learns markedly more slowly, which is why AUC is primary.
+Steps-to-threshold (secondary). The first evaluation step at which the at-training-noise validation true success reaches T, linearly interpolated; a run that never reaches T is censored (reported as "> 100", never imputed, and never entered into a ratio). T = 0.617, the midpoint between the zero-shot at-training-noise success and the gate-1 C2 paired run's final at-training-noise success on the validation set (0.570 at step 0 and 0.664 at step 100, `registers/runs/gate1-c2-paired-s0.json`), so that it is reachable under noise. The paired gate-1 curve crossed it before step 20, so steps-to-threshold is expected to separate arms only if the independent arm learns markedly more slowly, which is why AUC is primary.
 
 ## 3. Hypotheses and decision rules
 
@@ -102,7 +102,7 @@ P12 outcome (2026-09-05, run calib-qwen3.5-2b at commit 8fa9475, environment v1)
 
 ## 5. Run matrix
 
-Primary model Qwen3.5-2B. Training: TRL 1.12.0 GRPOTrainer with environment_factory, vLLM colocate, transformers 5.16.1 with the flash-linear-attention 0.5.2 kernels for the GatedDeltaNet layers, LoRA rank 32, 24 prompts x 8 rollouts per step, 100 steps, loss_type dapo (the trainer default; it is the DAPO token-level aggregation, not the DAPO algorithm's dynamic sampling), scale_rewards group unless stated, learning rate 1e-5, temperature 1.0, tool-result tokens masked from the loss. Every paired-versus-independent comparison runs on one provider and one stack; a condition is never split across providers. Trainer checkpoints are saved every 20 steps and all five are kept for the gradient probe. Runs are ordered by tier; the runs funded at the freeze are SET AT v1 from the gate-1 measured step time (460 s per step on an H100, 16.3 h and 64 USD for the full protocol), the DigitalOcean MI300X stack check (`registers/stack_check_digitalocean_qwen3.5-2b.json`: same stack at vLLM 0.27.1, ROCm torch 2.11, about 0.85 of the H100 evaluation throughput at 1.99 USD/h) and the remaining credit; lower tiers are "run if budget allows" and are reported if run. Provider assignment planned for v1: C2 on Modal (H100), C4 and C0 on DigitalOcean (MI300X); tier 2 in the order C2r, the blocking pair, scale_rewards none, on whichever provider has credit left, one condition per provider.
+Primary model Qwen3.5-2B. Training: TRL 1.12.0 GRPOTrainer with environment_factory, vLLM colocate, transformers 5.16.1 with the flash-linear-attention 0.5.2 kernels for the GatedDeltaNet layers, LoRA rank 32, 24 prompts x 8 rollouts per step, 100 steps, loss_type dapo (the trainer default; it is the DAPO token-level aggregation, not the DAPO algorithm's dynamic sampling), scale_rewards group unless stated, learning rate 1e-5, temperature 1.0, tool-result tokens masked from the loss. Every paired-versus-independent comparison runs on one provider and one stack; a condition is never split across providers. Trainer checkpoints are saved every 20 steps and all five are kept for the gradient probe. Runs are ordered by tier. Funded at the freeze, from the gate-1 measured cost (460 s per step on an H100, 16.3 h and 64 USD for the full protocol), the DigitalOcean MI300X stack check (`registers/stack_check_digitalocean_qwen3.5-2b.json`: same stack at vLLM 0.27.1, ROCm torch 2.11, about 0.85 of the H100 evaluation throughput at 1.99 USD/h, so about 35 USD per run) and the remaining credit: the whole of tier 1, 14 runs, of which 13 are launched after the freeze from `configs/t1-*.json`. C2 (paired seeds 0, 1, 2; independent seeds 0, 1, 2) runs on Modal H100, seed 0 of the paired arm being `gate1-c2-paired-s0` (section 7); C4 (paired and independent, seeds 0, 1, 2) and C0 (clean, seeds 0, 1) run on DigitalOcean MI300X. Seed 0 of every cell runs the luck-share diagnostic at steps 0, 50 and 100, the other seeds at 0 and 100. Tier 2 is run if budget allows, in the order C2r (2 arms x 2 seeds), the blocking pair, scale_rewards none, on whichever provider has credit left, one condition per provider; tiers 3 and 4 follow in that order.
 
 | tier | condition | noise | arms | seeds | hypotheses |
 |---|---|---|---|---|---|
@@ -145,11 +145,12 @@ Behavior examples chosen for the paper, figure design, the exact wording of the 
 
 ## 10. Freeze block (v1)
 
-- Frozen on (UTC): SET AT v1
-- Git commit of the frozen file: SET AT v1
-- SHA-256 of the frozen file: SET AT v1
-- RFC 3161 token 1 (TSA, time): SET AT v1
-- RFC 3161 token 2 (TSA, time): SET AT v1
+- Frozen on (UTC): 2026-09-08T12:33:49Z
+- Git commit of the frozen file: the commit whose message begins "Freeze pre-registration v1"; a file cannot contain the hash of the commit it is part of, so the hash is recorded in `registers/freeze/v1/freeze.json` and `docs/DAILY_LOG.md` by the following commit.
+- SHA-256 of the frozen file: computed over this file exactly as committed and stored in `registers/freeze/v1/PREREGISTRATION.md.sha256` (a file cannot contain its own hash).
+- RFC 3161 token 1: `registers/freeze/v1/prereg_freetsa.tsr`, TSA https://freetsa.org/tsr, over the SHA-256 above; the request is `prereg.tsq` and the TSA certificate chain is `freetsa_cacert.pem`.
+- RFC 3161 token 2: `registers/freeze/v1/prereg_digicert.tsr`, TSA http://timestamp.digicert.com, over the same request.
+- Verification: `openssl ts -verify -data docs/PREREGISTRATION.md -in registers/freeze/v1/prereg_freetsa.tsr -CAfile registers/freeze/v1/freetsa_cacert.pem` (and `openssl ts -reply -in <tsr> -text` to read the timestamp of either token); `registers/freeze/v1/README.md` repeats these commands.
 
 ## 11. Changes from v0 (2026-09-06, before the freeze)
 
@@ -164,9 +165,10 @@ Behavior examples chosen for the paper, figure design, the exact wording of the 
 - Run matrix: tiers with a funded list set at v1; 9B and the census dropped; 4B only after tiers 1 to 3.
 - Relaunch rules describe the implemented checkpoint and attempt behavior.
 
-## 12. Changes from v0.2 (2026-09-08, before the freeze)
+## 12. Changes from v0.2 (2026-09-08, before the freeze) and the v1 freeze
 
 - Gate 1 (C2 paired, seed 0) completed: T computed (0.617), the per-step cost measured, the run reused as C2 paired seed 0 with disclosure (section 7).
 - P12 recorded for environment v3 under both mixtures (section 4).
 - Second provider: the DigitalOcean MI300X stack check passed; provider assignment and checkpoint retention added to section 5.
 - Steps-to-threshold expectations noted (section 2); no decision rule changed.
+- v1 (2026-09-08T12:33:49Z): T entered (0.617); the funded list entered (tier 1, provider assignment, diagnostic schedule per seed); the freeze block filled; no hypothesis, decision rule, prediction or protocol changed between v0.3 and v1.

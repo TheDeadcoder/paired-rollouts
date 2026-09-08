@@ -1,0 +1,21 @@
+{
+  "run_id": "t1-c0-clean-s1",
+  "condition": "C0",
+  "arm": "clean",
+  "p": 0.0,
+  "q": 0.0,
+  "seed": 1,
+  "model": "Qwen/Qwen3.5-2B",
+  "steps": 100,
+  "prompts_per_step": 24,
+  "num_generations": 8,
+  "eval_every": 20,
+  "eval_tasks": 64,
+  "final_eval_tasks": 200,
+  "checkpoint_steps": 20,
+  "diagnostic_steps": [
+    0,
+    100
+  ],
+  "notes": "tier 1, pre-registered v1; C0 clean seed 1; provider digitalocean"
+}

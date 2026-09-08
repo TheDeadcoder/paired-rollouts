@@ -1,0 +1,21 @@
+{
+  "run_id": "t1-c4-paired-s2",
+  "condition": "C4",
+  "arm": "paired",
+  "p": 0.0,
+  "q": 0.1,
+  "seed": 2,
+  "model": "Qwen/Qwen3.5-2B",
+  "steps": 100,
+  "prompts_per_step": 24,
+  "num_generations": 8,
+  "eval_every": 20,
+  "eval_tasks": 64,
+  "final_eval_tasks": 200,
+  "checkpoint_steps": 20,
+  "diagnostic_steps": [
+    0,
+    100
+  ],
+  "notes": "tier 1, pre-registered v1; C4 paired seed 2; provider digitalocean"
+}
