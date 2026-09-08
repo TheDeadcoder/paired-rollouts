@@ -1,0 +1,28 @@
+{
+  "app": "root@134.199.201.165",
+  "commit": "d888dabb71eba12a515c773a39e8e03169ea0eee",
+  "entries": [
+    {
+      "call_id": "root@134.199.201.165:smoke-do-train",
+      "container": "pairedrl",
+      "host": "root@134.199.201.165",
+      "host_run_dir": "/root/work/runs/smoke-do-train",
+      "log": "/root/work/runs/smoke-do-train.log",
+      "run_id": "smoke-do-train",
+      "spawned_utc": "2026-09-08T15:02:27+00:00",
+      "spec_path": "configs/smoke-do-train.json"
+    },
+    {
+      "call_id": "root@134.199.201.165:smoke-do-train",
+      "container": "pairedrl",
+      "host": "root@134.199.201.165",
+      "host_run_dir": "/root/work/runs/smoke-do-train",
+      "log": "/root/work/runs/smoke-do-resume.log",
+      "run_id": "smoke-do-train",
+      "spawned_utc": "2026-09-08T15:02:27+00:00",
+      "spec_path": "configs/smoke-do-resume.json"
+    }
+  ],
+  "launched_utc": "2026-09-08T15:02:27+00:00",
+  "preregistration": null
+}
