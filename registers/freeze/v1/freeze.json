@@ -17,5 +17,5 @@
       "tsa": "http://timestamp.digicert.com"
     }
   ],
-  "commit": "pending: the commit whose message begins 'Freeze pre-registration v1'; filled in by the following commit"
+  "commit": "d368ad6b964355a5df212d0912383341cba6056b"
 }

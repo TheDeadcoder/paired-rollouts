@@ -15,12 +15,29 @@ def utc_now() -> str:
     return dt.datetime.now(dt.UTC).isoformat(timespec="seconds")
 
 
-def ledger_row(spec: RunSpec, launched_utc: str, call_id: str, status: str, provider: str = "modal") -> str:
+def preregistration_note(spec: RunSpec, preregistration: str | None) -> str:
+    """Provenance suffix of a ledger row. A pre-registration label is accepted only when the spec's own notes carry
+    it, so a launch flag cannot relabel a spec that was not part of the frozen document."""
+    if preregistration is None:
+        return "not pre-registered"
+    if f"pre-registered {preregistration}" not in (spec.notes or ""):
+        raise ValueError(f"{spec.run_id}: launched as pre-registered {preregistration} but its notes do not say so")
+    return f"pre-registered {preregistration}"
+
+
+def ledger_row(
+    spec: RunSpec,
+    launched_utc: str,
+    call_id: str,
+    status: str,
+    provider: str = "modal",
+    preregistration: str | None = None,
+) -> str:
     steps = 0 if spec.eval_only else spec.steps
     notes = f"call {call_id}"
     if spec.notes:
         notes += f"; {spec.notes}"
-    notes += "; not pre-registered"
+    notes += "; " + preregistration_note(spec, preregistration)
     notes = notes.replace("|", "/").replace("\n", " ")
     return (
         f"| {spec.run_id} | {launched_utc} | {provider} | {spec.model} | {spec.condition} | {spec.arm} | "
@@ -62,8 +79,16 @@ def launch_register_path(register_dir, label: str, launched_utc: str) -> pathlib
     return pathlib.Path(register_dir) / f"{stamp}_{safe}.json"
 
 
-def write_launch_register(path, commit: str, deployed_app: str, launched_utc: str, entries: list[dict]) -> dict:
-    register = {"launched_utc": launched_utc, "commit": commit, "app": deployed_app, "entries": entries}
+def write_launch_register(
+    path, commit: str, deployed_app: str, launched_utc: str, entries: list[dict], preregistration: str | None = None
+) -> dict:
+    register = {
+        "launched_utc": launched_utc,
+        "commit": commit,
+        "app": deployed_app,
+        "preregistration": preregistration,
+        "entries": entries,
+    }
     path = pathlib.Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(register, indent=2, sort_keys=True) + "\n", encoding="utf-8")

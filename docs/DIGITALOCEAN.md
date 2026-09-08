@@ -29,7 +29,7 @@ docker exec pairedrl bash -c "cd /work/paired-rollouts && pip install -e . && HF
 Jobs run through the same body as the Modal function (`pairedrl.ops.job.run_job`) via `scripts/run_local.py`, so the run directory (manifest with `provider`, episodes, groups, trainer checkpoints, `attempt<n>/` on relaunch) is identical. From the laptop, with a clean committed tree:
 
 ```
-python scripts/launch_remote.py --host root@<ip> --specs configs/a.json,configs/b.json --label do-<name>
+python scripts/launch_remote.py --host root@<ip> --specs configs/a.json,configs/b.json --label do-<name> [--preregistration v1]
 python scripts/collect_remote.py --register registers/launches/<utc>_do-<name>.json [--no-download]
 ```
 

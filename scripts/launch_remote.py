@@ -16,6 +16,7 @@ from pairedrl.ops.ledger import (
     append_rows,
     launch_register_path,
     ledger_row,
+    preregistration_note,
     utc_now,
     write_launch_register,
 )
@@ -51,6 +52,7 @@ def main() -> None:
     parser.add_argument("--hf-home", default="/work/hf")
     parser.add_argument("--ledger", default="docs/RUN_LEDGER.md")
     parser.add_argument("--register-dir", default="registers/launches")
+    parser.add_argument("--preregistration", default=None, help="label of the frozen pre-registration these specs belong to (for instance v1); every spec's notes must carry 'pre-registered <label>'; omit for exploratory runs")
     args = parser.parse_args()
 
     head, dirty = git_state()
@@ -60,6 +62,8 @@ def main() -> None:
     repo_in_job = args.remote_repo if container is None else args.container_repo
     spec_paths = [p.strip() for p in args.specs.split(",") if p.strip()]
     specs = [RunSpec.from_dict(json.loads(pathlib.Path(p).read_text(encoding="utf-8"))) for p in spec_paths]
+    for spec in specs:
+        preregistration_note(spec, args.preregistration)
 
     remote_head = remote(args.host, checkout_command(args.remote_repo, head))
     if remote_head.splitlines()[-1] != head:
@@ -80,9 +84,9 @@ def main() -> None:
             "container": container, "host_run_dir": f"{args.host_runs_dir}/{spec.run_id}",
             "log": f"{args.host_runs_dir}/{pathlib.Path(path).stem}.log", "spawned_utc": launched_utc,
         })
-        rows.append(ledger_row(spec, launched_utc, call_id, "LAUNCHED", provider=args.provider))
+        rows.append(ledger_row(spec, launched_utc, call_id, "LAUNCHED", provider=args.provider, preregistration=args.preregistration))
         print(f"STARTED {spec.run_id} on {args.host}")
-    write_launch_register(register_path, head, args.host, launched_utc, entries)
+    write_launch_register(register_path, head, args.host, launched_utc, entries, preregistration=args.preregistration)
     append_rows(args.ledger, rows)
     print(f"commit {head}")
     print(f"wrote {register_path}")

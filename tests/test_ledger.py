@@ -8,6 +8,7 @@ from pairedrl.ops.ledger import (
     latest_launch_register,
     launch_register_path,
     ledger_row,
+    preregistration_note,
     read_launch_register,
     set_status,
     write_launch_register,
@@ -34,6 +35,21 @@ def test_ledger_row_fields():
     assert ledger_row(train, "t", CALL, "LAUNCHED").split("|")[8].strip() == "100"
 
 
+def test_preregistration_label_requires_matching_spec_notes():
+    frozen = RunSpec(run_id="t1-c2-paired-s1", model="m", condition="C2", arm="paired", p=0.25, steps=100,
+                     notes="tier 1, pre-registered v1; C2 paired seed 1; provider modal")
+    assert preregistration_note(frozen, None) == "not pre-registered"
+    assert preregistration_note(frozen, "v1") == "pre-registered v1"
+    row = ledger_row(frozen, "t", CALL, "LAUNCHED", preregistration="v1")
+    assert row.strip().endswith("; provider modal; pre-registered v1 |")
+    assert "not pre-registered" not in row
+    unlabelled = RunSpec(run_id="g", model="m", condition="C2", arm="paired", p=0.25, steps=100)
+    with pytest.raises(ValueError):
+        preregistration_note(unlabelled, "v1")
+    with pytest.raises(ValueError):
+        preregistration_note(frozen, "v2")
+
+
 def test_append_and_set_status(tmp_path):
     path = make_ledger(tmp_path)
     spec = RunSpec(run_id="r", model="m", condition="C2", arm="paired", p=0.25)
@@ -57,6 +73,9 @@ def test_launch_register_round_trip(tmp_path):
     entries = [{"run_id": "a", "call_id": "fc-1", "spec_path": "configs/a.json", "spawned_utc": "t", "dashboard_url": None}]
     register = write_launch_register(first, "abc123", "pairedrl-train", "2026-09-05T10:00:00+00:00", entries)
     assert read_launch_register(first) == register and json.loads(first.read_text())["commit"] == "abc123"
+    assert register["preregistration"] is None
+    labelled = write_launch_register(first, "abc123", "pairedrl-train", "2026-09-05T10:00:00+00:00", entries, preregistration="v1")
+    assert labelled["preregistration"] == "v1" and json.loads(first.read_text())["preregistration"] == "v1"
     second = launch_register_path(reg_dir, "later", "2026-09-06T00:00:00+00:00")
     write_launch_register(second, "def456", "pairedrl-train", "2026-09-06T00:00:00+00:00", [])
     assert latest_launch_register(reg_dir) == second

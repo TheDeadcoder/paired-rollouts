@@ -16,6 +16,7 @@ from pairedrl.ops.ledger import (
     append_rows,
     launch_register_path,
     ledger_row,
+    preregistration_note,
     utc_now,
     write_launch_register,
 )
@@ -38,6 +39,7 @@ def main() -> None:
     parser.add_argument("--ledger", default="docs/RUN_LEDGER.md")
     parser.add_argument("--register-dir", default="registers/launches")
     parser.add_argument("--allow-dirty", action="store_true", help="launch even with uncommitted changes (the run will be refused by the provenance check)")
+    parser.add_argument("--preregistration", default=None, help="label of the frozen pre-registration these specs belong to (for instance v1); every spec's notes must carry 'pre-registered <label>'; omit for exploratory runs")
     args = parser.parse_args()
 
     head, dirty = git_state()
@@ -46,6 +48,8 @@ def main() -> None:
     commit = head + ("-dirty" if dirty else "")
     paths = [pathlib.Path(p.strip()) for p in args.specs.split(",") if p.strip()]
     specs = [RunSpec.from_dict(json.loads(p.read_text(encoding="utf-8"))) for p in paths]
+    for spec in specs:
+        preregistration_note(spec, args.preregistration)
 
     run = modal.Function.from_name(APP_NAME, FUNCTION_NAME)
     launched_utc = utc_now()
@@ -64,8 +68,8 @@ def main() -> None:
             "spawned_utc": utc_now(),
             "dashboard_url": dashboard,
         })
-        write_launch_register(register_path, commit, APP_NAME, launched_utc, entries)
-        append_rows(args.ledger, [ledger_row(spec, launched_utc, call.object_id, "LAUNCHED")])
+        write_launch_register(register_path, commit, APP_NAME, launched_utc, entries, preregistration=args.preregistration)
+        append_rows(args.ledger, [ledger_row(spec, launched_utc, call.object_id, "LAUNCHED", preregistration=args.preregistration)])
         print(f"SPAWNED {spec.run_id} {call.object_id}")
 
     print(f"commit {commit}")
