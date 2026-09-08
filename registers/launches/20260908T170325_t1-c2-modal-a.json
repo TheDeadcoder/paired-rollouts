@@ -1,0 +1,15 @@
+{
+  "app": "pairedrl-train",
+  "commit": "c84a890a122f5b5691c4b859e29b609461880449",
+  "entries": [
+    {
+      "call_id": "fc-01M20ZJZ0MDNJRBP756A80GENG",
+      "dashboard_url": "https://modal.com/id/fc-01M20ZJZ0MDNJRBP756A80GENG",
+      "run_id": "t1-c2-independent-s0",
+      "spawned_utc": "2026-09-08T17:03:26+00:00",
+      "spec_path": "configs/t1-c2-independent-s0.json"
+    }
+  ],
+  "launched_utc": "2026-09-08T17:03:25+00:00",
+  "preregistration": "v1"
+}
