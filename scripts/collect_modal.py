@@ -84,6 +84,8 @@ def main() -> int:
 
     register_path = pathlib.Path(args.register) if args.register else latest_launch_register(args.register_dir)
     register = read_launch_register(register_path)
+    if register["entries"] and "host" in register["entries"][0]:
+        raise SystemExit(f"{register_path} is a remote launch register (use scripts/collect_remote.py)")
     volume = modal.Volume.from_name(RUNS_VOLUME)
     runs_dir = pathlib.Path(args.runs_dir)
     print(f"register {register_path} (commit {register['commit']}, launched {register['launched_utc']})")

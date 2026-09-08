@@ -23,6 +23,7 @@ Status: calibration and exploratory runs; the pre-registration (`docs/PREREGISTR
 ## Running on Modal
 
 Runs are spawned onto a deployed Modal app and never depend on the launching machine staying online.
+
 ```
 modal deploy scripts/run_modal.py
 python scripts/launch_modal.py --specs configs/a.json,configs/b.json --label <name>
@@ -31,6 +32,10 @@ python scripts/collect_modal.py --cancel
 ```
 
 `deploy` is run once per commit and bakes the source, the task data and the commit hash into the image; a run whose launch commit differs from the deployed one refuses to start. `launch` returns in seconds, refuses a tree with uncommitted changes, writes `registers/launches/<utc>_<label>.json` (run ids, Modal call ids, commit) and appends one `LAUNCHED` row per run to `docs/RUN_LEDGER.md`. `collect` can be run at any time from any machine with Modal credentials: it prints each run's state and progress, downloads finished runs to `outputs/runs/<run_id>/` (not committed; the same files stay on the `pairedrl-runs` volume; trainer checkpoints and the final adapter are skipped unless `--with-weights` is given) and fills in the ledger status. `--cancel` stops every still-running run of the newest launch and terminates its containers. Runs checkpoint their manifest, trainer log, episode log (`episodes.jsonl`) and training-group register (`groups.jsonl`, the trainer's own groups with true outcomes, observed rewards and advantages) to the volume after every evaluation phase and every ten training steps, and save the trainer state (adapter, optimizer, scheduler, RNG) every `checkpoint_steps` steps. A container that Modal retries moves the previous attempt's files to `attempt<n>/` and resumes from the newest trainer checkpoint.
+
+## Running on DigitalOcean (AMD MI300X)
+
+The same job body runs on a droplet through `scripts/run_local.py`; `scripts/launch_remote.py` starts specs over SSH in a detached shell and `scripts/collect_remote.py` rsyncs the results back. See `docs/DIGITALOCEAN.md`.
 
 ## Development setup
 ```
