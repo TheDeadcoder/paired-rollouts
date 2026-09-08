@@ -1,0 +1,451 @@
+{
+  "arm": "paired",
+  "attempt": 2,
+  "attempts": [
+    {
+      "attempt": 1,
+      "error": null,
+      "estimated_cost_usd": 1.45,
+      "git_commit": "d888dabb71eba12a515c773a39e8e03169ea0eee",
+      "resumed_from_step": null,
+      "status": "COMPLETE",
+      "wall_time_s": 2620.4
+    },
+    {
+      "attempt": 2,
+      "error": null,
+      "estimated_cost_usd": 1.14,
+      "git_commit": "d888dabb71eba12a515c773a39e8e03169ea0eee",
+      "resumed_from_step": 3,
+      "status": "COMPLETE",
+      "wall_time_s": 2053.5
+    }
+  ],
+  "auc": {
+    "challenge": 0.53125,
+    "clean": 0.846875,
+    "noisy": 0.85625
+  },
+  "checkpoints": null,
+  "completeness": {
+    "complete": false,
+    "diagnostic_missing": [],
+    "diagnostic_steps_expected": [],
+    "diagnostic_tasks": 0,
+    "episodes_expected": 1368,
+    "episodes_found": 1536,
+    "periodic_and_final_missing": [
+      {
+        "expected": 32,
+        "found": 64,
+        "set": "final_clean",
+        "step": 5
+      },
+      {
+        "expected": 32,
+        "found": 64,
+        "set": "final_noisy_p010",
+        "step": 5
+      },
+      {
+        "expected": 32,
+        "found": 64,
+        "set": "final_noisy_p025",
+        "step": 5
+      },
+      {
+        "expected": 32,
+        "found": 64,
+        "set": "final_heldout_types",
+        "step": 5
+      },
+      {
+        "expected": 32,
+        "found": 64,
+        "set": "final_at_training",
+        "step": 5
+      },
+      {
+        "expected": 8,
+        "found": 16,
+        "set": "final_challenge",
+        "step": 5
+      }
+    ],
+    "periodic_steps_expected": [
+      0,
+      3,
+      5
+    ],
+    "training_groups_expected": 120,
+    "training_groups_found": 120,
+    "training_rollouts_expected": 960,
+    "training_rollouts_found": 960
+  },
+  "condition": "C4",
+  "curves": {
+    "challenge": [
+      {
+        "budget_exceeded_frac": 0.125,
+        "exposed_frac": 1.0,
+        "finished_frac": 0.8125,
+        "flipped_frac": 0.0,
+        "mean_calls": 9.4375,
+        "n": 16,
+        "observed_reward": 0.6875,
+        "recovery_success": 0.6875,
+        "step": 0,
+        "true_success": 0.6875
+      },
+      {
+        "budget_exceeded_frac": 0.4375,
+        "exposed_frac": 1.0,
+        "finished_frac": 0.5625,
+        "flipped_frac": 0.0,
+        "mean_calls": 10.0,
+        "n": 16,
+        "observed_reward": 0.375,
+        "recovery_success": 0.375,
+        "step": 3,
+        "true_success": 0.375
+      },
+      {
+        "budget_exceeded_frac": 0.1875,
+        "exposed_frac": 1.0,
+        "finished_frac": 0.8125,
+        "flipped_frac": 0.0,
+        "mean_calls": 9.375,
+        "n": 16,
+        "observed_reward": 0.6875,
+        "recovery_success": 0.6875,
+        "step": 5,
+        "true_success": 0.6875
+      }
+    ],
+    "clean": [
+      {
+        "budget_exceeded_frac": 0.0,
+        "exposed_frac": 0.0,
+        "finished_frac": 0.9375,
+        "flipped_frac": 0.0,
+        "mean_calls": 6.3125,
+        "n": 32,
+        "observed_reward": 0.90625,
+        "recovery_success": null,
+        "step": 0,
+        "true_success": 0.90625
+      },
+      {
+        "budget_exceeded_frac": 0.09375,
+        "exposed_frac": 0.0,
+        "finished_frac": 0.875,
+        "flipped_frac": 0.0,
+        "mean_calls": 6.65625,
+        "n": 32,
+        "observed_reward": 0.8125,
+        "recovery_success": null,
+        "step": 3,
+        "true_success": 0.8125
+      },
+      {
+        "budget_exceeded_frac": 0.0,
+        "exposed_frac": 0.0,
+        "finished_frac": 0.9375,
+        "flipped_frac": 0.0,
+        "mean_calls": 5.875,
+        "n": 32,
+        "observed_reward": 0.84375,
+        "recovery_success": null,
+        "step": 5,
+        "true_success": 0.84375
+      }
+    ],
+    "noisy": [
+      {
+        "budget_exceeded_frac": 0.0,
+        "exposed_frac": 0.0,
+        "finished_frac": 1.0,
+        "flipped_frac": 0.09375,
+        "mean_calls": 6.65625,
+        "n": 32,
+        "observed_reward": 0.75,
+        "recovery_success": null,
+        "step": 0,
+        "true_success": 0.84375
+      },
+      {
+        "budget_exceeded_frac": 0.03125,
+        "exposed_frac": 0.0,
+        "finished_frac": 0.9375,
+        "flipped_frac": 0.09375,
+        "mean_calls": 6.71875,
+        "n": 32,
+        "observed_reward": 0.75,
+        "recovery_success": null,
+        "step": 3,
+        "true_success": 0.84375
+      },
+      {
+        "budget_exceeded_frac": 0.03125,
+        "exposed_frac": 0.0,
+        "finished_frac": 0.96875,
+        "flipped_frac": 0.09375,
+        "mean_calls": 6.3125,
+        "n": 32,
+        "observed_reward": 0.8125,
+        "recovery_success": null,
+        "step": 5,
+        "true_success": 0.90625
+      }
+    ]
+  },
+  "episodes": 1536,
+  "estimated_cost_usd": 1.14,
+  "eval_timings": [
+    {
+      "seconds": 135.5,
+      "step": 5,
+      "what": "eval_clean"
+    },
+    {
+      "seconds": 93.3,
+      "step": 5,
+      "what": "eval_noisy"
+    },
+    {
+      "seconds": 127.5,
+      "step": 5,
+      "what": "eval_challenge"
+    },
+    {
+      "seconds": 55.7,
+      "step": 5,
+      "what": "final_clean"
+    },
+    {
+      "seconds": 100.7,
+      "step": 5,
+      "what": "final_noisy_p010"
+    },
+    {
+      "seconds": 87.0,
+      "step": 5,
+      "what": "final_noisy_p025"
+    },
+    {
+      "seconds": 67.2,
+      "step": 5,
+      "what": "final_heldout_types"
+    },
+    {
+      "seconds": 42.1,
+      "step": 5,
+      "what": "final_at_training"
+    },
+    {
+      "seconds": 59.3,
+      "step": 5,
+      "what": "final_challenge"
+    }
+  ],
+  "fault_weights": null,
+  "final": {
+    "at_training": {
+      "budget_exceeded_frac": 0.0,
+      "episodes": 32,
+      "exposed_frac": 0.0,
+      "finished_frac": 1.0,
+      "flipped_frac": 0.09375,
+      "mean_calls": 5.59375,
+      "observed_reward": 0.84375,
+      "recovery_success": null,
+      "step": 5,
+      "true_success": 0.9375
+    },
+    "challenge": {
+      "budget_exceeded_frac": 0.375,
+      "episodes": 8,
+      "exposed_frac": 0.875,
+      "finished_frac": 0.625,
+      "flipped_frac": 0.0,
+      "mean_calls": 10.75,
+      "observed_reward": 0.5,
+      "recovery_success": 0.5714285714285714,
+      "step": 5,
+      "true_success": 0.5
+    },
+    "clean": {
+      "budget_exceeded_frac": 0.0,
+      "episodes": 32,
+      "exposed_frac": 0.0,
+      "finished_frac": 1.0,
+      "flipped_frac": 0.0,
+      "mean_calls": 5.1875,
+      "observed_reward": 0.90625,
+      "recovery_success": null,
+      "step": 5,
+      "true_success": 0.90625
+    },
+    "heldout_types": {
+      "budget_exceeded_frac": 0.0625,
+      "episodes": 32,
+      "exposed_frac": 0.75,
+      "finished_frac": 0.9375,
+      "flipped_frac": 0.0,
+      "mean_calls": 6.71875,
+      "observed_reward": 0.90625,
+      "recovery_success": 0.875,
+      "step": 5,
+      "true_success": 0.90625
+    },
+    "noisy_p010": {
+      "budget_exceeded_frac": 0.1875,
+      "episodes": 32,
+      "exposed_frac": 0.71875,
+      "finished_frac": 0.8125,
+      "flipped_frac": 0.0,
+      "mean_calls": 8.125,
+      "observed_reward": 0.71875,
+      "recovery_success": 0.6521739130434783,
+      "step": 5,
+      "true_success": 0.71875
+    },
+    "noisy_p025": {
+      "budget_exceeded_frac": 0.15625,
+      "episodes": 32,
+      "exposed_frac": 0.75,
+      "finished_frac": 0.84375,
+      "flipped_frac": 0.0,
+      "mean_calls": 7.78125,
+      "observed_reward": 0.78125,
+      "recovery_success": 0.7083333333333334,
+      "step": 5,
+      "true_success": 0.78125
+    }
+  },
+  "git_commit": "d888dabb71eba12a515c773a39e8e03169ea0eee",
+  "lineage": {
+    "episodes": [
+      {
+        "attempt": 1,
+        "cutoff_step": 3,
+        "records": 904,
+        "resumed_from_step": null,
+        "superseded": 0
+      },
+      {
+        "attempt": 2,
+        "cutoff_step": null,
+        "records": 632,
+        "resumed_from_step": 3,
+        "superseded": 0
+      }
+    ],
+    "groups": [
+      {
+        "attempt": 1,
+        "cutoff_step": 3,
+        "records": 72,
+        "resumed_from_step": null,
+        "superseded": 0
+      },
+      {
+        "attempt": 2,
+        "cutoff_step": null,
+        "records": 48,
+        "resumed_from_step": 3,
+        "superseded": 0
+      }
+    ]
+  },
+  "loss_type": "dapo",
+  "luck_share": {},
+  "num_generations": 8,
+  "p": 0.0,
+  "peak_mem_gb": 104.85,
+  "prompts_per_step": 24,
+  "provider": "digitalocean",
+  "q": 0.1,
+  "run_id": "smoke-do-train",
+  "scale_rewards": "group",
+  "seed": 0,
+  "status": "COMPLETE",
+  "steps": 5,
+  "timing": {
+    "max_step_s": 668.7,
+    "mean_generation_s": 434.65,
+    "mean_passes_s": 159.05000000000007,
+    "mean_step_s": 593.7,
+    "min_step_s": 518.7,
+    "steps": 2
+  },
+  "total_estimated_cost_usd": 2.59,
+  "total_wall_time_s": 4673.9,
+  "training_curve": [
+    {
+      "budget_exceeded_frac": 0.057291666666666664,
+      "mean_calls": 6.53125,
+      "n": 192,
+      "observed_reward": 0.7135416666666666,
+      "step": 0,
+      "true_success": 0.7135416666666666
+    },
+    {
+      "budget_exceeded_frac": 0.005208333333333333,
+      "mean_calls": 6.192708333333333,
+      "n": 192,
+      "observed_reward": 0.8020833333333334,
+      "step": 1,
+      "true_success": 0.859375
+    },
+    {
+      "budget_exceeded_frac": 0.005208333333333333,
+      "mean_calls": 6.885416666666667,
+      "n": 192,
+      "observed_reward": 0.6979166666666666,
+      "step": 2,
+      "true_success": 0.7395833333333334
+    },
+    {
+      "budget_exceeded_frac": 0.07291666666666667,
+      "mean_calls": 8.46875,
+      "n": 192,
+      "observed_reward": 0.625,
+      "step": 3,
+      "true_success": 0.7864583333333334
+    },
+    {
+      "budget_exceeded_frac": 0.020833333333333332,
+      "mean_calls": 8.239583333333334,
+      "n": 192,
+      "observed_reward": 0.71875,
+      "step": 4,
+      "true_success": 0.71875
+    }
+  ],
+  "training_groups": {
+    "C4": {
+      "all_correct_groups": 48,
+      "groups": 120,
+      "mean_max_abs_advantage": 0.8903729860981305,
+      "spurious_among_all_correct": 0.0,
+      "steps": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "zero_variance_frac": 0.43333333333333335
+    }
+  },
+  "versions": {
+    "flash-linear-attention": "0.5.2",
+    "peft": "0.20.0",
+    "torch": "2.11.0+gitd0c8b1f",
+    "transformers": "5.16.1",
+    "trl": "1.12.0",
+    "vllm": "0.27.1+rocm723"
+  },
+  "wall_time_s": 2053.5
+}
