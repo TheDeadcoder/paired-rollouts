@@ -87,3 +87,11 @@ Spend figures are the sum of `estimated_cost_usd` over the run manifests (wall t
 - Checks passed: the smoke launch (Instruction 36) was refused by the droplet's `git checkout` because `registers/stack_check_digitalocean_qwen3.5-2b.json`, written there by the stack check and committed later from the laptop, was untracked on the droplet and in the way of the commit that tracks it; nothing was launched and no local file changed. Unit tests and ruff PASS
 - Deviations: none
 - Notes: the smoke launch is repeated at this commit; the Modal staged launch follows.
+
+### 2026-09-09, day 8 (second entry): MI300X smoke measured, tier 1 launched on droplet A
+
+- Commits: 106ab09 tier-1 C2 launched on Modal in two stages (independent seed 0 first, the other four after its first two training steps); (this commit) smoke register, chain sizing, droplet A chain (C4 paired seed 0, C0 clean seed 0)
+- Spend to date: Modal about 119 plus five C2 runs in progress | DigitalOcean about 7 (smoke 2.59 across two attempts) | GCP 0.00 | Daytona 0.00 | API 0.00
+- Checks passed: MI300X production-shape smoke COMPLETE in both attempts, resume from checkpoint-3 PASS (attempt 2, `attempt1/` preserved, 120 of 120 groups, 960 of 960 rollouts, diagnostic defects 0); `verify_run` REJECT on the extended smoke as designed (the final sets exist at steps 3 and 5); stage-1 Modal run healthy at two logged steps before stage 2 PASS
+- Deviations: none
+- Notes: warmed MI300X steps about 440 s (generation-bound; training passes about 145 s, faster than the H100), so a tier-1 run is planned at 17 to 18 h (C4) and 15 to 16 h (C0); chains of two runs per droplet, four droplets across three accounts (docs/DIGITALOCEAN.md, "Tier-1 chains"). `gpu` is empty in the MI300X manifests (the virtual function reports no name); the backend fields identify the stack.

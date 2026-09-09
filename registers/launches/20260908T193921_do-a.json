@@ -1,0 +1,28 @@
+{
+  "app": "root@134.199.201.165",
+  "commit": "2b67d2ce22d760048da389ff5d20f50943cb6800",
+  "entries": [
+    {
+      "call_id": "root@134.199.201.165:t1-c4-paired-s0",
+      "container": "pairedrl",
+      "host": "root@134.199.201.165",
+      "host_run_dir": "/root/work/runs/t1-c4-paired-s0",
+      "log": "/root/work/runs/t1-c4-paired-s0.log",
+      "run_id": "t1-c4-paired-s0",
+      "spawned_utc": "2026-09-08T19:39:21+00:00",
+      "spec_path": "configs/t1-c4-paired-s0.json"
+    },
+    {
+      "call_id": "root@134.199.201.165:t1-c0-clean-s0",
+      "container": "pairedrl",
+      "host": "root@134.199.201.165",
+      "host_run_dir": "/root/work/runs/t1-c0-clean-s0",
+      "log": "/root/work/runs/t1-c0-clean-s0.log",
+      "run_id": "t1-c0-clean-s0",
+      "spawned_utc": "2026-09-08T19:39:21+00:00",
+      "spec_path": "configs/t1-c0-clean-s0.json"
+    }
+  ],
+  "launched_utc": "2026-09-08T19:39:21+00:00",
+  "preregistration": "v1"
+}

@@ -52,6 +52,21 @@ python scripts/verify_run.py outputs/runs/<run_id> [--weights]
 
 The production-shape smoke (`configs/smoke-do-train.json`, three steps of 24 x 8 rollouts with the tier-1 sequence limits, checkpoints every step, small evaluation sets; then `configs/smoke-do-resume.json`, which extends the same run by two steps from checkpoint-3) gives the MI300X training step time and exercises evaluation, checkpointing and resume before any pre-registered run is launched there. Hours per tier-1 run = 100 x (measured step seconds) / 3600 plus the evaluation phases (about 1.5 h at 0.4 episodes per second for a seed-0 spec, 1 h otherwise). A droplet's chain is sized so that its runs finish inside the account's credit with margin for collection: an account with 100 USD of credit at 1.99 USD/h has 50 hours; the chains are planned at 40 hours of jobs at most.
 
+### Measured (2026-09-09, smoke-do-train, `registers/runs/smoke-do-train.json`)
+
+Five production-shape C4 steps of 24 x 8 rollouts on the MI300X: 543.5, 378.7, 419.5 s in attempt 1 and 668.7, 518.7 s in attempt 2 (steps 1 and 4 carry each attempt's model load and kernel warm-up), generation 237 to 495 s of each, training passes about 140 to 175 s (faster than the H100's 186 s; the flash-linear-attention kernels run on ROCm). Warmed steps average about 440 s against the H100's 461 s, so a tier-1 run on the MI300X is planned at 480 s per step (13.3 h of training) plus the evaluation phases at about 0.57 episodes per second (0.85 of the H100's 0.67 measured on gate 1): a C4 seed-0 run about 17.8 h, other C4 seeds 17.3 h, C0 runs about 15.8 and 15.3 h. Resume from checkpoint-3 into attempt 2 worked (`attempt1/` preserved, `resumed_from_step` 3); the two-attempt total was 4674 s, 2.59 USD at 1.99 USD/h.
+
+### Tier-1 chains (launched 2026-09-09)
+
+| droplet | account | credit at launch | chain | planned hours | planned USD at 1.99 |
+|---|---|---|---|---|---|
+| A (134.199.201.165) | friend 1 | 80 | t1-c4-paired-s0, t1-c0-clean-s0 | 33.6 | 67 |
+| B | friend 2 | 100 | t1-c4-independent-s0, t1-c4-paired-s1 | 35.1 | 70 |
+| C | own | 100 + 100 | t1-c4-independent-s1, t1-c4-paired-s2 | 34.6 | 69 |
+| D | own | (shared with C) | t1-c4-independent-s2, t1-c0-clean-s1 | 32.6 | 65 |
+
+Every chain leaves at least six hours of credit for collection with weights, verification and the copy to the archive droplet (D, destroyed last). The C4 pairs are compared within the provider; which droplet ran which seed is in the launch registers and the manifests (`hostname`).
+
 ## Before a droplet is destroyed
 
 ```
