@@ -73,6 +73,9 @@ def main() -> int:
     all_terminal = True
     for entry in register["entries"]:
         run_id, host, host_run_dir = entry["run_id"], entry["host"], entry["host_run_dir"]
+        if entry.get("cancelled_utc"):
+            print(f"{run_id}: CANCELLED before it started on {host} at {entry['cancelled_utc']} ({entry.get('cancelled_reason', '')})")
+            continue
         local_run_dir = pathlib.Path(args.runs_dir) / run_id
         if args.no_download:
             manifest = read_remote_manifest(host, host_run_dir)

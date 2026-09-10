@@ -14,6 +14,8 @@
     },
     {
       "call_id": "root@134.199.201.165:t1-c0-clean-s0",
+      "cancelled_reason": "queued start cancelled; C0 runs on Modal (DEVIATIONS 2026-09-09)",
+      "cancelled_utc": "2026-09-09T13:32:44+00:00",
       "container": "pairedrl",
       "host": "root@134.199.201.165",
       "host_run_dir": "/root/work/runs/t1-c0-clean-s0",
