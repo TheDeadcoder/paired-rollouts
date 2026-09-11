@@ -1,4 +1,5 @@
 import json
+import pathlib
 from collections import Counter
 
 import pytest
@@ -12,6 +13,9 @@ from pairedrl.train.runner import (
     assemble_eval_sets,
     assemble_training_rows,
     expected_eval_sizes,
+    expected_evidence,
+    final_step,
+    identity_counts,
     load_task_splits,
     luck_share_tables,
     luck_share_tables_by_phase,
@@ -19,6 +23,7 @@ from pairedrl.train.runner import (
     read_episode_log,
     summarize_episodes,
     summarize_groups,
+    task_pool_digests,
     training_group_records,
     vllm_engine_overrides,
 )
@@ -256,3 +261,38 @@ def test_expected_eval_sizes_match_assembled_sets_and_periodic_steps():
     assert periodic_steps(spec(steps=100, eval_every=20)) == [0, 20, 40, 60, 80, 100]
     assert periodic_steps(spec(steps=5, eval_every=2)) == [0, 2, 4, 5]
     assert periodic_steps(spec(eval_only=True)) == [] and periodic_steps(spec(train_only=True)) == []
+
+
+def test_expected_evidence_names_every_record_and_pool_digests_match_the_manifest(tmp_path):
+    s = spec(steps=4, prompts_per_step=3, num_generations=2, eval_every=2, eval_tasks=2, final_eval_tasks=2,
+             diagnostic_steps=[0, 4], diagnostic_schedules=2, diagnostic_samples=3)
+    evidence = expected_evidence(s, SPLITS)
+    sizes = expected_eval_sizes(s)
+    assert evidence["periodic_steps"] == [0, 2, 4] and evidence["final_step"] == 4 and evidence["diagnostic_steps"] == [0, 4]
+    assert {k: sum(v.values()) for k, v in evidence["periodic"].items()} == sizes["periodic"]
+    assert {k: sum(v.values()) for k, v in evidence["final"].items()} == sizes["final"]
+    assert evidence["diagnostic_tasks"] == 16 and set(evidence["diagnostic"].values()) == {3} and len(evidence["diagnostic"]) == 32
+    assert all(condition == "diag" for _, _, condition in evidence["diagnostic"])
+    rows = assemble_training_rows(s, SPLITS["train"])
+    assert len(evidence["training"]) == 4 and all(len(step) == 3 for step in evidence["training"])
+    assert evidence["training"][1][2] == (rows[5]["task_id"], rows[5]["schedule_seed"], "C2")
+    assert identity_counts(assemble_eval_sets(s, SPLITS["heldout"], final=False)["noisy"]) == evidence["periodic"]["noisy"]
+    assert all(condition == "eval:heldout_types" for _, _, condition in evidence["final"]["heldout_types"])
+    eval_only = expected_evidence(spec(eval_only=True, diagnostic_steps=[0, 50]), SPLITS)
+    assert eval_only["periodic"] == {} and eval_only["training"] == [] and eval_only["final_step"] == 0 and eval_only["diagnostic_steps"] == [0]
+    assert final_step(spec(eval_only=True)) == 0 and final_step(spec(steps=7)) == 7
+    train_only = expected_evidence(spec(train_only=True, steps=2, prompts_per_step=1), SPLITS)
+    assert train_only["final"] == {} and train_only["diagnostic_steps"] == [] and len(train_only["training"]) == 2
+    digests = task_pool_digests("data/tasks")
+    assert {k: v["count"] for k, v in digests.items()} == {"train": 2000, "heldout": 300, "diagnostic": 16, "test": 300}
+    assert all(v["match"] and v["sha256"] == v["manifest_sha256"] for v in digests.values())
+    other = tmp_path / "pools"
+    other.mkdir()
+    for name in ("train", "heldout", "diagnostic", "test", "MANIFEST"):
+        suffix = ".json" if name == "MANIFEST" else ".jsonl"
+        (other / f"{name}{suffix}").write_bytes(pathlib.Path("data/tasks", f"{name}{suffix}").read_bytes())
+    (other / "test.jsonl").write_text((other / "test.jsonl").read_text() + "\n")
+    tampered = task_pool_digests(other)
+    assert tampered["test"]["match"] is False and tampered["test"]["count"] == 300 and tampered["train"]["match"] is True
+    (other / "MANIFEST.json").unlink()
+    assert not any(v["match"] for v in task_pool_digests(other).values())

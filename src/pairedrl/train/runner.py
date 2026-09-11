@@ -1,10 +1,11 @@
 """Run specification, dataset assembly, trainer construction and evaluation orchestration."""
 
 import dataclasses
+import hashlib
 import json
 import pathlib
 import time
-from collections import defaultdict
+from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 
 from pairedrl.env.backoffice.tasks import Task, read_jsonl
@@ -60,6 +61,7 @@ class RunSpec:
     micro_batch: int = 2
     logprob_chunk: int = 1
     extend_previous: bool = False
+    relaunch_from_commit: str | None = None
     notes: str = ""
 
     def __post_init__(self):
@@ -191,6 +193,59 @@ def load_task_splits(data_dir) -> dict[str, list[Task]]:
     diagnostic: the luck-share tasks."""
     data_dir = pathlib.Path(data_dir)
     return {name: read_jsonl(data_dir / f"{name}.jsonl") for name in SPLITS}
+
+
+def task_pool_digests(data_dir) -> dict[str, dict]:
+    """SHA-256 of every split file against data/tasks/MANIFEST.json: the pools a run trained and evaluated on
+    are the frozen ones exactly when every `match` is true."""
+    data_dir = pathlib.Path(data_dir)
+    manifest_path = data_dir / "MANIFEST.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))["files"] if manifest_path.exists() else {}
+    out = {}
+    for name in SPLITS:
+        path = data_dir / f"{name}.jsonl"
+        digest = hashlib.sha256(path.read_bytes()).hexdigest() if path.exists() else None
+        expected = manifest.get(name, {}).get("sha256")
+        count = sum(1 for line in path.read_text(encoding="utf-8").splitlines() if line.strip()) if path.exists() else 0
+        out[name] = {"count": count, "sha256": digest, "manifest_sha256": expected, "match": digest is not None and digest == expected}
+    return out
+
+
+def final_step(spec: RunSpec) -> int:
+    """The trainer step stamped on the final evaluation phases: the last training step, or 0 for eval-only runs."""
+    return 0 if spec.eval_only else spec.steps
+
+
+def identity_counts(rows: list[dict]) -> Counter:
+    """Multiset of (task_id, schedule_seed, condition) over rows or episode records."""
+    return Counter((r["task_id"], int(r["schedule_seed"]), r.get("condition")) for r in rows)
+
+
+def expected_evidence(spec: RunSpec, splits: dict[str, list[Task]]) -> dict:
+    """The exact identities a complete run's logs must show, from the spec and the frozen pools: for every
+    periodic set the (task, schedule, condition) multiset evaluated at each registered step, for every final set
+    the multiset at the final step, for each diagnostic step the K schedules per diagnostic task with M records
+    each, and for every training step its `prompts_per_step` groups in trainer order (the dataset is not shuffled
+    and one generation batch is one optimizer step, so step s draws rows s * P to (s + 1) * P - 1)."""
+    periodic = assemble_eval_sets(spec, splits["heldout"], final=False) if periodic_steps(spec) else {}
+    final = assemble_eval_sets(spec, splits["test"], final=True) if not spec.train_only else {}
+    diag_steps = [s for s in spec.diagnostic_steps if s == 0 or not spec.eval_only] if not spec.train_only else []
+    diagnostic = assemble_diagnostic_rows(spec, splits["diagnostic"]) if diag_steps else []
+    train = assemble_training_rows(spec, splits["train"]) if not spec.eval_only else []
+    per_step = spec.prompts_per_step
+    return {
+        "periodic_steps": periodic_steps(spec),
+        "periodic": {name: identity_counts(rows) for name, rows in periodic.items()},
+        "final_step": final_step(spec),
+        "final": {name: identity_counts(rows) for name, rows in final.items()},
+        "diagnostic_steps": diag_steps,
+        "diagnostic": identity_counts(diagnostic),
+        "diagnostic_tasks": len(splits["diagnostic"]) if diag_steps else 0,
+        "training": [
+            [(r["task_id"], int(r["schedule_seed"]), r.get("condition")) for r in train[s * per_step:(s + 1) * per_step]]
+            for s in range(spec.steps if train else 0)
+        ],
+    }
 
 
 def summarize_episodes(records: list[dict]) -> dict:

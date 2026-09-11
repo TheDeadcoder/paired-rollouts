@@ -284,15 +284,25 @@ def pair_runs(runs: list[RunData]) -> list[tuple[RunData, RunData]]:
     return [(paired[s], independent[s]) for s in seeds]
 
 
-def decide(condition: str, run_dirs: list, n_boot: int = 10000, seed: int = 0) -> dict:
-    """Every registered rule that applies to `condition`, from accepted run directories, in one register."""
+def decide(condition: str, run_dirs: list, n_boot: int = 10000, seed: int = 0, data_dir=None) -> dict:
+    """Every registered rule that applies to `condition`, from run directories that pass the acceptance check
+    (COMPLETE, complete against the frozen pools, consistent across attempts), in one register."""
     from pairedrl.analysis.curves import run_register
 
     accepted = []
+    acceptance = {}
+    pools = None
     for d in run_dirs:
-        entry = run_register(d)
-        if entry["status"] != "COMPLETE" or not entry["completeness"]["complete"]:
-            raise ValueError(f"{d}: not accepted (status {entry['status']}, complete {entry['completeness']['complete']})")
+        entry = run_register(d, data_dir=data_dir)
+        consistency = entry["attempt_consistency"]
+        consistent = consistency["commits_consistent"] and consistency["model_consistent"] and consistency["task_pools_consistent"]
+        if entry["status"] != "COMPLETE" or not entry["completeness"]["complete"] or not consistent:
+            raise ValueError(
+                f"{d}: not accepted (status {entry['status']}, complete {entry['completeness']['complete']}, consistent {consistent})"
+            )
+        acceptance[entry["run_id"]] = {"attempts": len(entry["attempts"]), "commits": consistency["commits"],
+                                       "episodes": entry["completeness"]["episodes_found"]}
+        pools = entry["completeness"]["task_pools"]
         accepted.append(RunData(d))
     if any(r.spec.condition != condition for r in accepted):
         raise ValueError("every run must belong to the condition")
@@ -300,6 +310,8 @@ def decide(condition: str, run_dirs: list, n_boot: int = 10000, seed: int = 0) -
     out = {
         "condition": condition,
         "runs": [r.run_id for r in accepted],
+        "acceptance": acceptance,
+        "task_pools": {name: v["sha256"] for name, v in (pools or {}).items()},
         "seed_pairs": [[p.run_id, i.run_id] for p, i in pairs],
         "h1a": h1a(accepted, condition, n_boot, seed),
         "h2": h2(pairs, condition, n_boot, seed),

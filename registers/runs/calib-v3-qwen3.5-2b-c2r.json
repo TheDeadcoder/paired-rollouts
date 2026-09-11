@@ -1,10 +1,80 @@
 {
   "arm": "paired",
   "attempt": 1,
+  "attempt_consistency": {
+    "commit_changes": [],
+    "commits": [
+      "62caa40e84503377bf4ec9419ea8a3c26d1f0c25"
+    ],
+    "commits_consistent": true,
+    "model_commit_hashes": [
+      null
+    ],
+    "model_consistent": true,
+    "task_pools_consistent": true
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "deployed_commit": "62caa40e84503377bf4ec9419ea8a3c26d1f0c25",
+      "error": null,
+      "estimated_cost_usd": 8.13,
+      "git_commit": "62caa40e84503377bf4ec9419ea8a3c26d1f0c25",
+      "model_commit_hash": null,
+      "resumed_from_step": null,
+      "status": "COMPLETE",
+      "wall_time_s": 7408.8
+    }
+  ],
   "auc": {
     "challenge": null,
     "clean": null,
     "noisy": null
+  },
+  "checkpoints": null,
+  "completeness": {
+    "complete": true,
+    "diagnostic_missing": [],
+    "diagnostic_steps_expected": [
+      0
+    ],
+    "diagnostic_tasks": 16,
+    "episodes_expected": 5224,
+    "episodes_found": 5224,
+    "final_step_expected": 0,
+    "group_defects": [],
+    "identity_defects": [],
+    "periodic_and_final_missing": [],
+    "periodic_steps_expected": [],
+    "task_pools": {
+      "diagnostic": {
+        "count": 16,
+        "match": true,
+        "sha256": "43f82bdf1c6e5fc74beb3c05c8ac0ebb21fc60ee34787fd109ad64400430ef78"
+      },
+      "heldout": {
+        "count": 300,
+        "match": true,
+        "sha256": "9cceb1013563ebe47c6bde1f510ae12784724884aa10e47080800a89590121c7"
+      },
+      "test": {
+        "count": 300,
+        "match": true,
+        "sha256": "ce49f8bf9fe0ad8679106f92ce33ff7f0fa2b1c9ebc609b41754f2d727e7bb10"
+      },
+      "train": {
+        "count": 2000,
+        "match": true,
+        "sha256": "2bbec1c596afc8495933a59a35cc69fec0b75c22caa7ab42759f4f7a296828ae"
+      }
+    },
+    "task_pools_match": true,
+    "totals_match": true,
+    "training_groups_expected": 0,
+    "training_groups_found": 0,
+    "training_rollouts_expected": 0,
+    "training_rollouts_found": 0,
+    "unexpected_phases": {}
   },
   "condition": "C2r",
   "curves": {
@@ -132,6 +202,26 @@
     }
   },
   "git_commit": "62caa40e84503377bf4ec9419ea8a3c26d1f0c25",
+  "lineage": {
+    "episodes": [
+      {
+        "attempt": 1,
+        "cutoff_step": null,
+        "records": 5224,
+        "resumed_from_step": null,
+        "superseded": 0
+      }
+    ],
+    "groups": [
+      {
+        "attempt": 1,
+        "cutoff_step": null,
+        "records": 0,
+        "resumed_from_step": null,
+        "superseded": 0
+      }
+    ]
+  },
   "loss_type": "dapo",
   "luck_share": {
     "diag:step0": {
@@ -158,6 +248,8 @@
   "steps_to_threshold": null,
   "threshold": 0.617,
   "timing": {},
+  "total_estimated_cost_usd": 8.13,
+  "total_wall_time_s": 7408.8,
   "training_curve": [],
   "training_groups": {},
   "versions": {

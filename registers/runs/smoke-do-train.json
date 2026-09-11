@@ -1,21 +1,39 @@
 {
   "arm": "paired",
   "attempt": 2,
+  "attempt_consistency": {
+    "commit_changes": [],
+    "commits": [
+      "d888dabb71eba12a515c773a39e8e03169ea0eee",
+      "d888dabb71eba12a515c773a39e8e03169ea0eee"
+    ],
+    "commits_consistent": true,
+    "model_commit_hashes": [
+      "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "15852e8c16360a2fea060d615a32b45270f8a8fc"
+    ],
+    "model_consistent": true,
+    "task_pools_consistent": true
+  },
   "attempts": [
     {
       "attempt": 1,
+      "deployed_commit": "d888dabb71eba12a515c773a39e8e03169ea0eee",
       "error": null,
       "estimated_cost_usd": 1.45,
       "git_commit": "d888dabb71eba12a515c773a39e8e03169ea0eee",
+      "model_commit_hash": "15852e8c16360a2fea060d615a32b45270f8a8fc",
       "resumed_from_step": null,
       "status": "COMPLETE",
       "wall_time_s": 2620.4
     },
     {
       "attempt": 2,
+      "deployed_commit": "d888dabb71eba12a515c773a39e8e03169ea0eee",
       "error": null,
       "estimated_cost_usd": 1.14,
       "git_commit": "d888dabb71eba12a515c773a39e8e03169ea0eee",
+      "model_commit_hash": "15852e8c16360a2fea060d615a32b45270f8a8fc",
       "resumed_from_step": 3,
       "status": "COMPLETE",
       "wall_time_s": 2053.5
@@ -34,53 +52,51 @@
     "diagnostic_tasks": 0,
     "episodes_expected": 1368,
     "episodes_found": 1536,
-    "periodic_and_final_missing": [
-      {
-        "expected": 32,
-        "found": 64,
-        "set": "final_clean",
-        "step": 5
-      },
-      {
-        "expected": 32,
-        "found": 64,
-        "set": "final_noisy_p010",
-        "step": 5
-      },
-      {
-        "expected": 32,
-        "found": 64,
-        "set": "final_noisy_p025",
-        "step": 5
-      },
-      {
-        "expected": 32,
-        "found": 64,
-        "set": "final_heldout_types",
-        "step": 5
-      },
-      {
-        "expected": 32,
-        "found": 64,
-        "set": "final_at_training",
-        "step": 5
-      },
-      {
-        "expected": 8,
-        "found": 16,
-        "set": "final_challenge",
-        "step": 5
-      }
-    ],
+    "final_step_expected": 5,
+    "group_defects": [],
+    "identity_defects": [],
+    "periodic_and_final_missing": [],
     "periodic_steps_expected": [
       0,
       3,
       5
     ],
+    "task_pools": {
+      "diagnostic": {
+        "count": 16,
+        "match": true,
+        "sha256": "43f82bdf1c6e5fc74beb3c05c8ac0ebb21fc60ee34787fd109ad64400430ef78"
+      },
+      "heldout": {
+        "count": 300,
+        "match": true,
+        "sha256": "9cceb1013563ebe47c6bde1f510ae12784724884aa10e47080800a89590121c7"
+      },
+      "test": {
+        "count": 300,
+        "match": true,
+        "sha256": "ce49f8bf9fe0ad8679106f92ce33ff7f0fa2b1c9ebc609b41754f2d727e7bb10"
+      },
+      "train": {
+        "count": 2000,
+        "match": true,
+        "sha256": "2bbec1c596afc8495933a59a35cc69fec0b75c22caa7ab42759f4f7a296828ae"
+      }
+    },
+    "task_pools_match": true,
+    "totals_match": false,
     "training_groups_expected": 120,
     "training_groups_found": 120,
     "training_rollouts_expected": 960,
-    "training_rollouts_found": 960
+    "training_rollouts_found": 960,
+    "unexpected_phases": {
+      "final_at_training:step3": 32,
+      "final_challenge:step3": 8,
+      "final_clean:step3": 32,
+      "final_heldout_types:step3": 32,
+      "final_noisy_p010:step3": 32,
+      "final_noisy_p025:step3": 32
+    }
   },
   "condition": "C4",
   "curves": {

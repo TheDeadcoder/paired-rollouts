@@ -1,12 +1,26 @@
 {
   "arm": "paired",
   "attempt": 1,
+  "attempt_consistency": {
+    "commit_changes": [],
+    "commits": [
+      "c9a2c4b9372c45429810b62d8c27304eb3f9dec9"
+    ],
+    "commits_consistent": true,
+    "model_commit_hashes": [
+      "15852e8c16360a2fea060d615a32b45270f8a8fc"
+    ],
+    "model_consistent": true,
+    "task_pools_consistent": true
+  },
   "attempts": [
     {
       "attempt": 1,
+      "deployed_commit": "c9a2c4b9372c45429810b62d8c27304eb3f9dec9",
       "error": null,
       "estimated_cost_usd": 60.73,
       "git_commit": "c9a2c4b9372c45429810b62d8c27304eb3f9dec9",
+      "model_commit_hash": "15852e8c16360a2fea060d615a32b45270f8a8fc",
       "resumed_from_step": null,
       "status": "COMPLETE",
       "wall_time_s": 55351.7
@@ -28,6 +42,9 @@
     "diagnostic_tasks": 16,
     "episodes_expected": 26568,
     "episodes_found": 26568,
+    "final_step_expected": 100,
+    "group_defects": [],
+    "identity_defects": [],
     "periodic_and_final_missing": [],
     "periodic_steps_expected": [
       0,
@@ -37,10 +54,35 @@
       80,
       100
     ],
+    "task_pools": {
+      "diagnostic": {
+        "count": 16,
+        "match": true,
+        "sha256": "43f82bdf1c6e5fc74beb3c05c8ac0ebb21fc60ee34787fd109ad64400430ef78"
+      },
+      "heldout": {
+        "count": 300,
+        "match": true,
+        "sha256": "9cceb1013563ebe47c6bde1f510ae12784724884aa10e47080800a89590121c7"
+      },
+      "test": {
+        "count": 300,
+        "match": true,
+        "sha256": "ce49f8bf9fe0ad8679106f92ce33ff7f0fa2b1c9ebc609b41754f2d727e7bb10"
+      },
+      "train": {
+        "count": 2000,
+        "match": true,
+        "sha256": "2bbec1c596afc8495933a59a35cc69fec0b75c22caa7ab42759f4f7a296828ae"
+      }
+    },
+    "task_pools_match": true,
+    "totals_match": true,
     "training_groups_expected": 2400,
     "training_groups_found": 2400,
     "training_rollouts_expected": 19200,
-    "training_rollouts_found": 19200
+    "training_rollouts_found": 19200,
+    "unexpected_phases": {}
   },
   "condition": "C2",
   "curves": {

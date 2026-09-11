@@ -1,4 +1,48 @@
 {
+  "acceptance": {
+    "gate1-c2-paired-s0": {
+      "attempts": 1,
+      "commits": [
+        "62caa40e84503377bf4ec9419ea8a3c26d1f0c25"
+      ],
+      "episodes": 27592
+    },
+    "t1-c2-independent-s0": {
+      "attempts": 1,
+      "commits": [
+        "c84a890a122f5b5691c4b859e29b609461880449"
+      ],
+      "episodes": 27592
+    },
+    "t1-c2-independent-s1": {
+      "attempts": 1,
+      "commits": [
+        "c9a2c4b9372c45429810b62d8c27304eb3f9dec9"
+      ],
+      "episodes": 26568
+    },
+    "t1-c2-independent-s2": {
+      "attempts": 1,
+      "commits": [
+        "c9a2c4b9372c45429810b62d8c27304eb3f9dec9"
+      ],
+      "episodes": 26568
+    },
+    "t1-c2-paired-s1": {
+      "attempts": 1,
+      "commits": [
+        "c9a2c4b9372c45429810b62d8c27304eb3f9dec9"
+      ],
+      "episodes": 26568
+    },
+    "t1-c2-paired-s2": {
+      "attempts": 1,
+      "commits": [
+        "c9a2c4b9372c45429810b62d8c27304eb3f9dec9"
+      ],
+      "episodes": 26568
+    }
+  },
   "condition": "C2",
   "h1a": {
     "condition": "C2",
@@ -284,5 +328,11 @@
       "t1-c2-paired-s2",
       "t1-c2-independent-s2"
     ]
-  ]
+  ],
+  "task_pools": {
+    "diagnostic": "43f82bdf1c6e5fc74beb3c05c8ac0ebb21fc60ee34787fd109ad64400430ef78",
+    "heldout": "9cceb1013563ebe47c6bde1f510ae12784724884aa10e47080800a89590121c7",
+    "test": "ce49f8bf9fe0ad8679106f92ce33ff7f0fa2b1c9ebc609b41754f2d727e7bb10",
+    "train": "2bbec1c596afc8495933a59a35cc69fec0b75c22caa7ab42759f4f7a296828ae"
+  }
 }

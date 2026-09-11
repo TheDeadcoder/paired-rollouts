@@ -8,6 +8,8 @@ import sys
 import pytest
 
 from pairedrl.ops.job import (
+    checkpoint_defects,
+    commit_named,
     count_lines,
     is_complete_checkpoint,
     list_checkpoints,
@@ -64,11 +66,13 @@ def test_remote_command_builders():
 
 
 def make_checkpoint(path, complete=True):
+    """The files the pinned trainer writes for a LoRA checkpoint, in its order; an interrupted save stops before
+    trainer_state.json."""
     path.mkdir(parents=True)
-    (path / "adapter_model.safetensors").write_text("w")
-    (path / "optimizer.pt").write_text("o")
+    for name in ("adapter_config.json", "adapter_model.safetensors", "optimizer.pt", "scheduler.pt", "rng_state.pth"):
+        (path / name).write_text("x")
     if complete:
-        (path / "trainer_state.json").write_text("{}")
+        (path / "trainer_state.json").write_text(json.dumps({"global_step": int(path.name.split("-")[1])}))
 
 
 def test_preserve_previous_attempt_moves_state_and_finds_the_newest_complete_checkpoint(tmp_path):
@@ -80,6 +84,11 @@ def test_preserve_previous_attempt_moves_state_and_finds_the_newest_complete_che
     make_checkpoint(tmp_path / "trainer" / "checkpoint-100", complete=False)
     (tmp_path / "trainer" / "checkpoint-60").mkdir()
     assert is_complete_checkpoint(tmp_path / "trainer" / "checkpoint-80") and not is_complete_checkpoint(tmp_path / "trainer" / "checkpoint-100")
+    assert checkpoint_defects(tmp_path / "trainer" / "checkpoint-100") == ["trainer_state.json missing"]
+    assert checkpoint_defects(tmp_path / "trainer" / "checkpoint-60") == ["no weights", "optimizer.pt missing", "scheduler.pt missing", "rng_state missing", "trainer_state.json missing"]
+    (tmp_path / "trainer" / "checkpoint-20" / "optimizer.pt").unlink()
+    assert checkpoint_defects(tmp_path / "trainer" / "checkpoint-20") == ["optimizer.pt missing"]
+    (tmp_path / "trainer" / "checkpoint-20" / "optimizer.pt").write_text("x")
     complete, incomplete = list_checkpoints(tmp_path / "trainer")
     assert [c.name for c in complete] == ["checkpoint-20", "checkpoint-80"] and [c.name for c in incomplete] == ["checkpoint-60", "checkpoint-100"]
     attempt, checkpoint = preserve_previous_attempt(tmp_path)
@@ -91,20 +100,32 @@ def test_preserve_previous_attempt_moves_state_and_finds_the_newest_complete_che
 
 def test_refusal_reasons_leave_the_run_directory_untouched(tmp_path):
     spec = RunSpec(run_id="r", model="m", condition="C2", arm="paired", p=0.25, steps=100)
-    assert refusal_reason(spec, tmp_path, "abc", "abc") is None
-    assert "provenance" in refusal_reason(spec, tmp_path, "abc-dirty", "abc-dirty")
-    assert "provenance" in refusal_reason(spec, tmp_path, "abc", "def")
-    manifest = {"run_id": "r", "status": "FAILED", "attempt": 1, "spec": spec.to_dict()}
+    pools = {"train": {"sha256": "t1"}, "heldout": {"sha256": "h1"}}
+    assert refusal_reason(spec, tmp_path, "abc1234", "abc1234", pools) is None
+    assert "provenance" in refusal_reason(spec, tmp_path, "abc1234-dirty", "abc1234-dirty")
+    assert "provenance" in refusal_reason(spec, tmp_path, "abc1234", "def5678")
+    manifest = {"run_id": "r", "status": "FAILED", "attempt": 1, "spec": spec.to_dict(), "git_commit": "abc1234",
+                "deployed_commit": "abc1234", "task_pools": pools}
     (tmp_path / "run_manifest.json").write_text(json.dumps(manifest))
     (tmp_path / "episodes.jsonl").write_text("{}\n")
-    assert refusal_reason(spec, tmp_path, "abc", "abc") is None
+    assert refusal_reason(spec, tmp_path, "abc1234", "abc1234", pools) is None
     changed = RunSpec(run_id="r", model="m", condition="C2", arm="paired", p=0.25, steps=100, learning_rate=2e-5)
-    assert "different spec" in refusal_reason(changed, tmp_path, "abc", "abc") and "learning_rate" in refusal_reason(changed, tmp_path, "abc", "abc")
+    assert "different spec" in refusal_reason(changed, tmp_path, "abc1234", "abc1234") and "learning_rate" in refusal_reason(changed, tmp_path, "abc1234", "abc1234")
+    # a relaunch at another commit must name the previous attempt's commit; the pools may never differ
+    across = refusal_reason(spec, tmp_path, "def5678", "def5678", pools)
+    assert "attempt 1 ran at commit 'abc1234'" in across and "relaunch_from_commit" in across
+    named = RunSpec(run_id="r", model="m", condition="C2", arm="paired", p=0.25, steps=100, relaunch_from_commit="abc1234")
+    assert refusal_reason(named, tmp_path, "def5678", "def5678", pools) is None
+    wrong = RunSpec(run_id="r", model="m", condition="C2", arm="paired", p=0.25, steps=100, relaunch_from_commit="0000000")
+    assert "relaunch_from_commit" in refusal_reason(wrong, tmp_path, "def5678", "def5678", pools)
+    other_pools = {"train": {"sha256": "t2"}, "heldout": {"sha256": "h1"}}
+    assert "task pools ['train'] differ from attempt 1's" in refusal_reason(spec, tmp_path, "abc1234", "abc1234", other_pools)
+    assert commit_named("abc1234", "abc1234def") and commit_named("abc1234def", "abc1234") and not commit_named("abc", "abc1234") and not commit_named(None, "abc1234")
     (tmp_path / "run_manifest.json").write_text(json.dumps(dict(manifest, status="COMPLETE")))
-    assert "already COMPLETE" in refusal_reason(spec, tmp_path, "abc", "abc")
+    assert "already COMPLETE" in refusal_reason(spec, tmp_path, "abc1234", "abc1234")
     extension = RunSpec(run_id="r", model="m", condition="C2", arm="paired", p=0.25, steps=120, extend_previous=True)
-    assert refusal_reason(extension, tmp_path, "abc", "abc") is None
-    record = write_refusal(spec, tmp_path, "already COMPLETE", "abc", "abc", "digitalocean")
+    assert refusal_reason(extension, tmp_path, "abc1234", "abc1234") is None
+    record = write_refusal(spec, tmp_path, "already COMPLETE", "abc1234", "abc1234", "digitalocean")
     assert record["status"] == "REFUSED" and record["error"] == "already COMPLETE"
     refused = list((tmp_path / "refused").glob("*.json"))
     assert len(refused) == 1 and json.loads(refused[0].read_text())["run_id"] == "r"

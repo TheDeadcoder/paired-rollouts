@@ -2,10 +2,10 @@
 register.
 
     python scripts/decide.py --condition C2 --runs outputs/runs/gate1-c2-paired-s0 outputs/runs/t1-c2-independent-s0 ... \
-        --out registers/decisions/tier1_c2.json [--boot 10000] [--seed 20260911]
+        --out registers/decisions/tier1_c2.json [--boot 10000] [--seed 20260911] [--data-dir data/tasks]
 
-Every run must be COMPLETE and complete (verify_run ACCEPT); the rules are applied exactly as registered and the
-outcome, pass or miss, is written as is.
+Every run must be COMPLETE, complete against the frozen pools and consistent across attempts (verify_run ACCEPT);
+the rules are applied exactly as registered and the outcome, pass or miss, is written as is.
 """
 
 import argparse
@@ -20,8 +20,9 @@ def main() -> None:
     parser.add_argument("--out", required=True)
     parser.add_argument("--boot", type=int, default=10000)
     parser.add_argument("--seed", type=int, default=20260911)
+    parser.add_argument("--data-dir", default="data/tasks")
     args = parser.parse_args()
-    decision = decide(args.condition, args.runs, n_boot=args.boot, seed=args.seed)
+    decision = decide(args.condition, args.runs, n_boot=args.boot, seed=args.seed, data_dir=args.data_dir)
     write_decision(decision, args.out)
     print(format_decision(decision))
     print(f"wrote {args.out}")

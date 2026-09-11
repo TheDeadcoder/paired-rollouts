@@ -18,6 +18,11 @@ STATE_FILES = ("run_manifest.json", "summary.json", "trainer_log_history.json", 
 VERSION_PACKAGES = ["torch", "transformers", "trl", "vllm", "peft", "flash-linear-attention"]
 CHECKPOINT_MARKER = "trainer_state.json"
 ADAPTER_FILES = ("adapter_model.safetensors", "adapter_model.bin", "model.safetensors", "pytorch_model.bin")
+ADAPTER_CONFIG = "adapter_config.json"
+CHECKPOINT_STATE_FILES = ("optimizer.pt", "scheduler.pt")
+RNG_FILE = "rng_state.pth"
+RELAUNCH_FIELDS = ("relaunch_from_commit",)
+MIN_COMMIT_PREFIX = 7
 
 
 def utc_now() -> str:
@@ -35,10 +40,39 @@ def checkpoint_step(path: pathlib.Path) -> int:
     return int(path.name.split("-")[1])
 
 
+def checkpoint_defects(path: pathlib.Path) -> list[str]:
+    """Why a checkpoint directory cannot be resumed from or archived as complete. The pinned trainer saves the
+    adapter (with its config), optimizer.pt, scheduler.pt and rng_state.pth, then trainer_state.json last, so an
+    interrupted save lacks the marker; a transferred or pruned copy can lack any file, and resuming without the
+    optimizer state would silently restart Adam at the recorded step. The marker must parse and its global_step
+    must be the directory's step."""
+    defects = []
+    weights = [f for f in ADAPTER_FILES if (path / f).exists()]
+    if not weights:
+        defects.append("no weights")
+    elif weights[0].startswith("adapter_") and not (path / ADAPTER_CONFIG).exists():
+        defects.append(f"{ADAPTER_CONFIG} missing")
+    defects.extend(f"{name} missing" for name in CHECKPOINT_STATE_FILES if not (path / name).exists())
+    if not (path / RNG_FILE).exists() and not list(path.glob("rng_state_*.pth")):
+        defects.append("rng_state missing")
+    marker = path / CHECKPOINT_MARKER
+    if not marker.exists():
+        defects.append(f"{CHECKPOINT_MARKER} missing")
+    else:
+        try:
+            state = json.loads(marker.read_text(encoding="utf-8"))
+            step = int(state.get("global_step"))
+        except (ValueError, TypeError, OSError):
+            defects.append(f"{CHECKPOINT_MARKER} unreadable or without global_step")
+        else:
+            expected = checkpoint_step(path)
+            if step != expected:
+                defects.append(f"global_step {step} != {expected}")
+    return defects
+
+
 def is_complete_checkpoint(path: pathlib.Path) -> bool:
-    """The trainer writes `trainer_state.json` last, after the adapter, optimizer, scheduler and RNG files; a
-    directory without it (or without adapter weights) is an interrupted save and is never resumed from."""
-    return (path / CHECKPOINT_MARKER).exists() and any((path / f).exists() for f in ADAPTER_FILES)
+    return not checkpoint_defects(path)
 
 
 def list_checkpoints(trainer_dir: pathlib.Path) -> tuple[list[pathlib.Path], list[pathlib.Path]]:
@@ -71,23 +105,52 @@ def preserve_previous_attempt(out_dir: pathlib.Path) -> tuple[int, pathlib.Path 
     return n + 1, newest_complete_checkpoint(out_dir / "trainer")
 
 
-def refusal_reason(spec: RunSpec, out_dir: pathlib.Path, git_commit: str, deployed_commit: str) -> str | None:
+def commit_named(named: str | None, actual: str | None) -> bool:
+    """Whether `named` (a full hash or a prefix of at least MIN_COMMIT_PREFIX characters) designates `actual`."""
+    if not named or not actual or len(named) < MIN_COMMIT_PREFIX:
+        return False
+    return actual.startswith(named) or named.startswith(actual)
+
+
+def pool_hashes(task_pools: dict | None) -> dict[str, str | None]:
+    return {name: (v or {}).get("sha256") for name, v in (task_pools or {}).items()}
+
+
+def refusal_reason(
+    spec: RunSpec, out_dir: pathlib.Path, git_commit: str, deployed_commit: str, task_pools: dict | None = None
+) -> str | None:
     """Why this invocation must not touch the run directory: a launch commit that is not the code's own, a repeat
-    of a COMPLETE run, or a relaunch under a run id whose previous attempt had a different spec. A spec with
-    `extend_previous` (smoke tests of the resume path) may continue a completed or differently specified run."""
+    of a COMPLETE run, a relaunch under a run id whose previous attempt had a different spec, a relaunch at a
+    different commit than the previous attempt unless the spec names that commit in `relaunch_from_commit` (an
+    infrastructure-only change recorded in docs/DEVIATIONS.md), or task pools that differ from the previous
+    attempt's. A spec with `extend_previous` (smoke tests of the resume path) may continue a completed or
+    differently specified run."""
     if git_commit != deployed_commit or git_commit.endswith("-dirty"):
         return f"provenance: launched with commit {git_commit!r} but the code is at {deployed_commit!r}"
     manifest_path = out_dir / "run_manifest.json"
     if not manifest_path.exists() or spec.extend_previous:
         return None
     previous = json.loads(manifest_path.read_text(encoding="utf-8"))
+    attempt = previous.get("attempt")
     if previous.get("status") == "COMPLETE":
-        return f"{spec.run_id} is already COMPLETE (attempt {previous.get('attempt')}); a repeat needs a new run id"
+        return f"{spec.run_id} is already COMPLETE (attempt {attempt}); a repeat needs a new run id"
     previous_spec = RunSpec.from_dict(previous["spec"]).to_dict()
     current = spec.to_dict()
-    changed = sorted(k for k in set(previous_spec) | set(current) if previous_spec.get(k) != current.get(k))
+    changed = sorted(
+        k for k in set(previous_spec) | set(current) if previous_spec.get(k) != current.get(k) and k not in RELAUNCH_FIELDS
+    )
     if changed:
         return f"{spec.run_id}: relaunched with a different spec (fields {changed}); a different protocol needs a new run id"
+    previous_commit = previous.get("deployed_commit") or previous.get("git_commit")
+    if previous_commit and previous_commit != deployed_commit and not commit_named(spec.relaunch_from_commit, previous_commit):
+        return (
+            f"{spec.run_id}: attempt {attempt} ran at commit {previous_commit!r} and this launch is at {deployed_commit!r}; "
+            f"a relaunch across commits must name the previous commit in relaunch_from_commit"
+        )
+    previous_pools = pool_hashes(previous.get("task_pools"))
+    if task_pools is not None and previous_pools and previous_pools != pool_hashes(task_pools):
+        differing = sorted(k for k in set(previous_pools) | set(pool_hashes(task_pools)) if previous_pools.get(k) != pool_hashes(task_pools).get(k))
+        return f"{spec.run_id}: task pools {differing} differ from attempt {attempt}'s; the frozen pools are part of the protocol"
     return None
 
 
@@ -158,11 +221,13 @@ def run_job(
         read_episode_log,
         summarize_episodes,
         summarize_groups,
+        task_pool_digests,
     )
 
     out_dir = pathlib.Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    reason = refusal_reason(spec, out_dir, git_commit, deployed_commit)
+    task_pools = task_pool_digests(data_dir)
+    reason = refusal_reason(spec, out_dir, git_commit, deployed_commit, task_pools)
     if reason is not None:
         record = write_refusal(spec, out_dir, reason, git_commit, deployed_commit, provider)
         if commit_fn is not None:
@@ -185,6 +250,8 @@ def run_job(
         "resumed_from_checkpoint": str(checkpoint) if checkpoint else None,
         "resumed_from_step": checkpoint_step(checkpoint) if checkpoint else None,
         "incomplete_checkpoints_skipped": [c.name for c in incomplete],
+        "incomplete_checkpoint_defects": {c.name: checkpoint_defects(c) for c in incomplete},
+        "task_pools": task_pools,
         "started_utc": utc_now(),
         "hostname": socket.gethostname(),
         "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,

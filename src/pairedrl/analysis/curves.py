@@ -1,22 +1,27 @@
 """Learning curves, areas and the per-run register built from a run directory (manifest, episodes, groups), with
-the accepted lineage across attempts and an explicit completeness check against the spec."""
+the accepted lineage across attempts and an explicit completeness check against the spec and the frozen task
+pools: exact evaluation, diagnostic and training identities, not counts alone."""
 
 import json
 import pathlib
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 from pairedrl.analysis.diagnostics import luck_share_over_tasks, luck_share_pooled
 from pairedrl.train.runner import (
     RunSpec,
     expected_eval_sizes,
+    expected_evidence,
+    identity_counts,
+    load_task_splits,
     luck_share_tables_by_phase,
-    periodic_steps,
     read_episode_log,
     summarize_episodes,
     summarize_groups,
+    task_pool_digests,
 )
 
 PERIODIC_SETS = ("clean", "noisy", "challenge")
+DEFAULT_DATA_DIR = pathlib.Path(__file__).resolve().parents[3] / "data" / "tasks"
 
 
 def _phase_step(phase: str) -> int | None:
@@ -193,58 +198,117 @@ def step_timing_summary(timings: list[dict]) -> dict:
     }
 
 
-def completeness(spec: RunSpec, records: list[dict], groups: list[dict], curves: dict, luck: dict) -> dict:
-    """What a complete run must contain, from the spec alone, against what the lineage holds: every periodic set
-    at every registered step with its full episode count, every final set, every diagnostic phase with K x M
-    samples per task, and all training groups. Job status says the process ended; this says the evidence is whole."""
+def _multiset_diff(expected: Counter, found: Counter) -> tuple[int, int]:
+    return sum((expected - found).values()), sum((found - expected).values())
+
+
+def _group_defects(spec: RunSpec, groups: list[dict], evidence: dict) -> list[dict]:
+    """Every training step must hold groups 0 to P - 1, each on the task and schedule of its row in trainer order,
+    with `num_generations` members; groups at steps outside the plan are defects too."""
+    by_step: dict[int, dict[int, dict]] = defaultdict(dict)
+    duplicates = []
+    for g in groups:
+        if g.get("group") in by_step[g.get("step")]:
+            duplicates.append({"step": g.get("step"), "defect": f"group {g.get('group')} recorded twice"})
+        by_step[g.get("step")][g.get("group")] = g
+    defects = list(duplicates)
+    planned = evidence["training"]
+    for step, expected in enumerate(planned):
+        found = by_step.get(step, {})
+        if sorted(found) != list(range(len(expected))):
+            defects.append({"step": step, "defect": f"groups {sorted(found)} instead of 0..{len(expected) - 1}"})
+        for g, (task_id, schedule_seed, condition) in enumerate(expected):
+            record = found.get(g)
+            if record is None:
+                continue
+            if record.get("task_id") != task_id or int(record.get("schedule_seed", -1)) != schedule_seed or record.get("condition") != condition:
+                defects.append({"step": step, "defect": f"group {g} is {record.get('task_id')}/{record.get('schedule_seed')}/{record.get('condition')}, expected {task_id}/{schedule_seed}/{condition}"})
+            sizes = {len(record.get(k, [])) for k in ("true_success", "observed_reward", "advantages")}
+            if sizes != {spec.num_generations}:
+                defects.append({"step": step, "defect": f"group {g} has member counts {sorted(sizes)}, expected {spec.num_generations}"})
+    for step in sorted((s for s in by_step if not isinstance(s, int) or s < 0 or s >= len(planned)), key=str):
+        defects.append({"step": step, "defect": f"{len(by_step[step])} groups at a step outside the plan"})
+    return defects
+
+
+def completeness(spec: RunSpec, records: list[dict], groups: list[dict], luck: dict, evidence: dict, pools: dict) -> dict:
+    """What a complete run must contain, from the spec and the frozen pools, against what the lineage holds: every
+    periodic set at every registered step and every final set at the final step with exactly the expected
+    (task, schedule, condition) records, every diagnostic step with the frozen diagnostic tasks under K schedules
+    and M samples each, every training step with its groups and rollouts in trainer order, no phase outside that
+    plan, exact totals, and pool files whose hashes match the manifest. Job status says the process ended; this
+    says the evidence is whole and is the evidence the protocol asked for."""
     sizes = expected_eval_sizes(spec)
-    missing = []
-    for name, expected in sizes["periodic"].items():
-        found = {p["step"]: p["n"] for p in curves.get(name, [])}
-        for step in periodic_steps(spec):
-            if found.get(step) != expected:
-                missing.append({"set": f"eval_{name}", "step": step, "found": found.get(step, 0), "expected": expected})
-    final_found = {}
+    by_phase: dict[str, list[dict]] = defaultdict(list)
     for r in records:
-        phase = r.get("phase", "")
-        if phase.startswith("final_"):
-            final_found[phase.split(":", 1)[0][len("final_"):]] = final_found.get(phase.split(":", 1)[0][len("final_"):], 0) + 1
-    if not spec.train_only:
-        for name, expected in sizes["final"].items():
-            if final_found.get(name, 0) != expected:
-                missing.append({"set": f"final_{name}", "step": spec.steps, "found": final_found.get(name, 0), "expected": expected})
-    diag_steps = [s for s in spec.diagnostic_steps if s == 0 or not spec.eval_only]
+        by_phase[r.get("phase", "")].append(r)
+    missing = []
+    identity = []
+    expected_phases = set()
+
+    def check(phase: str, expected: Counter, label: str, step: int, expected_n: int) -> None:
+        expected_phases.add(phase)
+        found = identity_counts(by_phase.get(phase, []))
+        n_found = sum(found.values())
+        if n_found != expected_n:
+            missing.append({"set": label, "step": step, "found": n_found, "expected": expected_n})
+        miss, extra = _multiset_diff(expected, found)
+        if miss or extra:
+            identity.append({"phase": phase, "missing": miss, "extra": extra})
+
+    for step in evidence["periodic_steps"]:
+        for name, expected in evidence["periodic"].items():
+            check(f"eval_{name}:step{step}", expected, f"eval_{name}", step, sizes["periodic"][name])
+    for name, expected in evidence["final"].items():
+        check(f"final_{name}:step{evidence['final_step']}", expected, f"final_{name}", evidence["final_step"], sizes["final"][name])
+    diag_steps = evidence["diagnostic_steps"]
     diag_missing = []
     for step in diag_steps:
         phase = f"diag:step{step}"
+        check(phase, evidence["diagnostic"], "diag", step, sum(evidence["diagnostic"].values()))
         info = luck.get(phase)
         if info is None or info.get("defect"):
             diag_missing.append({"phase": phase, "found": (info or {}).get("tasks", 0), "defect": (info or {}).get("defect", "absent")})
-    expected_groups = 0 if spec.eval_only else spec.steps * spec.prompts_per_step
-    expected_rollouts = expected_groups * spec.num_generations
+    for step, expected_groups in enumerate(evidence["training"]):
+        expected = Counter()
+        for key in expected_groups:
+            expected[key] += spec.num_generations
+        check(f"train:step{step}", expected, "train", step, len(expected_groups) * spec.num_generations)
+    unexpected = {phase: len(recs) for phase, recs in sorted(by_phase.items()) if phase not in expected_phases}
+    group_defects = _group_defects(spec, groups, evidence)
+    expected_groups_n = sum(len(g) for g in evidence["training"])
+    expected_rollouts = expected_groups_n * spec.num_generations
     training_rollouts = sum(1 for r in records if r.get("phase", "").startswith("train"))
-    diag_tasks = max((info.get("tasks", 0) for info in luck.values()), default=0)
-    expected_diag = diag_tasks * spec.diagnostic_schedules * spec.diagnostic_samples * len(diag_steps)
+    expected_diag = sum(evidence["diagnostic"].values()) * len(diag_steps)
+    pools_match = bool(pools) and all(v.get("match") for v in pools.values())
     out = {
-        "periodic_steps_expected": periodic_steps(spec),
+        "periodic_steps_expected": list(evidence["periodic_steps"]),
         "periodic_and_final_missing": missing,
-        "diagnostic_steps_expected": diag_steps,
-        "diagnostic_tasks": diag_tasks,
+        "identity_defects": identity,
+        "unexpected_phases": unexpected,
+        "final_step_expected": evidence["final_step"],
+        "diagnostic_steps_expected": list(diag_steps),
+        "diagnostic_tasks": evidence["diagnostic_tasks"],
         "diagnostic_missing": diag_missing,
-        "training_groups_expected": expected_groups,
+        "group_defects": group_defects,
+        "training_groups_expected": expected_groups_n,
         "training_groups_found": len(groups),
         "training_rollouts_expected": expected_rollouts,
         "training_rollouts_found": training_rollouts,
         "episodes_expected": (
-            sum(sizes["periodic"].values()) * len(periodic_steps(spec))
-            + (0 if spec.train_only else sum(sizes["final"].values()))
+            sum(sizes["periodic"].values()) * len(evidence["periodic_steps"])
+            + sum(sizes["final"][name] for name in evidence["final"])
             + expected_diag
             + expected_rollouts
         ),
         "episodes_found": len(records),
+        "task_pools": {name: {"count": v["count"], "sha256": v["sha256"], "match": v["match"]} for name, v in pools.items()},
+        "task_pools_match": pools_match,
     }
+    out["totals_match"] = out["episodes_found"] == out["episodes_expected"] and len(groups) == expected_groups_n
     out["complete"] = (
-        not missing and not diag_missing and len(groups) == expected_groups and training_rollouts == expected_rollouts
+        not missing and not identity and not unexpected and not diag_missing and not group_defects
+        and out["totals_match"] and pools_match
     )
     return out
 
@@ -263,8 +327,9 @@ def luck_by_phase_strict(records: list[dict], spec: RunSpec) -> dict:
 
 
 def checkpoint_inventory(run_dir, spec: RunSpec) -> dict | None:
-    """Which trainer checkpoints exist and are complete, when the weights were collected (None otherwise)."""
-    from pairedrl.ops.job import list_checkpoints
+    """Which trainer checkpoints exist and are complete (adapter with config, optimizer, scheduler, RNG state and a
+    parseable trainer_state.json at the directory's step), when the weights were collected (None otherwise)."""
+    from pairedrl.ops.job import ADAPTER_CONFIG, checkpoint_defects, list_checkpoints
 
     trainer = pathlib.Path(run_dir) / "trainer"
     if not trainer.exists():
@@ -272,19 +337,50 @@ def checkpoint_inventory(run_dir, spec: RunSpec) -> dict | None:
     complete, incomplete = list_checkpoints(trainer)
     expected = [] if spec.eval_only else list(range(spec.checkpoint_steps, spec.steps + 1, spec.checkpoint_steps))
     found = [int(c.name.split("-")[1]) for c in complete]
+    adapter_final = pathlib.Path(run_dir) / "adapter_final"
     return {
         "expected": expected,
         "complete": found,
         "incomplete": [c.name for c in incomplete],
+        "defects": {c.name: checkpoint_defects(c) for c in incomplete},
         "missing": [s for s in expected if s not in found],
-        "adapter_final": (pathlib.Path(run_dir) / "adapter_final" / "adapter_model.safetensors").exists(),
+        "adapter_final": (adapter_final / "adapter_model.safetensors").exists() and (adapter_final / ADAPTER_CONFIG).exists(),
     }
 
 
-def run_register(run_dir, threshold: float | None = None) -> dict:
+def attempt_consistency(attempts: list[dict]) -> dict:
+    """Whether every attempt of a run used the same code, model snapshot and task pools: the code commit may only
+    change when the later attempt's spec names the earlier commit in `relaunch_from_commit` (an infrastructure-only
+    change recorded in docs/DEVIATIONS.md); the model commit hash and the pool hashes may never change."""
+    from pairedrl.ops.job import commit_named, pool_hashes
+
+    commits = [a["manifest"].get("deployed_commit") or a["manifest"].get("git_commit") for a in attempts]
+    changes = []
+    for i in range(1, len(attempts)):
+        if commits[i] != commits[i - 1]:
+            named = (attempts[i]["manifest"].get("spec") or {}).get("relaunch_from_commit")
+            changes.append({"attempt": attempts[i]["manifest"].get("attempt"), "from": commits[i - 1], "to": commits[i],
+                            "acknowledged": commit_named(named, commits[i - 1])})
+    models = [a["manifest"].get("model_commit_hash") for a in attempts]
+    known_models = {m for m in models if m}
+    pools = [pool_hashes(a["manifest"].get("task_pools")) for a in attempts]
+    known_pools = [p for p in pools if p]
+    return {
+        "commits": commits,
+        "commit_changes": changes,
+        "commits_consistent": all(c["acknowledged"] for c in changes),
+        "model_commit_hashes": models,
+        "model_consistent": len(known_models) <= 1,
+        "task_pools_consistent": all(p == known_pools[0] for p in known_pools),
+    }
+
+
+def run_register(run_dir, threshold: float | None = None, data_dir=None) -> dict:
     """Everything the paper reads from one run: spec facts, periodic curves with areas, final sets, luck share
-    per checkpoint, training-group totals, training curve, timing summary, the attempt lineage and completeness."""
+    per checkpoint, training-group totals, training curve, timing summary, the attempt lineage, completeness
+    against the frozen pools under `data_dir` (the repository's data/tasks by default) and attempt consistency."""
     run_dir = pathlib.Path(run_dir)
+    data_dir = pathlib.Path(data_dir) if data_dir is not None else DEFAULT_DATA_DIR
     attempts = load_attempts(run_dir)
     manifest = attempts[-1]["manifest"]
     records, episode_lineage = lineage_records(attempts, "episodes.jsonl")
@@ -293,6 +389,8 @@ def run_register(run_dir, threshold: float | None = None) -> dict:
     run_spec = RunSpec.from_dict(spec)
     curves = {name: periodic_curve(records, name) for name in PERIODIC_SETS}
     luck = luck_by_phase_strict(records, run_spec)
+    evidence = expected_evidence(run_spec, load_task_splits(data_dir))
+    pools = task_pool_digests(data_dir)
     entry = {
         "run_id": manifest["run_id"],
         "provider": manifest.get("provider", "modal"),
@@ -301,12 +399,14 @@ def run_register(run_dir, threshold: float | None = None) -> dict:
         "attempts": [
             {
                 "attempt": a["manifest"].get("attempt"), "status": a["manifest"].get("status"),
-                "git_commit": a["manifest"].get("git_commit"), "resumed_from_step": _resume_step(a["manifest"]),
+                "git_commit": a["manifest"].get("git_commit"), "deployed_commit": a["manifest"].get("deployed_commit"),
+                "model_commit_hash": a["manifest"].get("model_commit_hash"), "resumed_from_step": _resume_step(a["manifest"]),
                 "wall_time_s": a["manifest"].get("wall_time_s"), "estimated_cost_usd": a["manifest"].get("estimated_cost_usd"),
                 "error": a["manifest"].get("error"),
             }
             for a in attempts
         ],
+        "attempt_consistency": attempt_consistency(attempts),
         "total_wall_time_s": sum((a["manifest"].get("wall_time_s") or 0) for a in attempts),
         "total_estimated_cost_usd": round(sum((a["manifest"].get("estimated_cost_usd") or 0) for a in attempts), 2),
         "lineage": {"episodes": episode_lineage["attempts"], "groups": group_lineage["attempts"]},
@@ -335,7 +435,7 @@ def run_register(run_dir, threshold: float | None = None) -> dict:
         "training_curve": training_curve(records),
         "timing": step_timing_summary(manifest.get("step_timings", [])),
         "eval_timings": manifest.get("eval_timings", []),
-        "completeness": completeness(run_spec, records, groups, curves, luck),
+        "completeness": completeness(run_spec, records, groups, luck, evidence, pools),
         "checkpoints": checkpoint_inventory(run_dir, run_spec),
     }
     if threshold is not None:
@@ -392,17 +492,34 @@ def format_run(entry: dict) -> str:
         lines.append(
             f"  completeness: {'COMPLETE' if comp['complete'] else 'INCOMPLETE'}; episodes {comp['episodes_found']}/{comp['episodes_expected']}, "
             f"groups {comp['training_groups_found']}/{comp['training_groups_expected']}, "
-            f"missing sets {len(comp['periodic_and_final_missing'])}, diagnostic defects {len(comp['diagnostic_missing'])}; "
+            f"missing sets {len(comp['periodic_and_final_missing'])}, identity defects {len(comp['identity_defects'])}, "
+            f"unexpected phases {len(comp['unexpected_phases'])}, diagnostic defects {len(comp['diagnostic_missing'])}, "
+            f"group defects {len(comp['group_defects'])}, pools {'match' if comp['task_pools_match'] else 'MISMATCH'}; "
             f"attempts {len(entry.get('attempts', []))}, total {entry.get('total_wall_time_s')} s, est {entry.get('total_estimated_cost_usd')} USD"
         )
         for m in comp["periodic_and_final_missing"][:6]:
             lines.append(f"    missing {m['set']} step {m['step']}: {m['found']} of {m['expected']}")
+        for m in comp["identity_defects"][:6]:
+            lines.append(f"    identity {m['phase']}: {m['missing']} expected records absent, {m['extra']} unexpected")
+        for phase, n in list(comp["unexpected_phases"].items())[:6]:
+            lines.append(f"    unexpected {phase}: {n} records")
         for m in comp["diagnostic_missing"][:3]:
             lines.append(f"    diagnostic {m['phase']}: {m['defect']}")
+        for m in comp["group_defects"][:6]:
+            lines.append(f"    groups step {m['step']}: {m['defect']}")
+    consistency = entry.get("attempt_consistency") or {}
+    if consistency:
+        lines.append(
+            f"  attempts: commits {consistency['commits']} ({'consistent' if consistency['commits_consistent'] else 'UNACKNOWLEDGED CHANGE'}), "
+            f"model {'consistent' if consistency['model_consistent'] else 'CHANGED'}, "
+            f"pools {'consistent' if consistency['task_pools_consistent'] else 'CHANGED'}"
+        )
     ck = entry.get("checkpoints")
     if ck is not None:
         lines.append(
             f"  checkpoints: complete {ck['complete']}, missing {ck['missing']}, incomplete {ck['incomplete']}, "
             f"adapter_final {ck['adapter_final']}"
         )
+        for name, defects in ck["defects"].items():
+            lines.append(f"    {name}: {', '.join(defects)}")
     return "\n".join(lines)
