@@ -1,0 +1,288 @@
+{
+  "condition": "C2",
+  "h1a": {
+    "condition": "C2",
+    "hypothesis": "H1a",
+    "passes": true,
+    "rule": {
+      "lambda_at_least": 0.15,
+      "lower_bound_above": 0.05
+    },
+    "runs": {
+      "gate1-c2-paired-s0": {
+        "arm": "paired",
+        "luck_criterion": true,
+        "luck_share_step0": {
+          "ci95": [
+            0.2395,
+            0.4576
+          ],
+          "lam": 0.3467,
+          "tasks": 16,
+          "tasks_defined": 16
+        },
+        "seed_sharing": {
+          "groups": 2400,
+          "groups_sharing_one_seed": 2400,
+          "groups_with_several_seeds": 0
+        },
+        "sharing_criterion": true
+      },
+      "t1-c2-independent-s0": {
+        "arm": "independent",
+        "luck_criterion": true,
+        "luck_share_step0": {
+          "ci95": [
+            0.2207,
+            0.4806
+          ],
+          "lam": 0.3524,
+          "tasks": 16,
+          "tasks_defined": 16
+        },
+        "seed_sharing": {
+          "groups": 2400,
+          "groups_sharing_one_seed": 0,
+          "groups_with_several_seeds": 2400
+        },
+        "sharing_criterion": true
+      },
+      "t1-c2-independent-s1": {
+        "arm": "independent",
+        "luck_criterion": true,
+        "luck_share_step0": {
+          "ci95": [
+            0.2589,
+            0.5074
+          ],
+          "lam": 0.3801,
+          "tasks": 16,
+          "tasks_defined": 16
+        },
+        "seed_sharing": {
+          "groups": 2400,
+          "groups_sharing_one_seed": 0,
+          "groups_with_several_seeds": 2400
+        },
+        "sharing_criterion": true
+      },
+      "t1-c2-independent-s2": {
+        "arm": "independent",
+        "luck_criterion": true,
+        "luck_share_step0": {
+          "ci95": [
+            0.2094,
+            0.462
+          ],
+          "lam": 0.3323,
+          "tasks": 16,
+          "tasks_defined": 16
+        },
+        "seed_sharing": {
+          "groups": 2400,
+          "groups_sharing_one_seed": 0,
+          "groups_with_several_seeds": 2400
+        },
+        "sharing_criterion": true
+      },
+      "t1-c2-paired-s1": {
+        "arm": "paired",
+        "luck_criterion": true,
+        "luck_share_step0": {
+          "ci95": [
+            0.2614,
+            0.5098
+          ],
+          "lam": 0.3801,
+          "tasks": 16,
+          "tasks_defined": 16
+        },
+        "seed_sharing": {
+          "groups": 2400,
+          "groups_sharing_one_seed": 2400,
+          "groups_with_several_seeds": 0
+        },
+        "sharing_criterion": true
+      },
+      "t1-c2-paired-s2": {
+        "arm": "paired",
+        "luck_criterion": true,
+        "luck_share_step0": {
+          "ci95": [
+            0.2077,
+            0.4625
+          ],
+          "lam": 0.3323,
+          "tasks": 16,
+          "tasks_defined": 16
+        },
+        "seed_sharing": {
+          "groups": 2400,
+          "groups_sharing_one_seed": 2400,
+          "groups_with_several_seeds": 0
+        },
+        "sharing_criterion": true
+      }
+    }
+  },
+  "h2": {
+    "auc_difference_by_seed": [
+      0.0539,
+      -0.0016,
+      0.0586
+    ],
+    "auc_difference_ci95": [
+      -0.0039,
+      0.0779
+    ],
+    "auc_difference_mean": 0.037,
+    "auc_independent": [
+      0.5867,
+      0.6227,
+      0.5672
+    ],
+    "auc_paired": [
+      0.6406,
+      0.6211,
+      0.6258
+    ],
+    "bootstrap": {
+      "resamples": 10000,
+      "seed": 20260911
+    },
+    "condition": "C2",
+    "final_difference_mean": 0.0508,
+    "final_independent_by_seed": [
+      0.6138,
+      0.6312,
+      0.6075
+    ],
+    "final_paired_by_seed": [
+      0.6538,
+      0.6412,
+      0.71
+    ],
+    "final_set": "noisy_p025",
+    "hypothesis": "H2a",
+    "passes": false,
+    "rule": {
+      "every_seed_positive": false,
+      "final_direction": true,
+      "mean_at_least": 0.03,
+      "mean_criterion": true
+    },
+    "runs": [
+      [
+        "gate1-c2-paired-s0",
+        "t1-c2-independent-s0"
+      ],
+      [
+        "t1-c2-paired-s1",
+        "t1-c2-independent-s1"
+      ],
+      [
+        "t1-c2-paired-s2",
+        "t1-c2-independent-s2"
+      ]
+    ],
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "steps": [
+      0,
+      20,
+      40,
+      60,
+      80,
+      100
+    ],
+    "tasks": 64,
+    "validation_set": "noisy"
+  },
+  "h3": {
+    "bootstrap": {
+      "resamples": 10000,
+      "seed": 20260911
+    },
+    "difference_by_seed": [
+      0.0729,
+      0.0156,
+      0.0729
+    ],
+    "difference_ci95": [
+      -0.0104,
+      0.1215
+    ],
+    "difference_mean": 0.0538,
+    "hypothesis": "H3",
+    "passes": true,
+    "rule": {
+      "every_seed_positive": true,
+      "mean_at_least": 0.05,
+      "mean_criterion": true
+    },
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "steps": [
+      40,
+      60,
+      80
+    ],
+    "tasks": 64
+  },
+  "h5": {
+    "bootstrap": {
+      "resamples": 10000,
+      "seed": 20260911
+    },
+    "difference_by_seed": [
+      0.0063,
+      0.01,
+      0.0525
+    ],
+    "difference_ci90": [
+      -0.0037,
+      0.0525
+    ],
+    "difference_mean": 0.0229,
+    "hypothesis": "H5",
+    "passes": true,
+    "rule": {
+      "lower_bound_above": -0.03
+    },
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "set": "heldout_types",
+    "tasks": 200
+  },
+  "runs": [
+    "gate1-c2-paired-s0",
+    "t1-c2-independent-s0",
+    "t1-c2-paired-s1",
+    "t1-c2-independent-s1",
+    "t1-c2-paired-s2",
+    "t1-c2-independent-s2"
+  ],
+  "seed_pairs": [
+    [
+      "gate1-c2-paired-s0",
+      "t1-c2-independent-s0"
+    ],
+    [
+      "t1-c2-paired-s1",
+      "t1-c2-independent-s1"
+    ],
+    [
+      "t1-c2-paired-s2",
+      "t1-c2-independent-s2"
+    ]
+  ]
+}
