@@ -56,16 +56,19 @@ The production-shape smoke (`configs/smoke-do-train.json`, three steps of 24 x 8
 
 Five production-shape C4 steps of 24 x 8 rollouts on the MI300X: 543.5, 378.7, 419.5 s in attempt 1 and 668.7, 518.7 s in attempt 2 (steps 1 and 4 carry each attempt's model load and kernel warm-up), generation 237 to 495 s of each, training passes about 140 to 175 s (faster than the H100's 186 s; the flash-linear-attention kernels run on ROCm). Warmed steps average about 440 s against the H100's 461 s, so a tier-1 run on the MI300X is planned at 480 s per step (13.3 h of training) plus the evaluation phases at about 0.57 episodes per second (0.85 of the H100's 0.67 measured on gate 1): a C4 seed-0 run about 17.8 h, other C4 seeds 17.3 h, C0 runs about 15.8 and 15.3 h. Resume from checkpoint-3 into attempt 2 worked (`attempt1/` preserved, `resumed_from_step` 3); the two-attempt total was 4674 s, 2.59 USD at 1.99 USD/h.
 
-### Tier-1 chains (launched 2026-09-09)
+### Tier-1 chains
 
-| droplet | account | credit at launch | chain | planned hours | planned USD at 1.99 |
-|---|---|---|---|---|---|
-| A (134.199.201.165) | friend 1 | 80 | t1-c4-paired-s0, t1-c0-clean-s0 | 33.6 | 67 |
-| B | friend 2 | 100 | t1-c4-independent-s0, t1-c4-paired-s1 | 35.1 | 70 |
-| C | own | 100 + 100 | t1-c4-independent-s1, t1-c4-paired-s2 | 34.6 | 69 |
-| D | own | (shared with C) | t1-c4-independent-s2, t1-c0-clean-s1 | 32.6 | 65 |
+Re-planned on 2026-09-10 after t1-c4-paired-s0 measured 24.1 h and 47.98 USD (534 s per step, 14.8 h of training; evaluation phases and diagnostics 9.2 h, about 0.28 episodes per second over the 9,192 non-training episodes). Outcome noise leaves the environment dynamics clean, so a C0 run has the same training step time and the same evaluation load minus the at-training set: about 23.5 h (seed 0, three diagnostics) or 22.4 h (seed 1). A C4 run without the step-50 diagnostic (seeds 1 and 2) is about 23.0 h. Two runs of any kind are about 46 to 47 h and 92 to 94 USD, so a 100 USD account carries two runs only with the account's payment method covering a few dollars of overage, and one run otherwise.
 
-Every chain leaves at least six hours of credit for collection with weights, verification and the copy to the archive droplet (D, destroyed last). The C4 pairs are compared within the provider; which droplet ran which seed is in the launch registers and the manifests (`hostname`).
+| droplet | account | chain (in order) | planned hours | planned USD at 1.99 |
+|---|---|---|---|---|
+| A (destroyed 2026-09-10) | friend 1 | t1-c4-paired-s0 (24.1 h, 47.98 USD, collected with weights); t1-c0-clean-s0 cancelled | 24 | 48 |
+| B | friend 2 | t1-c4-independent-s0, then t1-c0-clean-s1 if the account can absorb about 5 USD of overage, else t1-c4-independent-s0 alone | 47 or 24 | 93 or 48 |
+| C | own | t1-c4-paired-s1, t1-c4-independent-s1 | 46 | 92 |
+| D | own | t1-c4-independent-s2, t1-c4-paired-s2 (the seed pairs run in opposite arm order on C and D) | 46 | 92 |
+| E | own | t1-c0-clean-s0, then t1-c0-clean-s1 if B runs one job | 23.5 or 46 | 47 or 92 |
+
+Each seed pair runs both arms on one droplet, in opposite order on the two droplets, so that neither arm is always first. The own account carries 231 to 276 USD of chains and is topped up above that before C, D and E are created. Every chain leaves credit for collection with weights and verification; there is no archive droplet: the laptop copy verified by `verify_run --weights` plus the Hugging Face upload of the trainer checkpoints and the final adapter are the durable copies, and a droplet is destroyed as soon as its last run is collected and verified. Which droplet ran which seed is in the launch registers and the manifests (`hostname`).
 
 ## Before a droplet is destroyed
 
@@ -74,4 +77,4 @@ python scripts/collect_remote.py --register registers/launches/<utc>_do-<name>.j
 python scripts/verify_run.py outputs/runs/<run_id> ... --weights
 ```
 
-Both must pass for every run on the droplet: the register, episodes, groups, every `attempt<n>/`, the five trainer checkpoints and `adapter_final` are then on the laptop. A second copy goes to the droplet that stays alive longest (`rsync -az -e "ssh -o BatchMode=yes" outputs/runs/<run_id>/ root@<archive ip>:/root/work/runs/<run_id>/`, or droplet to droplet with `ssh -A root@<archive ip> "rsync -az root@<source ip>:/root/work/runs/ /root/work/runs/"`). Only then is the droplet destroyed.
+Both must pass for every run on the droplet: the register, episodes, groups, every `attempt<n>/`, the five trainer checkpoints and `adapter_final` are then on the laptop. The trainer checkpoints and the final adapter are then uploaded to the project's Hugging Face repository as the second durable copy. Only then is the droplet destroyed.

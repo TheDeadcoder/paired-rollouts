@@ -14,7 +14,7 @@
     },
     {
       "call_id": "root@134.199.201.165:t1-c0-clean-s0",
-      "cancelled_reason": "queued start cancelled; C0 runs on Modal (DEVIATIONS 2026-09-09)",
+      "cancelled_reason": "queued start cancelled; droplet A destroyed on 2026-09-10 after t1-c4-paired-s0 was collected with weights because the account's remaining credit could not carry a second run; C0 stays on DigitalOcean on another droplet (DEVIATIONS 2026-09-10); the run had not begun on droplet A",
       "cancelled_utc": "2026-09-09T13:32:44+00:00",
       "container": "pairedrl",
       "host": "root@134.199.201.165",

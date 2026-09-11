@@ -1,0 +1,36 @@
+{
+  "app": "pairedrl-train",
+  "commit": "c9a2c4b9372c45429810b62d8c27304eb3f9dec9",
+  "entries": [
+    {
+      "call_id": "fc-01M252G7R65ST0T4S282HP12W5",
+      "dashboard_url": "https://modal.com/id/fc-01M252G7R65ST0T4S282HP12W5",
+      "run_id": "t1-c2-paired-s1",
+      "spawned_utc": "2026-09-10T07:11:20+00:00",
+      "spec_path": "configs/t1-c2-paired-s1.json"
+    },
+    {
+      "call_id": "fc-01M252G83ANERN41666V2K5N4T",
+      "dashboard_url": "https://modal.com/id/fc-01M252G83ANERN41666V2K5N4T",
+      "run_id": "t1-c2-paired-s2",
+      "spawned_utc": "2026-09-10T07:11:20+00:00",
+      "spec_path": "configs/t1-c2-paired-s2.json"
+    },
+    {
+      "call_id": "fc-01M252G8DKDA32WWV6QX9BEKW0",
+      "dashboard_url": "https://modal.com/id/fc-01M252G8DKDA32WWV6QX9BEKW0",
+      "run_id": "t1-c2-independent-s1",
+      "spawned_utc": "2026-09-10T07:11:21+00:00",
+      "spec_path": "configs/t1-c2-independent-s1.json"
+    },
+    {
+      "call_id": "fc-01M252G8T3E1M4F7PS36V5Z60Y",
+      "dashboard_url": "https://modal.com/id/fc-01M252G8T3E1M4F7PS36V5Z60Y",
+      "run_id": "t1-c2-independent-s2",
+      "spawned_utc": "2026-09-10T07:11:21+00:00",
+      "spec_path": "configs/t1-c2-independent-s2.json"
+    }
+  ],
+  "launched_utc": "2026-09-10T07:11:19+00:00",
+  "preregistration": "v1"
+}
