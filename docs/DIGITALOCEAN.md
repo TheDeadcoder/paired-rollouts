@@ -74,7 +74,9 @@ Each seed pair runs both arms on one droplet, in opposite order on the two dropl
 
 ```
 python scripts/collect_remote.py --register registers/launches/<utc>_do-<name>.json --with-weights
-python scripts/verify_run.py outputs/runs/<run_id> ... --weights
+python scripts/verify_run.py outputs/runs/<run_id> --weights --threshold 0.617
+python scripts/build_run_register.py --runs outputs/runs/<run_id> --threshold 0.617
+python scripts/upload_weights.py outputs/runs/<run_id> --repo <user>/<name>
 ```
 
-Both must pass for every run on the droplet: the register, episodes, groups, every `attempt<n>/`, the five trainer checkpoints and `adapter_final` are then on the laptop. The trainer checkpoints and the final adapter are then uploaded to the project's Hugging Face repository as the second durable copy. Only then is the droplet destroyed.
+All four must pass for every run on the droplet: the register, episodes, groups, every `attempt<n>/`, the five trainer checkpoints and `adapter_final` are then on the laptop, `verify_run` has accepted them with the weights, the run register is written, and `upload_weights` (which refuses a run that `verify_run --weights` would not accept) has put every checkpoint file and the final adapter into the project's Hugging Face model repository in one commit and written `registers/weights/<run_id>.json` with the revision and the sha256 of every file. Only then is the droplet destroyed, and the table above records the date.

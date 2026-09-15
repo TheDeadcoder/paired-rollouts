@@ -2,6 +2,7 @@
 for: evaluations at the wrong step, a missing diagnostic task, substituted task or schedule identities, groups off
 their rows, phases outside the plan, checkpoints without their state, attempts at unacknowledged commits."""
 
+import hashlib
 import importlib.util
 import json
 import pathlib
@@ -190,3 +191,32 @@ def test_decide_refuses_inconsistent_runs(tmp_path):
     rewrite(run_dir, manifest_dict=dict(root, attempt=2, git_commit="def5678", deployed_commit="def5678"))
     with pytest.raises(ValueError, match="consistent False"):
         decide("C2", [run_dir], n_boot=10)
+
+
+def test_upload_weights_refuses_unverified_runs_and_records_the_inventory(tmp_path):
+    upload = load_script("upload_weights")
+    spec = small_spec()
+    run_dir = complete_run(tmp_path, spec)
+    calls = []
+
+    def fake_commit(repo, uploads, message):
+        calls.append((repo, [p for p, _ in uploads], message))
+        return "abcdef0123456789", f"https://huggingface.co/{repo}/commit/abcdef0123456789"
+
+    with pytest.raises(ValueError, match="not accepted with weights"):
+        upload.upload_run(run_dir, "user/repo", commit_fn=fake_commit, out_dir=tmp_path / "weights")
+    assert calls == [] and not (tmp_path / "weights").exists()
+    write_checkpoint(run_dir / "trainer" / "checkpoint-2", 2)
+    write_checkpoint(run_dir / "trainer" / "checkpoint-4", 4)
+    (run_dir / "adapter_final").mkdir()
+    (run_dir / "adapter_final" / "adapter_model.safetensors").write_text("final")
+    (run_dir / "adapter_final" / "adapter_config.json").write_text("{}")
+    record = upload.upload_run(run_dir, "user/repo", commit_fn=fake_commit, out_dir=tmp_path / "weights")
+    assert len(calls) == 1 and calls[0][0] == "user/repo" and "run-l: trainer checkpoints" in calls[0][2]
+    assert calls[0][1][:2] == ["run-l/trainer/checkpoint-2/adapter_config.json", "run-l/trainer/checkpoint-2/adapter_model.safetensors"]
+    assert calls[0][1][-2:] == ["run-l/adapter_final/adapter_config.json", "run-l/adapter_final/adapter_model.safetensors"]
+    assert len(record["files"]) == 14 and record["revision"] == "abcdef0123456789" and record["checkpoints"]["complete"] == [2, 4]
+    final = next(f for f in record["files"] if f["path"] == "adapter_final/adapter_model.safetensors")
+    assert final["bytes"] == 5 and final["sha256"] == hashlib.sha256(b"final").hexdigest()
+    saved = json.loads((tmp_path / "weights" / "run-l.json").read_text())
+    assert saved["total_bytes"] == sum(f["bytes"] for f in record["files"]) and saved["git_commit"] == "abc1234"

@@ -22,6 +22,7 @@ dev = [
 ]
 cloud = [
   "modal>=1.5,<2",
+  "huggingface_hub>=0.30",
 ]
 train = [
   "torch==2.13.0",
