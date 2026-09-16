@@ -1,0 +1,18 @@
+{
+  "app": "root@134.199.194.240",
+  "commit": "36783ed5cdf2dffdfc2e2ee0beb5c9719783fbf4",
+  "entries": [
+    {
+      "call_id": "root@134.199.194.240:t1-c4-independent-s2",
+      "container": "pairedrl",
+      "host": "root@134.199.194.240",
+      "host_run_dir": "/root/work/runs/t1-c4-independent-s2",
+      "log": "/root/work/runs/t1-c4-independent-s2.log",
+      "run_id": "t1-c4-independent-s2",
+      "spawned_utc": "2026-09-16T02:27:05+00:00",
+      "spec_path": "configs/t1-c4-independent-s2.json"
+    }
+  ],
+  "launched_utc": "2026-09-16T02:27:05+00:00",
+  "preregistration": "v1"
+}

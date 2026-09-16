@@ -1,0 +1,1542 @@
+{
+  "arm": "independent",
+  "attempt": 1,
+  "attempt_consistency": {
+    "commit_changes": [],
+    "commits": [
+      "f3db125dd494dc4eb46913ac0598ac49d5e3c477"
+    ],
+    "commits_consistent": true,
+    "model_commit_hashes": [
+      "15852e8c16360a2fea060d615a32b45270f8a8fc"
+    ],
+    "model_consistent": true,
+    "task_pools_consistent": true
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "deployed_commit": "f3db125dd494dc4eb46913ac0598ac49d5e3c477",
+      "error": null,
+      "estimated_cost_usd": 45.63,
+      "git_commit": "f3db125dd494dc4eb46913ac0598ac49d5e3c477",
+      "model_commit_hash": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "resumed_from_step": null,
+      "status": "COMPLETE",
+      "wall_time_s": 82552.3
+    }
+  ],
+  "auc": {
+    "challenge": 0.5640625,
+    "clean": 0.88984375,
+    "noisy": 0.878125
+  },
+  "checkpoints": {
+    "adapter_final": true,
+    "complete": [
+      20,
+      40,
+      60,
+      80,
+      100
+    ],
+    "defects": {},
+    "expected": [
+      20,
+      40,
+      60,
+      80,
+      100
+    ],
+    "incomplete": [],
+    "missing": []
+  },
+  "completeness": {
+    "complete": true,
+    "diagnostic_missing": [],
+    "diagnostic_steps_expected": [
+      0,
+      50,
+      100
+    ],
+    "diagnostic_tasks": 16,
+    "episodes_expected": 28392,
+    "episodes_found": 28392,
+    "final_step_expected": 100,
+    "group_defects": [],
+    "identity_defects": [],
+    "periodic_and_final_missing": [],
+    "periodic_steps_expected": [
+      0,
+      20,
+      40,
+      60,
+      80,
+      100
+    ],
+    "task_pools": {
+      "diagnostic": {
+        "count": 16,
+        "match": true,
+        "sha256": "43f82bdf1c6e5fc74beb3c05c8ac0ebb21fc60ee34787fd109ad64400430ef78"
+      },
+      "heldout": {
+        "count": 300,
+        "match": true,
+        "sha256": "9cceb1013563ebe47c6bde1f510ae12784724884aa10e47080800a89590121c7"
+      },
+      "test": {
+        "count": 300,
+        "match": true,
+        "sha256": "ce49f8bf9fe0ad8679106f92ce33ff7f0fa2b1c9ebc609b41754f2d727e7bb10"
+      },
+      "train": {
+        "count": 2000,
+        "match": true,
+        "sha256": "2bbec1c596afc8495933a59a35cc69fec0b75c22caa7ab42759f4f7a296828ae"
+      }
+    },
+    "task_pools_match": true,
+    "totals_match": true,
+    "training_groups_expected": 2400,
+    "training_groups_found": 2400,
+    "training_rollouts_expected": 19200,
+    "training_rollouts_found": 19200,
+    "unexpected_phases": {}
+  },
+  "condition": "C4",
+  "curves": {
+    "challenge": [
+      {
+        "budget_exceeded_frac": 0.359375,
+        "exposed_frac": 0.96875,
+        "finished_frac": 0.625,
+        "flipped_frac": 0.0,
+        "mean_calls": 10.8125,
+        "n": 64,
+        "observed_reward": 0.515625,
+        "recovery_success": 0.532258064516129,
+        "step": 0,
+        "true_success": 0.515625
+      },
+      {
+        "budget_exceeded_frac": 0.3125,
+        "exposed_frac": 0.96875,
+        "finished_frac": 0.671875,
+        "flipped_frac": 0.0,
+        "mean_calls": 11.09375,
+        "n": 64,
+        "observed_reward": 0.59375,
+        "recovery_success": 0.6129032258064516,
+        "step": 20,
+        "true_success": 0.59375
+      },
+      {
+        "budget_exceeded_frac": 0.390625,
+        "exposed_frac": 0.96875,
+        "finished_frac": 0.578125,
+        "flipped_frac": 0.0,
+        "mean_calls": 11.03125,
+        "n": 64,
+        "observed_reward": 0.578125,
+        "recovery_success": 0.5967741935483871,
+        "step": 40,
+        "true_success": 0.578125
+      },
+      {
+        "budget_exceeded_frac": 0.40625,
+        "exposed_frac": 0.953125,
+        "finished_frac": 0.578125,
+        "flipped_frac": 0.0,
+        "mean_calls": 11.140625,
+        "n": 64,
+        "observed_reward": 0.515625,
+        "recovery_success": 0.5409836065573771,
+        "step": 60,
+        "true_success": 0.515625
+      },
+      {
+        "budget_exceeded_frac": 0.4375,
+        "exposed_frac": 1.0,
+        "finished_frac": 0.5625,
+        "flipped_frac": 0.0,
+        "mean_calls": 11.375,
+        "n": 64,
+        "observed_reward": 0.59375,
+        "recovery_success": 0.59375,
+        "step": 80,
+        "true_success": 0.59375
+      },
+      {
+        "budget_exceeded_frac": 0.40625,
+        "exposed_frac": 0.984375,
+        "finished_frac": 0.59375,
+        "flipped_frac": 0.0,
+        "mean_calls": 11.34375,
+        "n": 64,
+        "observed_reward": 0.5625,
+        "recovery_success": 0.5714285714285714,
+        "step": 100,
+        "true_success": 0.5625
+      }
+    ],
+    "clean": [
+      {
+        "budget_exceeded_frac": 0.0390625,
+        "exposed_frac": 0.0,
+        "finished_frac": 0.9453125,
+        "flipped_frac": 0.0,
+        "mean_calls": 7.1015625,
+        "n": 128,
+        "observed_reward": 0.828125,
+        "recovery_success": null,
+        "step": 0,
+        "true_success": 0.828125
+      },
+      {
+        "budget_exceeded_frac": 0.0546875,
+        "exposed_frac": 0.0,
+        "finished_frac": 0.921875,
+        "flipped_frac": 0.0,
+        "mean_calls": 7.203125,
+        "n": 128,
+        "observed_reward": 0.875,
+        "recovery_success": null,
+        "step": 20,
+        "true_success": 0.875
+      },
+      {
+        "budget_exceeded_frac": 0.0546875,
+        "exposed_frac": 0.0,
+        "finished_frac": 0.90625,
+        "flipped_frac": 0.0,
+        "mean_calls": 7.484375,
+        "n": 128,
+        "observed_reward": 0.875,
+        "recovery_success": null,
+        "step": 40,
+        "true_success": 0.875
+      },
+      {
+        "budget_exceeded_frac": 0.046875,
+        "exposed_frac": 0.0,
+        "finished_frac": 0.921875,
+        "flipped_frac": 0.0,
+        "mean_calls": 7.671875,
+        "n": 128,
+        "observed_reward": 0.890625,
+        "recovery_success": null,
+        "step": 60,
+        "true_success": 0.890625
+      },
+      {
+        "budget_exceeded_frac": 0.0234375,
+        "exposed_frac": 0.0,
+        "finished_frac": 0.9609375,
+        "flipped_frac": 0.0,
+        "mean_calls": 7.625,
+        "n": 128,
+        "observed_reward": 0.9296875,
+        "recovery_success": null,
+        "step": 80,
+        "true_success": 0.9296875
+      },
+      {
+        "budget_exceeded_frac": 0.046875,
+        "exposed_frac": 0.0,
+        "finished_frac": 0.9296875,
+        "flipped_frac": 0.0,
+        "mean_calls": 7.4453125,
+        "n": 128,
+        "observed_reward": 0.9296875,
+        "recovery_success": null,
+        "step": 100,
+        "true_success": 0.9296875
+      }
+    ],
+    "noisy": [
+      {
+        "budget_exceeded_frac": 0.0390625,
+        "exposed_frac": 0.0,
+        "finished_frac": 0.90625,
+        "flipped_frac": 0.0546875,
+        "mean_calls": 7.0703125,
+        "n": 128,
+        "observed_reward": 0.7578125,
+        "recovery_success": null,
+        "step": 0,
+        "true_success": 0.8125
+      },
+      {
+        "budget_exceeded_frac": 0.0625,
+        "exposed_frac": 0.0,
+        "finished_frac": 0.90625,
+        "flipped_frac": 0.0703125,
+        "mean_calls": 7.4453125,
+        "n": 128,
+        "observed_reward": 0.765625,
+        "recovery_success": null,
+        "step": 20,
+        "true_success": 0.8359375
+      },
+      {
+        "budget_exceeded_frac": 0.0546875,
+        "exposed_frac": 0.0,
+        "finished_frac": 0.921875,
+        "flipped_frac": 0.0703125,
+        "mean_calls": 7.453125,
+        "n": 128,
+        "observed_reward": 0.8046875,
+        "recovery_success": null,
+        "step": 40,
+        "true_success": 0.875
+      },
+      {
+        "budget_exceeded_frac": 0.0078125,
+        "exposed_frac": 0.0,
+        "finished_frac": 0.9453125,
+        "flipped_frac": 0.0703125,
+        "mean_calls": 7.484375,
+        "n": 128,
+        "observed_reward": 0.8203125,
+        "recovery_success": null,
+        "step": 60,
+        "true_success": 0.890625
+      },
+      {
+        "budget_exceeded_frac": 0.0390625,
+        "exposed_frac": 0.0,
+        "finished_frac": 0.9296875,
+        "flipped_frac": 0.078125,
+        "mean_calls": 7.40625,
+        "n": 128,
+        "observed_reward": 0.84375,
+        "recovery_success": null,
+        "step": 80,
+        "true_success": 0.921875
+      },
+      {
+        "budget_exceeded_frac": 0.03125,
+        "exposed_frac": 0.0,
+        "finished_frac": 0.9375,
+        "flipped_frac": 0.078125,
+        "mean_calls": 7.5,
+        "n": 128,
+        "observed_reward": 0.84375,
+        "recovery_success": null,
+        "step": 100,
+        "true_success": 0.921875
+      }
+    ]
+  },
+  "episodes": 28392,
+  "estimated_cost_usd": 45.63,
+  "eval_timings": [
+    {
+      "seconds": 312.8,
+      "step": 0,
+      "what": "eval_clean"
+    },
+    {
+      "seconds": 297.8,
+      "step": 0,
+      "what": "eval_noisy"
+    },
+    {
+      "seconds": 281.1,
+      "step": 0,
+      "what": "eval_challenge"
+    },
+    {
+      "seconds": 2713.5,
+      "step": 0,
+      "what": "diag"
+    },
+    {
+      "seconds": 270.0,
+      "step": 20,
+      "what": "eval_clean"
+    },
+    {
+      "seconds": 265.8,
+      "step": 20,
+      "what": "eval_noisy"
+    },
+    {
+      "seconds": 283.0,
+      "step": 20,
+      "what": "eval_challenge"
+    },
+    {
+      "seconds": 316.6,
+      "step": 40,
+      "what": "eval_clean"
+    },
+    {
+      "seconds": 316.5,
+      "step": 40,
+      "what": "eval_noisy"
+    },
+    {
+      "seconds": 370.3,
+      "step": 40,
+      "what": "eval_challenge"
+    },
+    {
+      "seconds": 3585.1,
+      "step": 50,
+      "what": "diag"
+    },
+    {
+      "seconds": 286.5,
+      "step": 60,
+      "what": "eval_clean"
+    },
+    {
+      "seconds": 270.0,
+      "step": 60,
+      "what": "eval_noisy"
+    },
+    {
+      "seconds": 343.7,
+      "step": 60,
+      "what": "eval_challenge"
+    },
+    {
+      "seconds": 254.0,
+      "step": 80,
+      "what": "eval_clean"
+    },
+    {
+      "seconds": 265.1,
+      "step": 80,
+      "what": "eval_noisy"
+    },
+    {
+      "seconds": 453.2,
+      "step": 80,
+      "what": "eval_challenge"
+    },
+    {
+      "seconds": 313.8,
+      "step": 100,
+      "what": "eval_clean"
+    },
+    {
+      "seconds": 275.1,
+      "step": 100,
+      "what": "eval_noisy"
+    },
+    {
+      "seconds": 367.9,
+      "step": 100,
+      "what": "eval_challenge"
+    },
+    {
+      "seconds": 1903.1,
+      "step": 100,
+      "what": "final_clean"
+    },
+    {
+      "seconds": 2695.4,
+      "step": 100,
+      "what": "final_noisy_p010"
+    },
+    {
+      "seconds": 3406.4,
+      "step": 100,
+      "what": "final_noisy_p025"
+    },
+    {
+      "seconds": 3179.1,
+      "step": 100,
+      "what": "final_heldout_types"
+    },
+    {
+      "seconds": 1889.6,
+      "step": 100,
+      "what": "final_at_training"
+    },
+    {
+      "seconds": 979.3,
+      "step": 100,
+      "what": "final_challenge"
+    },
+    {
+      "seconds": 3482.1,
+      "step": 100,
+      "what": "diag"
+    }
+  ],
+  "fault_weights": null,
+  "final": {
+    "at_training": {
+      "budget_exceeded_frac": 0.03125,
+      "episodes": 800,
+      "exposed_frac": 0.0,
+      "finished_frac": 0.95,
+      "flipped_frac": 0.08625,
+      "mean_calls": 7.55,
+      "observed_reward": 0.83125,
+      "recovery_success": null,
+      "step": 100,
+      "true_success": 0.9175
+    },
+    "challenge": {
+      "budget_exceeded_frac": 0.45,
+      "episodes": 200,
+      "exposed_frac": 0.99,
+      "finished_frac": 0.54,
+      "flipped_frac": 0.0,
+      "mean_calls": 11.47,
+      "observed_reward": 0.525,
+      "recovery_success": 0.5303030303030303,
+      "step": 100,
+      "true_success": 0.525
+    },
+    "clean": {
+      "budget_exceeded_frac": 0.04375,
+      "episodes": 800,
+      "exposed_frac": 0.0,
+      "finished_frac": 0.9425,
+      "flipped_frac": 0.0,
+      "mean_calls": 7.62375,
+      "observed_reward": 0.9025,
+      "recovery_success": null,
+      "step": 100,
+      "true_success": 0.9025
+    },
+    "heldout_types": {
+      "budget_exceeded_frac": 0.20375,
+      "episodes": 800,
+      "exposed_frac": 0.8175,
+      "finished_frac": 0.72625,
+      "flipped_frac": 0.0,
+      "mean_calls": 9.09,
+      "observed_reward": 0.7525,
+      "recovery_success": 0.7125382262996942,
+      "step": 100,
+      "true_success": 0.7525
+    },
+    "noisy_p010": {
+      "budget_exceeded_frac": 0.16125,
+      "episodes": 800,
+      "exposed_frac": 0.5075,
+      "finished_frac": 0.82625,
+      "flipped_frac": 0.0,
+      "mean_calls": 8.70125,
+      "observed_reward": 0.79625,
+      "recovery_success": 0.6724137931034483,
+      "step": 100,
+      "true_success": 0.79625
+    },
+    "noisy_p025": {
+      "budget_exceeded_frac": 0.3925,
+      "episodes": 800,
+      "exposed_frac": 0.82125,
+      "finished_frac": 0.5975,
+      "flipped_frac": 0.0,
+      "mean_calls": 10.365,
+      "observed_reward": 0.57,
+      "recovery_success": 0.487062404870624,
+      "step": 100,
+      "true_success": 0.57
+    }
+  },
+  "git_commit": "f3db125dd494dc4eb46913ac0598ac49d5e3c477",
+  "lineage": {
+    "episodes": [
+      {
+        "attempt": 1,
+        "cutoff_step": null,
+        "records": 28392,
+        "resumed_from_step": null,
+        "superseded": 0
+      }
+    ],
+    "groups": [
+      {
+        "attempt": 1,
+        "cutoff_step": null,
+        "records": 2400,
+        "resumed_from_step": null,
+        "superseded": 0
+      }
+    ]
+  },
+  "loss_type": "dapo",
+  "luck_share": {
+    "diag:step0": {
+      "lam": 0.3418048725260053,
+      "lam_pooled": 0.37490134175217044,
+      "sigma2_env_mean": 0.06626674107142856,
+      "sigma2_pol_mean": 0.11049107142857142,
+      "tables": 16,
+      "tasks": 16,
+      "tasks_defined": 15
+    },
+    "diag:step100": {
+      "lam": 0.541298110660111,
+      "lam_pooled": 0.617920540997464,
+      "sigma2_env_mean": 0.10198102678571427,
+      "sigma2_pol_mean": 0.06305803571428571,
+      "tables": 16,
+      "tasks": 16,
+      "tasks_defined": 15
+    },
+    "diag:step50": {
+      "lam": 0.49454945029895475,
+      "lam_pooled": 0.5739348370927319,
+      "sigma2_env_mean": 0.09584263392857142,
+      "sigma2_pol_mean": 0.07114955357142858,
+      "tables": 16,
+      "tasks": 16,
+      "tasks_defined": 16
+    }
+  },
+  "num_generations": 8,
+  "p": 0.0,
+  "peak_mem_gb": 104.64,
+  "prompts_per_step": 24,
+  "provider": "digitalocean",
+  "q": 0.1,
+  "run_id": "t1-c4-independent-s0",
+  "scale_rewards": "group",
+  "seed": 0,
+  "status": "COMPLETE",
+  "steps": 100,
+  "steps_to_threshold": 0.0,
+  "threshold": 0.617,
+  "timing": {
+    "max_step_s": 719.2,
+    "mean_generation_s": 381.235,
+    "mean_passes_s": 148.456,
+    "mean_step_s": 529.691,
+    "min_step_s": 340.5,
+    "steps": 100
+  },
+  "total_estimated_cost_usd": 45.63,
+  "total_wall_time_s": 82552.3,
+  "training_curve": [
+    {
+      "budget_exceeded_frac": 0.020833333333333332,
+      "mean_calls": 6.21875,
+      "n": 192,
+      "observed_reward": 0.7447916666666666,
+      "step": 0,
+      "true_success": 0.8229166666666666
+    },
+    {
+      "budget_exceeded_frac": 0.005208333333333333,
+      "mean_calls": 6.140625,
+      "n": 192,
+      "observed_reward": 0.75,
+      "step": 1,
+      "true_success": 0.8385416666666666
+    },
+    {
+      "budget_exceeded_frac": 0.026041666666666668,
+      "mean_calls": 6.984375,
+      "n": 192,
+      "observed_reward": 0.703125,
+      "step": 2,
+      "true_success": 0.78125
+    },
+    {
+      "budget_exceeded_frac": 0.06770833333333333,
+      "mean_calls": 8.479166666666666,
+      "n": 192,
+      "observed_reward": 0.7447916666666666,
+      "step": 3,
+      "true_success": 0.8020833333333334
+    },
+    {
+      "budget_exceeded_frac": 0.046875,
+      "mean_calls": 8.46875,
+      "n": 192,
+      "observed_reward": 0.6875,
+      "step": 4,
+      "true_success": 0.7760416666666666
+    },
+    {
+      "budget_exceeded_frac": 0.010416666666666666,
+      "mean_calls": 6.671875,
+      "n": 192,
+      "observed_reward": 0.6770833333333334,
+      "step": 5,
+      "true_success": 0.8020833333333334
+    },
+    {
+      "budget_exceeded_frac": 0.057291666666666664,
+      "mean_calls": 7.223958333333333,
+      "n": 192,
+      "observed_reward": 0.6875,
+      "step": 6,
+      "true_success": 0.7864583333333334
+    },
+    {
+      "budget_exceeded_frac": 0.06770833333333333,
+      "mean_calls": 7.630208333333333,
+      "n": 192,
+      "observed_reward": 0.6979166666666666,
+      "step": 7,
+      "true_success": 0.796875
+    },
+    {
+      "budget_exceeded_frac": 0.046875,
+      "mean_calls": 7.28125,
+      "n": 192,
+      "observed_reward": 0.734375,
+      "step": 8,
+      "true_success": 0.84375
+    },
+    {
+      "budget_exceeded_frac": 0.026041666666666668,
+      "mean_calls": 8.489583333333334,
+      "n": 192,
+      "observed_reward": 0.6770833333333334,
+      "step": 9,
+      "true_success": 0.7447916666666666
+    },
+    {
+      "budget_exceeded_frac": 0.11458333333333333,
+      "mean_calls": 7.822916666666667,
+      "n": 192,
+      "observed_reward": 0.6822916666666666,
+      "step": 10,
+      "true_success": 0.7864583333333334
+    },
+    {
+      "budget_exceeded_frac": 0.03125,
+      "mean_calls": 6.078125,
+      "n": 192,
+      "observed_reward": 0.6979166666666666,
+      "step": 11,
+      "true_success": 0.78125
+    },
+    {
+      "budget_exceeded_frac": 0.11979166666666667,
+      "mean_calls": 8.697916666666666,
+      "n": 192,
+      "observed_reward": 0.6666666666666666,
+      "step": 12,
+      "true_success": 0.734375
+    },
+    {
+      "budget_exceeded_frac": 0.078125,
+      "mean_calls": 7.864583333333333,
+      "n": 192,
+      "observed_reward": 0.6458333333333334,
+      "step": 13,
+      "true_success": 0.78125
+    },
+    {
+      "budget_exceeded_frac": 0.125,
+      "mean_calls": 8.59375,
+      "n": 192,
+      "observed_reward": 0.71875,
+      "step": 14,
+      "true_success": 0.78125
+    },
+    {
+      "budget_exceeded_frac": 0.052083333333333336,
+      "mean_calls": 7.625,
+      "n": 192,
+      "observed_reward": 0.734375,
+      "step": 15,
+      "true_success": 0.8020833333333334
+    },
+    {
+      "budget_exceeded_frac": 0.041666666666666664,
+      "mean_calls": 8.223958333333334,
+      "n": 192,
+      "observed_reward": 0.7291666666666666,
+      "step": 16,
+      "true_success": 0.78125
+    },
+    {
+      "budget_exceeded_frac": 0.046875,
+      "mean_calls": 7.505208333333333,
+      "n": 192,
+      "observed_reward": 0.734375,
+      "step": 17,
+      "true_success": 0.796875
+    },
+    {
+      "budget_exceeded_frac": 0.015625,
+      "mean_calls": 7.484375,
+      "n": 192,
+      "observed_reward": 0.75,
+      "step": 18,
+      "true_success": 0.796875
+    },
+    {
+      "budget_exceeded_frac": 0.041666666666666664,
+      "mean_calls": 7.364583333333333,
+      "n": 192,
+      "observed_reward": 0.7604166666666666,
+      "step": 19,
+      "true_success": 0.84375
+    },
+    {
+      "budget_exceeded_frac": 0.036458333333333336,
+      "mean_calls": 7.755208333333333,
+      "n": 192,
+      "observed_reward": 0.6979166666666666,
+      "step": 20,
+      "true_success": 0.8072916666666666
+    },
+    {
+      "budget_exceeded_frac": 0.026041666666666668,
+      "mean_calls": 6.744791666666667,
+      "n": 192,
+      "observed_reward": 0.8072916666666666,
+      "step": 21,
+      "true_success": 0.9114583333333334
+    },
+    {
+      "budget_exceeded_frac": 0.07291666666666667,
+      "mean_calls": 7.604166666666667,
+      "n": 192,
+      "observed_reward": 0.8072916666666666,
+      "step": 22,
+      "true_success": 0.8645833333333334
+    },
+    {
+      "budget_exceeded_frac": 0.020833333333333332,
+      "mean_calls": 6.859375,
+      "n": 192,
+      "observed_reward": 0.8177083333333334,
+      "step": 23,
+      "true_success": 0.875
+    },
+    {
+      "budget_exceeded_frac": 0.020833333333333332,
+      "mean_calls": 6.177083333333333,
+      "n": 192,
+      "observed_reward": 0.796875,
+      "step": 24,
+      "true_success": 0.8802083333333334
+    },
+    {
+      "budget_exceeded_frac": 0.036458333333333336,
+      "mean_calls": 8.020833333333334,
+      "n": 192,
+      "observed_reward": 0.8125,
+      "step": 25,
+      "true_success": 0.8854166666666666
+    },
+    {
+      "budget_exceeded_frac": 0.036458333333333336,
+      "mean_calls": 7.552083333333333,
+      "n": 192,
+      "observed_reward": 0.7708333333333334,
+      "step": 26,
+      "true_success": 0.8177083333333334
+    },
+    {
+      "budget_exceeded_frac": 0.07291666666666667,
+      "mean_calls": 9.104166666666666,
+      "n": 192,
+      "observed_reward": 0.7916666666666666,
+      "step": 27,
+      "true_success": 0.8645833333333334
+    },
+    {
+      "budget_exceeded_frac": 0.10416666666666667,
+      "mean_calls": 7.671875,
+      "n": 192,
+      "observed_reward": 0.7239583333333334,
+      "step": 28,
+      "true_success": 0.8020833333333334
+    },
+    {
+      "budget_exceeded_frac": 0.09375,
+      "mean_calls": 9.197916666666666,
+      "n": 192,
+      "observed_reward": 0.7916666666666666,
+      "step": 29,
+      "true_success": 0.8802083333333334
+    },
+    {
+      "budget_exceeded_frac": 0.03125,
+      "mean_calls": 8.848958333333334,
+      "n": 192,
+      "observed_reward": 0.7916666666666666,
+      "step": 30,
+      "true_success": 0.8645833333333334
+    },
+    {
+      "budget_exceeded_frac": 0.03125,
+      "mean_calls": 6.666666666666667,
+      "n": 192,
+      "observed_reward": 0.8072916666666666,
+      "step": 31,
+      "true_success": 0.90625
+    },
+    {
+      "budget_exceeded_frac": 0.020833333333333332,
+      "mean_calls": 7.901041666666667,
+      "n": 192,
+      "observed_reward": 0.7760416666666666,
+      "step": 32,
+      "true_success": 0.8697916666666666
+    },
+    {
+      "budget_exceeded_frac": 0.046875,
+      "mean_calls": 8.21875,
+      "n": 192,
+      "observed_reward": 0.796875,
+      "step": 33,
+      "true_success": 0.8958333333333334
+    },
+    {
+      "budget_exceeded_frac": 0.0625,
+      "mean_calls": 7.177083333333333,
+      "n": 192,
+      "observed_reward": 0.7708333333333334,
+      "step": 34,
+      "true_success": 0.8854166666666666
+    },
+    {
+      "budget_exceeded_frac": 0.052083333333333336,
+      "mean_calls": 6.96875,
+      "n": 192,
+      "observed_reward": 0.8541666666666666,
+      "step": 35,
+      "true_success": 0.9166666666666666
+    },
+    {
+      "budget_exceeded_frac": 0.08333333333333333,
+      "mean_calls": 8.447916666666666,
+      "n": 192,
+      "observed_reward": 0.7291666666666666,
+      "step": 36,
+      "true_success": 0.8020833333333334
+    },
+    {
+      "budget_exceeded_frac": 0.09375,
+      "mean_calls": 8.838541666666666,
+      "n": 192,
+      "observed_reward": 0.7708333333333334,
+      "step": 37,
+      "true_success": 0.8541666666666666
+    },
+    {
+      "budget_exceeded_frac": 0.026041666666666668,
+      "mean_calls": 7.609375,
+      "n": 192,
+      "observed_reward": 0.8072916666666666,
+      "step": 38,
+      "true_success": 0.9010416666666666
+    },
+    {
+      "budget_exceeded_frac": 0.052083333333333336,
+      "mean_calls": 8.619791666666666,
+      "n": 192,
+      "observed_reward": 0.8072916666666666,
+      "step": 39,
+      "true_success": 0.890625
+    },
+    {
+      "budget_exceeded_frac": 0.03125,
+      "mean_calls": 6.942708333333333,
+      "n": 192,
+      "observed_reward": 0.8541666666666666,
+      "step": 40,
+      "true_success": 0.9375
+    },
+    {
+      "budget_exceeded_frac": 0.015625,
+      "mean_calls": 7.208333333333333,
+      "n": 192,
+      "observed_reward": 0.828125,
+      "step": 41,
+      "true_success": 0.9427083333333334
+    },
+    {
+      "budget_exceeded_frac": 0.041666666666666664,
+      "mean_calls": 8.223958333333334,
+      "n": 192,
+      "observed_reward": 0.796875,
+      "step": 42,
+      "true_success": 0.921875
+    },
+    {
+      "budget_exceeded_frac": 0.03125,
+      "mean_calls": 8.880208333333334,
+      "n": 192,
+      "observed_reward": 0.8072916666666666,
+      "step": 43,
+      "true_success": 0.8802083333333334
+    },
+    {
+      "budget_exceeded_frac": 0.052083333333333336,
+      "mean_calls": 7.072916666666667,
+      "n": 192,
+      "observed_reward": 0.8072916666666666,
+      "step": 44,
+      "true_success": 0.9010416666666666
+    },
+    {
+      "budget_exceeded_frac": 0.020833333333333332,
+      "mean_calls": 6.984375,
+      "n": 192,
+      "observed_reward": 0.8229166666666666,
+      "step": 45,
+      "true_success": 0.9166666666666666
+    },
+    {
+      "budget_exceeded_frac": 0.046875,
+      "mean_calls": 7.958333333333333,
+      "n": 192,
+      "observed_reward": 0.8229166666666666,
+      "step": 46,
+      "true_success": 0.8802083333333334
+    },
+    {
+      "budget_exceeded_frac": 0.03125,
+      "mean_calls": 7.296875,
+      "n": 192,
+      "observed_reward": 0.8645833333333334,
+      "step": 47,
+      "true_success": 0.9322916666666666
+    },
+    {
+      "budget_exceeded_frac": 0.020833333333333332,
+      "mean_calls": 8.067708333333334,
+      "n": 192,
+      "observed_reward": 0.8072916666666666,
+      "step": 48,
+      "true_success": 0.890625
+    },
+    {
+      "budget_exceeded_frac": 0.07291666666666667,
+      "mean_calls": 8.572916666666666,
+      "n": 192,
+      "observed_reward": 0.8072916666666666,
+      "step": 49,
+      "true_success": 0.9010416666666666
+    },
+    {
+      "budget_exceeded_frac": 0.052083333333333336,
+      "mean_calls": 8.46875,
+      "n": 192,
+      "observed_reward": 0.8385416666666666,
+      "step": 50,
+      "true_success": 0.9270833333333334
+    },
+    {
+      "budget_exceeded_frac": 0.015625,
+      "mean_calls": 7.223958333333333,
+      "n": 192,
+      "observed_reward": 0.8072916666666666,
+      "step": 51,
+      "true_success": 0.8854166666666666
+    },
+    {
+      "budget_exceeded_frac": 0.036458333333333336,
+      "mean_calls": 7.84375,
+      "n": 192,
+      "observed_reward": 0.8020833333333334,
+      "step": 52,
+      "true_success": 0.90625
+    },
+    {
+      "budget_exceeded_frac": 0.010416666666666666,
+      "mean_calls": 6.828125,
+      "n": 192,
+      "observed_reward": 0.78125,
+      "step": 53,
+      "true_success": 0.9166666666666666
+    },
+    {
+      "budget_exceeded_frac": 0.026041666666666668,
+      "mean_calls": 6.864583333333333,
+      "n": 192,
+      "observed_reward": 0.7916666666666666,
+      "step": 54,
+      "true_success": 0.921875
+    },
+    {
+      "budget_exceeded_frac": 0.10416666666666667,
+      "mean_calls": 8.192708333333334,
+      "n": 192,
+      "observed_reward": 0.7395833333333334,
+      "step": 55,
+      "true_success": 0.8385416666666666
+    },
+    {
+      "budget_exceeded_frac": 0.036458333333333336,
+      "mean_calls": 7.234375,
+      "n": 192,
+      "observed_reward": 0.8177083333333334,
+      "step": 56,
+      "true_success": 0.9322916666666666
+    },
+    {
+      "budget_exceeded_frac": 0.0,
+      "mean_calls": 6.854166666666667,
+      "n": 192,
+      "observed_reward": 0.828125,
+      "step": 57,
+      "true_success": 0.9322916666666666
+    },
+    {
+      "budget_exceeded_frac": 0.03125,
+      "mean_calls": 8.583333333333334,
+      "n": 192,
+      "observed_reward": 0.828125,
+      "step": 58,
+      "true_success": 0.9166666666666666
+    },
+    {
+      "budget_exceeded_frac": 0.020833333333333332,
+      "mean_calls": 7.364583333333333,
+      "n": 192,
+      "observed_reward": 0.859375,
+      "step": 59,
+      "true_success": 0.9114583333333334
+    },
+    {
+      "budget_exceeded_frac": 0.046875,
+      "mean_calls": 7.973958333333333,
+      "n": 192,
+      "observed_reward": 0.7916666666666666,
+      "step": 60,
+      "true_success": 0.8958333333333334
+    },
+    {
+      "budget_exceeded_frac": 0.005208333333333333,
+      "mean_calls": 5.802083333333333,
+      "n": 192,
+      "observed_reward": 0.8697916666666666,
+      "step": 61,
+      "true_success": 0.9166666666666666
+    },
+    {
+      "budget_exceeded_frac": 0.057291666666666664,
+      "mean_calls": 7.052083333333333,
+      "n": 192,
+      "observed_reward": 0.84375,
+      "step": 62,
+      "true_success": 0.9114583333333334
+    },
+    {
+      "budget_exceeded_frac": 0.041666666666666664,
+      "mean_calls": 6.916666666666667,
+      "n": 192,
+      "observed_reward": 0.8177083333333334,
+      "step": 63,
+      "true_success": 0.9270833333333334
+    },
+    {
+      "budget_exceeded_frac": 0.020833333333333332,
+      "mean_calls": 5.864583333333333,
+      "n": 192,
+      "observed_reward": 0.8333333333333334,
+      "step": 64,
+      "true_success": 0.9375
+    },
+    {
+      "budget_exceeded_frac": 0.046875,
+      "mean_calls": 7.671875,
+      "n": 192,
+      "observed_reward": 0.8385416666666666,
+      "step": 65,
+      "true_success": 0.9114583333333334
+    },
+    {
+      "budget_exceeded_frac": 0.020833333333333332,
+      "mean_calls": 6.640625,
+      "n": 192,
+      "observed_reward": 0.8177083333333334,
+      "step": 66,
+      "true_success": 0.9375
+    },
+    {
+      "budget_exceeded_frac": 0.036458333333333336,
+      "mean_calls": 7.104166666666667,
+      "n": 192,
+      "observed_reward": 0.84375,
+      "step": 67,
+      "true_success": 0.9010416666666666
+    },
+    {
+      "budget_exceeded_frac": 0.057291666666666664,
+      "mean_calls": 7.479166666666667,
+      "n": 192,
+      "observed_reward": 0.7552083333333334,
+      "step": 68,
+      "true_success": 0.8072916666666666
+    },
+    {
+      "budget_exceeded_frac": 0.057291666666666664,
+      "mean_calls": 7.760416666666667,
+      "n": 192,
+      "observed_reward": 0.8125,
+      "step": 69,
+      "true_success": 0.90625
+    },
+    {
+      "budget_exceeded_frac": 0.010416666666666666,
+      "mean_calls": 7.65625,
+      "n": 192,
+      "observed_reward": 0.8125,
+      "step": 70,
+      "true_success": 0.9270833333333334
+    },
+    {
+      "budget_exceeded_frac": 0.08854166666666667,
+      "mean_calls": 9.25,
+      "n": 192,
+      "observed_reward": 0.7552083333333334,
+      "step": 71,
+      "true_success": 0.859375
+    },
+    {
+      "budget_exceeded_frac": 0.041666666666666664,
+      "mean_calls": 7.671875,
+      "n": 192,
+      "observed_reward": 0.78125,
+      "step": 72,
+      "true_success": 0.875
+    },
+    {
+      "budget_exceeded_frac": 0.08854166666666667,
+      "mean_calls": 7.75,
+      "n": 192,
+      "observed_reward": 0.7916666666666666,
+      "step": 73,
+      "true_success": 0.8489583333333334
+    },
+    {
+      "budget_exceeded_frac": 0.057291666666666664,
+      "mean_calls": 8.697916666666666,
+      "n": 192,
+      "observed_reward": 0.7239583333333334,
+      "step": 74,
+      "true_success": 0.8177083333333334
+    },
+    {
+      "budget_exceeded_frac": 0.03125,
+      "mean_calls": 7.895833333333333,
+      "n": 192,
+      "observed_reward": 0.8489583333333334,
+      "step": 75,
+      "true_success": 0.9479166666666666
+    },
+    {
+      "budget_exceeded_frac": 0.041666666666666664,
+      "mean_calls": 8.057291666666666,
+      "n": 192,
+      "observed_reward": 0.8229166666666666,
+      "step": 76,
+      "true_success": 0.9270833333333334
+    },
+    {
+      "budget_exceeded_frac": 0.041666666666666664,
+      "mean_calls": 6.5,
+      "n": 192,
+      "observed_reward": 0.8020833333333334,
+      "step": 77,
+      "true_success": 0.90625
+    },
+    {
+      "budget_exceeded_frac": 0.020833333333333332,
+      "mean_calls": 7.192708333333333,
+      "n": 192,
+      "observed_reward": 0.8125,
+      "step": 78,
+      "true_success": 0.9270833333333334
+    },
+    {
+      "budget_exceeded_frac": 0.020833333333333332,
+      "mean_calls": 8.338541666666666,
+      "n": 192,
+      "observed_reward": 0.7916666666666666,
+      "step": 79,
+      "true_success": 0.9010416666666666
+    },
+    {
+      "budget_exceeded_frac": 0.057291666666666664,
+      "mean_calls": 9.0625,
+      "n": 192,
+      "observed_reward": 0.78125,
+      "step": 80,
+      "true_success": 0.8541666666666666
+    },
+    {
+      "budget_exceeded_frac": 0.036458333333333336,
+      "mean_calls": 8.197916666666666,
+      "n": 192,
+      "observed_reward": 0.8072916666666666,
+      "step": 81,
+      "true_success": 0.9114583333333334
+    },
+    {
+      "budget_exceeded_frac": 0.010416666666666666,
+      "mean_calls": 6.479166666666667,
+      "n": 192,
+      "observed_reward": 0.8697916666666666,
+      "step": 82,
+      "true_success": 0.953125
+    },
+    {
+      "budget_exceeded_frac": 0.06770833333333333,
+      "mean_calls": 8.15625,
+      "n": 192,
+      "observed_reward": 0.78125,
+      "step": 83,
+      "true_success": 0.8385416666666666
+    },
+    {
+      "budget_exceeded_frac": 0.010416666666666666,
+      "mean_calls": 6.3125,
+      "n": 192,
+      "observed_reward": 0.859375,
+      "step": 84,
+      "true_success": 0.9635416666666666
+    },
+    {
+      "budget_exceeded_frac": 0.03125,
+      "mean_calls": 7.177083333333333,
+      "n": 192,
+      "observed_reward": 0.859375,
+      "step": 85,
+      "true_success": 0.9427083333333334
+    },
+    {
+      "budget_exceeded_frac": 0.046875,
+      "mean_calls": 9.260416666666666,
+      "n": 192,
+      "observed_reward": 0.828125,
+      "step": 86,
+      "true_success": 0.9010416666666666
+    },
+    {
+      "budget_exceeded_frac": 0.015625,
+      "mean_calls": 8.270833333333334,
+      "n": 192,
+      "observed_reward": 0.8229166666666666,
+      "step": 87,
+      "true_success": 0.890625
+    },
+    {
+      "budget_exceeded_frac": 0.026041666666666668,
+      "mean_calls": 8.151041666666666,
+      "n": 192,
+      "observed_reward": 0.8541666666666666,
+      "step": 88,
+      "true_success": 0.9270833333333334
+    },
+    {
+      "budget_exceeded_frac": 0.020833333333333332,
+      "mean_calls": 7.145833333333333,
+      "n": 192,
+      "observed_reward": 0.8489583333333334,
+      "step": 89,
+      "true_success": 0.9375
+    },
+    {
+      "budget_exceeded_frac": 0.036458333333333336,
+      "mean_calls": 7.447916666666667,
+      "n": 192,
+      "observed_reward": 0.8333333333333334,
+      "step": 90,
+      "true_success": 0.9322916666666666
+    },
+    {
+      "budget_exceeded_frac": 0.026041666666666668,
+      "mean_calls": 7.557291666666667,
+      "n": 192,
+      "observed_reward": 0.8541666666666666,
+      "step": 91,
+      "true_success": 0.9479166666666666
+    },
+    {
+      "budget_exceeded_frac": 0.057291666666666664,
+      "mean_calls": 8.6875,
+      "n": 192,
+      "observed_reward": 0.7604166666666666,
+      "step": 92,
+      "true_success": 0.84375
+    },
+    {
+      "budget_exceeded_frac": 0.078125,
+      "mean_calls": 8.692708333333334,
+      "n": 192,
+      "observed_reward": 0.7864583333333334,
+      "step": 93,
+      "true_success": 0.8541666666666666
+    },
+    {
+      "budget_exceeded_frac": 0.026041666666666668,
+      "mean_calls": 6.447916666666667,
+      "n": 192,
+      "observed_reward": 0.8125,
+      "step": 94,
+      "true_success": 0.9166666666666666
+    },
+    {
+      "budget_exceeded_frac": 0.06770833333333333,
+      "mean_calls": 8.442708333333334,
+      "n": 192,
+      "observed_reward": 0.734375,
+      "step": 95,
+      "true_success": 0.859375
+    },
+    {
+      "budget_exceeded_frac": 0.036458333333333336,
+      "mean_calls": 8.151041666666666,
+      "n": 192,
+      "observed_reward": 0.8229166666666666,
+      "step": 96,
+      "true_success": 0.9114583333333334
+    },
+    {
+      "budget_exceeded_frac": 0.078125,
+      "mean_calls": 8.338541666666666,
+      "n": 192,
+      "observed_reward": 0.765625,
+      "step": 97,
+      "true_success": 0.84375
+    },
+    {
+      "budget_exceeded_frac": 0.08854166666666667,
+      "mean_calls": 8.1875,
+      "n": 192,
+      "observed_reward": 0.7552083333333334,
+      "step": 98,
+      "true_success": 0.84375
+    },
+    {
+      "budget_exceeded_frac": 0.03125,
+      "mean_calls": 7.34375,
+      "n": 192,
+      "observed_reward": 0.828125,
+      "step": 99,
+      "true_success": 0.9270833333333334
+    }
+  ],
+  "training_groups": {
+    "C4": {
+      "all_correct_groups": 1355,
+      "groups": 2400,
+      "mean_max_abs_advantage": 1.387126243089636,
+      "spurious_among_all_correct": 0.574169741697417,
+      "steps": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99
+      ],
+      "zero_variance_frac": 0.24291666666666667
+    }
+  },
+  "versions": {
+    "flash-linear-attention": "0.5.2",
+    "peft": "0.20.0",
+    "torch": "2.11.0+gitd0c8b1f",
+    "transformers": "5.16.1",
+    "trl": "1.12.0",
+    "vllm": "0.27.1+rocm723"
+  },
+  "wall_time_s": 82552.3
+}

@@ -63,8 +63,8 @@ Re-planned on 2026-09-10 after t1-c4-paired-s0 measured 24.1 h and 47.98 USD (53
 | droplet | account | chain (in order) | planned hours | planned USD at 1.99 |
 |---|---|---|---|---|
 | A (destroyed 2026-09-10) | friend 1 | t1-c4-paired-s0 (24.1 h, 47.98 USD, collected with weights); t1-c0-clean-s0 cancelled | 24 | 48 |
-| B | friend 2 | t1-c4-independent-s0, then t1-c0-clean-s1 if the account can absorb about 5 USD of overage, else t1-c4-independent-s0 alone | 47 or 24 | 93 or 48 |
-| C | own | t1-c4-paired-s1, t1-c4-independent-s1 | 46 | 92 |
+| B | friend 2 | t1-c4-independent-s0 (COMPLETE, 22.9 h, 45.63 USD, collected and accepted with weights 2026-09-16, weights at Melikshah/paired-rollouts-weights revision 641a2a72, droplet retained and reused for t1-c4-independent-s2), t1-c4-independent-s2 | 46 | 92 |
+| C | own | t1-c4-paired-s1 (COMPLETE, 21.7 h, 43.21 USD, collected and accepted with weights 2026-09-16, weights at Melikshah/paired-rollouts-weights revision 42dd6d51, droplet retained and reused for t1-c4-independent-s1), t1-c4-independent-s1 | 46 | 92 |
 | D | own | t1-c4-independent-s2, t1-c4-paired-s2 (the seed pairs run in opposite arm order on C and D) | 46 | 92 |
 | E | own | t1-c0-clean-s0, then t1-c0-clean-s1 if B runs one job | 23.5 or 46 | 47 or 92 |
 
