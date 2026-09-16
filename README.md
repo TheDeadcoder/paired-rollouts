@@ -37,7 +37,7 @@ python scripts/upload_weights.py outputs/runs/<run_id> --repo <user>/<name>
 
 ## Running on DigitalOcean (AMD MI300X)
 
-The same job body runs on a droplet through `scripts/run_local.py`; `scripts/launch_remote.py` starts specs over SSH in a detached shell and `scripts/collect_remote.py` rsyncs the results back. See `docs/DIGITALOCEAN.md`.
+The same job body runs on a droplet or a pod through `scripts/run_local.py`; `scripts/launch_remote.py` starts specs over SSH in a detached shell and `scripts/collect_remote.py` rsyncs the results back. See `docs/DIGITALOCEAN.md` (MI300X droplets, the stack inside a container) and `docs/RUNPOD.md` (H100 pods, the stack in a venv on the host, `--container none`).
 
 ## Development setup
 ```

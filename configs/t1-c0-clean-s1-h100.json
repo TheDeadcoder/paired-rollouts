@@ -1,10 +1,10 @@
 {
-  "run_id": "t1-c0-clean-s0",
+  "run_id": "t1-c0-clean-s1-h100",
   "condition": "C0",
   "arm": "clean",
   "p": 0.0,
   "q": 0.0,
-  "seed": 0,
+  "seed": 1,
   "model": "Qwen/Qwen3.5-2B",
   "steps": 100,
   "prompts_per_step": 24,
@@ -15,8 +15,7 @@
   "checkpoint_steps": 20,
   "diagnostic_steps": [
     0,
-    50,
     100
   ],
-  "notes": "tier 1, pre-registered v1; C0 clean seed 0; moved from DigitalOcean 2026-09-16 to an H100 host (DEVIATIONS); provider in the launch register"
+  "notes": "tier 1, pre-registered v1; C0 clean seed 1, H100 replication of t1-c0-clean-s1 (the C0 reference on the H100 uses this run; DEVIATIONS 2026-09-16); H100 provider in the launch register"
 }

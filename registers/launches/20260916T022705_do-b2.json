@@ -4,6 +4,8 @@
   "entries": [
     {
       "call_id": "root@134.199.194.240:t1-c4-independent-s2",
+      "cancelled_reason": "DigitalOcean droplet root@134.199.194.240 stopped progressing on 2026-09-16 (last observed: t1-c4-independent-s2: RUNNING | no manifest yet); the run is abandoned here and launched on an H100 host under the same run id (DEVIATIONS 2026-09-16); nothing produced on the droplet is used",
+      "cancelled_utc": "2026-09-16T22:27:56+00:00",
       "container": "pairedrl",
       "host": "root@134.199.194.240",
       "host_run_dir": "/root/work/runs/t1-c4-independent-s2",

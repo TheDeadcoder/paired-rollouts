@@ -1,0 +1,18 @@
+{
+  "app": "root@134.199.195.148",
+  "commit": "4ed92459d3bfc6abc069770037bc6e1f172058ff",
+  "entries": [
+    {
+      "call_id": "root@134.199.195.148:t1-c0-clean-s1",
+      "container": "pairedrl",
+      "host": "root@134.199.195.148",
+      "host_run_dir": "/root/work/runs/t1-c0-clean-s1",
+      "log": "/root/work/runs/t1-c0-clean-s1.log",
+      "run_id": "t1-c0-clean-s1",
+      "spawned_utc": "2026-09-16T05:25:40+00:00",
+      "spec_path": "configs/t1-c0-clean-s1.json"
+    }
+  ],
+  "launched_utc": "2026-09-16T05:25:40+00:00",
+  "preregistration": "v1"
+}

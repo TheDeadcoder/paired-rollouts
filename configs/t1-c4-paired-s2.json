@@ -17,5 +17,5 @@
     0,
     100
   ],
-  "notes": "tier 1, pre-registered v1; C4 paired seed 2; provider digitalocean"
+  "notes": "tier 1, pre-registered v1; C4 paired seed 2; moved from DigitalOcean 2026-09-16 to an H100 host (DEVIATIONS); provider in the launch register"
 }
