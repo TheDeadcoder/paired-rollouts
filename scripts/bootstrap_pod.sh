@@ -43,9 +43,15 @@ else
 fi
 cd paired-rollouts && git checkout -q -f "$COMMIT" && git rev-parse HEAD
 
-echo "== venv"
-if [ ! -x /workspace/venv/bin/python ]; then
-  python3 -m venv /workspace/venv || (apt-get update -q && apt-get install -y -q python3-venv && python3 -m venv /workspace/venv)
+echo "== venv (Python 3.12: flashinfer, a vLLM dependency, has array.array[int] type hints that need 3.12; the template ships 3.11)"
+if ! command -v python3.12 >/dev/null 2>&1; then
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get update -q
+  apt-get install -y -q python3.12 python3.12-venv python3.12-dev
+fi
+if [ ! -x /workspace/venv/bin/python ] || ! /workspace/venv/bin/python -c 'import sys; sys.exit(0 if sys.version_info[:2] == (3, 12) else 1)' 2>/dev/null; then
+  rm -rf /workspace/venv
+  python3.12 -m venv /workspace/venv
 fi
 touch /root/.bashrc
 grep -q 'workspace/venv/bin' /root/.bashrc || sed -i '1i export PATH=/workspace/venv/bin:$PATH' /root/.bashrc

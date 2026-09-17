@@ -1,0 +1,22 @@
+{
+  "app": "pairedrl-train",
+  "commit": "6f0ea2e374babaca82837ea29b86357479f1358d",
+  "entries": [
+    {
+      "call_id": "fc-01M2P5QPDRBYAC3XVV8P9EM6NH",
+      "dashboard_url": "https://modal.com/id/fc-01M2P5QPDRBYAC3XVV8P9EM6NH",
+      "run_id": "t1-c4-paired-s1-h100",
+      "spawned_utc": "2026-09-16T22:34:55+00:00",
+      "spec_path": "configs/t1-c4-paired-s1-h100.json"
+    },
+    {
+      "call_id": "fc-01M2P5QPRNN5GBFKW190HN4ZP4",
+      "dashboard_url": "https://modal.com/id/fc-01M2P5QPRNN5GBFKW190HN4ZP4",
+      "run_id": "t1-c4-independent-s1",
+      "spawned_utc": "2026-09-16T22:34:56+00:00",
+      "spec_path": "configs/t1-c4-independent-s1.json"
+    }
+  ],
+  "launched_utc": "2026-09-16T22:34:54+00:00",
+  "preregistration": "v1"
+}
