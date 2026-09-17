@@ -1,0 +1,18 @@
+{
+  "app": "runpod-b",
+  "commit": "24289533d34878d0ad62008e93a0b8ccd35a8bd4",
+  "entries": [
+    {
+      "call_id": "runpod-b:t1-c0-clean-s1-h100",
+      "container": null,
+      "host": "runpod-b",
+      "host_run_dir": "/workspace/runs/t1-c0-clean-s1-h100",
+      "log": "/workspace/runs/t1-c0-clean-s1-h100.log",
+      "run_id": "t1-c0-clean-s1-h100",
+      "spawned_utc": "2026-09-17T21:08:10+00:00",
+      "spec_path": "configs/t1-c0-clean-s1-h100.json"
+    }
+  ],
+  "launched_utc": "2026-09-17T21:08:10+00:00",
+  "preregistration": "v1"
+}
