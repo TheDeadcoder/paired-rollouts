@@ -210,12 +210,23 @@ def _episode(task, sched, phase, exposed=False):
 
 def test_identity_assertions():
     design = {"diagnostic_tasks": 2, "schedules": 2, "samples": 2, "clean_tasks": 2, "clean_rollouts": 2, "resamples": 4}
-    diag = [(None, [_episode(t, s, "probe_diag") for t in ("d0", "d1") for s in (10, 11) for _ in range(2)])]
-    clean = [(None, [_episode(t, 0, "probe_clean") for t in ("c0", "c1") for _ in range(2)])]
+    diag = [(None, [_episode(t, s, "probe_diag:step0") for t in ("d0", "d1") for s in (10, 11) for _ in range(2)])]
+    clean = [(None, [_episode(t, 0, "probe_clean:step0") for t in ("c0", "c1") for _ in range(2)])]
     tp.assert_capture_identities(diag, clean, design)
-    bad = [(None, [_episode("d0", 0, "probe_clean") for _ in range(2)] + [_episode("c1", 0, "probe_clean") for _ in range(2)])]
+    bad = [(None, [_episode("d0", 0, "probe_clean:step0") for _ in range(2)] + [_episode("c1", 0, "probe_clean:step0") for _ in range(2)])]
     with pytest.raises(AssertionError):
         tp.assert_capture_identities(diag, bad, design)
+
+
+def test_transition_member_ordering():
+    def mem(sched, idx):
+        return (None, idx, {"schedule_seed": sched, "task_id": "t"})
+    shuffled = [mem(20, 0), mem(10, 1), mem(20, 2), mem(10, 3), mem(10, 4), mem(20, 5)]
+    seeds = [m[2]["schedule_seed"] for m in tp.order_transition_members(shuffled)]
+    assert seeds == [10, 10, 10, 20, 20, 20]
+    tp.assert_schedule_layout(seeds, 2, 3, "t")
+    with pytest.raises(AssertionError):
+        tp.assert_schedule_layout([10, 20, 10, 20, 10, 20], 2, 3, "t")
 
 
 def test_coordinate_stability():

@@ -120,7 +120,7 @@ def assert_capture_identities(diag_captured, clean_captured, design) -> None:
     capture is `clean_tasks` tasks of `clean_rollouts` rollouts each (phase probe_clean, no faults exposed), with no
     task id in both."""
     diag, clean = flatten_episodes(diag_captured), flatten_episodes(clean_captured)
-    bad = {e.get("phase") for e in diag} - {"probe_diag"}
+    bad = {(e.get("phase") or "").split(":")[0] for e in diag} - {"probe_diag"}
     if bad:
         raise AssertionError(f"diagnostic capture phases {bad}, expected probe_diag")
     diag_by_task = defaultdict(list)
@@ -134,7 +134,7 @@ def assert_capture_identities(diag_captured, clean_captured, design) -> None:
         seeds = Counter(e["schedule_seed"] for e in eps)
         if len(seeds) != design["schedules"] or any(c != design["samples"] for c in seeds.values()):
             raise AssertionError(f"diagnostic task {tid}: schedule seeds {dict(seeds)}, expected {design['schedules']}x{design['samples']}")
-    bad = {e.get("phase") for e in clean} - {"probe_clean"}
+    bad = {(e.get("phase") or "").split(":")[0] for e in clean} - {"probe_clean"}
     if bad:
         raise AssertionError(f"clean capture phases {bad}, expected probe_clean")
     clean_by_task = defaultdict(list)
@@ -169,6 +169,23 @@ def enable_lora_grads(model) -> None:
     and off for everything else, so the score is over the trainable adapter only."""
     for name, param in model.named_parameters():
         param.requires_grad_("lora_" in name)
+
+
+def _any_gradient_checkpointing(model) -> bool:
+    return any(getattr(module, "gradient_checkpointing", False) for module in model.modules())
+
+
+def _enable_gradient_checkpointing(model) -> None:
+    """Activation checkpointing for the single-sequence backward, so it does not materialize the full activations of
+    an ~8000-token sequence next to vLLM's reservation. PeftModel forwards the call to the base model; if it does
+    not, call it on base_model.model. LoRA dropout is 0 and the base has no dropout, so train mode changes only the
+    checkpointing path (docs/PROBE.md)."""
+    kwargs = {"gradient_checkpointing_kwargs": {"use_reentrant": False}}
+    model.gradient_checkpointing_enable(**kwargs)
+    if not _any_gradient_checkpointing(model):
+        model.base_model.model.gradient_checkpointing_enable(**kwargs)
+    if not _any_gradient_checkpointing(model):
+        raise AssertionError("gradient checkpointing did not enable on any module")
 
 
 def lora_grad_names(model) -> list:
@@ -320,23 +337,28 @@ def validate_loss_gradient(trainer, validation, coords) -> dict:
     sub = {k: output[k][indices] for k in keys if output.get(k) is not None}
     mask = sub["completion_mask"] if sub.get("tool_mask") is None else sub["completion_mask"] * sub["tool_mask"]
     t_group = float(mask.sum().item())
-    sub["advantages"] = torch.tensor(grpo_advantages(true.tolist(), "group"), dtype=torch.float32)
+    sub["advantages"] = torch.tensor(grpo_advantages(true.tolist(), "group"), dtype=torch.float32, device=mask.device)
     sub["num_items_in_batch"] = mask.sum()
-    was_training = trainer.model.training
-    trainer.model.train()
+    steps_per_generation = trainer.args.steps_per_generation
+    set_accum = not hasattr(trainer, "current_gradient_accumulation_steps")
+    if set_accum:
+        trainer.current_gradient_accumulation_steps = steps_per_generation
     trainer.model.zero_grad(set_to_none=True)
-    trainer._compute_loss(trainer.model, sub).backward()
+    try:
+        trainer._compute_loss(trainer.model, sub).backward()
+    finally:
+        if set_accum:
+            del trainer.current_gradient_accumulation_steps
     params = dict(trainer.model.named_parameters())
     grad = torch.cat([params[name].grad.reshape(-1).float() for name in coords]).detach().cpu().numpy()
     trainer.model.zero_grad(set_to_none=True)
-    if not was_training:
-        trainer.model.eval()
     recon = (scores.T @ (np.asarray(grpo_advantages(true.tolist(), "group")) * rho)) / t_group
     minus_grad = -grad
     denom = np.linalg.norm(minus_grad) + 1e-30
     return {"cosine": float(minus_grad @ recon / (denom * (np.linalg.norm(recon) + 1e-30))),
             "norm_ratio": float(np.linalg.norm(recon) / denom),
-            "relative_l2": float(np.linalg.norm(minus_grad - recon) / denom), "t_group": t_group}
+            "relative_l2": float(np.linalg.norm(minus_grad - recon) / denom), "t_group": t_group,
+            "steps_per_generation": steps_per_generation}
 
 
 # ---- G: atomic writes and provenance-checked resume -------------------------
@@ -391,6 +413,27 @@ def within_task_trace_transition(sum_sq_norm, summed_weights, gram, n_groups) ->
     return pm.trace_variance(sum_sq_norm, pm.quadratic(summed_weights, gram), n_groups)
 
 
+def order_transition_members(members) -> list:
+    """Lay a task's captured members out schedule-major by a stable sort on (schedule_seed, capture position), so
+    rollout index k*M + m shares schedule k whatever order the eval dataloader delivered them in."""
+    return [member for _, member in sorted(enumerate(members), key=lambda im: (im[1][2]["schedule_seed"], im[0]))]
+
+
+def assert_schedule_layout(schedule_seeds, k_schedules, m_samples, task_id) -> None:
+    """Hard error unless the ordered seeds are `k_schedules` consecutive blocks of `m_samples`, each block one seed
+    and the block seeds distinct."""
+    if len(schedule_seeds) != k_schedules * m_samples:
+        raise AssertionError(f"transition task {task_id}: {len(schedule_seeds)} members != {k_schedules}x{m_samples}")
+    block_seeds = []
+    for b in range(k_schedules):
+        block = set(schedule_seeds[b * m_samples:(b + 1) * m_samples])
+        if len(block) != 1:
+            raise AssertionError(f"transition task {task_id}: block {b} spans schedule seeds {block}")
+        block_seeds.append(next(iter(block)))
+    if len(set(block_seeds)) != k_schedules:
+        raise AssertionError(f"transition task {task_id}: schedule seeds not distinct {block_seeds}")
+
+
 # ---- the RunSpec the trainer is built with ----------------------------------
 
 def _probe_run_spec(spec: ProbeSpec, design: dict, adapter_path):
@@ -417,7 +460,6 @@ def _probe_step(spec: ProbeSpec, step: int, runs_root, data_dir, out_dir, git_co
 
     from pairedrl.noise.config import NoiseConfig
     from pairedrl.train.dataset import build_eval_rows
-    from pairedrl.train.env_adapter import BackOfficeEnv
     from pairedrl.train.runner import assemble_diagnostic_rows, build_trainer, load_task_splits
 
     runs_root, out_dir = pathlib.Path(runs_root), pathlib.Path(out_dir)
@@ -443,15 +485,16 @@ def _probe_step(spec: ProbeSpec, step: int, runs_root, data_dir, out_dir, git_co
     torch.cuda.reset_peak_memory_stats() if torch.cuda.is_available() else None
     gen0 = time.perf_counter()
     with capture_batches(trainer) as diag_captured:
-        BackOfficeEnv.phase = "probe:diag"
         trainer.evaluate(eval_dataset=Dataset.from_list(diag_rows), metric_key_prefix="probe_diag")
     with capture_batches(trainer) as clean_captured:
-        BackOfficeEnv.phase = "probe:clean"
         trainer.evaluate(eval_dataset=Dataset.from_list(clean_rows), metric_key_prefix="probe_clean")
     generation_seconds = round(time.perf_counter() - gen0, 1)
     peak_generation = torch.cuda.max_memory_allocated() if torch.cuda.is_available() else 0
     assert_capture_identities(diag_captured, clean_captured, design)
 
+    trainer.model.train()
+    _enable_gradient_checkpointing(trainer.model)
+    trainer.model.config.use_cache = False
     coords, base_fingerprint, p = _establish_coordinates(trainer, clean_captured, step)
     fingerprint_before = lora_fingerprint(trainer.model, coords)
     t_ref = _t_ref(diag_captured, clean_captured)
@@ -467,6 +510,7 @@ def _probe_step(spec: ProbeSpec, step: int, runs_root, data_dir, out_dir, git_co
     fingerprint_after = lora_fingerprint(trainer.model, coords)
     if fingerprint_after != fingerprint_before:
         raise AssertionError(f"LoRA weights changed during scoring: {fingerprint_before[:12]} -> {fingerprint_after[:12]}")
+    trainer.model.eval()
 
     accumulators = {"step": step, "q": spec.q, "outcome": clean["accumulators"], "transition": diag["accumulators"]}
     summary = pm.checkpoint_summary(accumulators)
@@ -627,7 +671,10 @@ def _accumulate_transition(spec, design, step, captured, trainer, coords, p, t_r
     task_table, evidence = [], []
     rollouts = 0
     k, m = design["schedules"], design["samples"]
-    for tid, members in tasks.items():
+    for tid, unordered in tasks.items():
+        members = order_transition_members(unordered)
+        schedule_order = [int(episode["schedule_seed"]) for _, _, episode in members]
+        assert_schedule_layout(schedule_order, k, m, tid)
         gram, scores, tokens, rho = _score_task(trainer, members, coords, p)
         rewards = np.array([float(e["true_success"]) for _, _, e in members])
         index_lists = pm.transition_designs(k, m, design["resamples"], rng)
@@ -646,7 +693,8 @@ def _accumulate_transition(spec, design, step, captured, trainer, coords, p, t_r
             task_row[d] = {"sum_sq_norm": terms["mean_centered"]["sum_sq_norm"]}
         task_table.append(task_row)
         evidence.append({"task_id": tid, "gram": gram.tolist(), "rewards": rewards.tolist(), "tokens": tokens.tolist(),
-                         "rho": rho.tolist(), "index_lists": index_lists, "identities": [_identity(e) for _, _, e in members]})
+                         "rho": rho.tolist(), "index_lists": index_lists, "schedule_order": schedule_order,
+                         "identities": [_identity(e) for _, _, e in members]})
         del scores
     accumulators = {}
     for est in pm.ESTIMATORS:

@@ -103,7 +103,11 @@ supersede the earlier text of this file:
   computation shared by both trajectories via `build_probe_register --base-from`.
 - Memory. One rollout is scored at a time into a pinned CPU matrix (n x P, n at most 64); the fp64 Gram and the
   weighted sums are formed by moving row chunks (at most 2 GB fp64) to the GPU; `empty_cache` runs after each task.
-  The backward runs in train mode with gradient checkpointing enabled (`use_reentrant=False`; LoRA dropout is 0);
+  Before any scoring the model is put in train mode and `gradient_checkpointing_enable(use_reentrant=False)` is called
+  (on the PeftModel, or its `base_model.model` if the wrapper does not forward it), `use_cache` is set False, and some
+  module is asserted to have `gradient_checkpointing` True; the model returns to eval after the fingerprint check.
+  Train mode changes only the checkpointing path here (LoRA dropout is 0 and the base has no dropout), and without it
+  a single ~8000-token backward would materialize full activations next to vLLM's reservation.
   `torch.cuda.max_memory_allocated` after generation and after scoring is recorded.
 - One process per checkpoint. `run_probe` runs each step as a `python -m pairedrl.train.probe` subprocess so a step's
   memory is released before the next; it resumes only a step whose recorded provenance (spec sha, trajectory, adapter
@@ -125,6 +129,15 @@ supersede the earlier text of this file:
   attention_mask = cat(prompt_mask, completion_mask), logits_to_keep = completion_ids.size(1), the temperature applied
   inside `_get_per_token_logps_and_entropies`, differentiated scalar (per_token_logps * mask).sum() with
   mask = completion_mask * tool_mask, T_i = mask.sum()). The diagnostic and clean generations are captured in separate
-  context managers, each into its own buffer, and the identities (counts, phases, no faults on clean, disjoint task
-  ids) are asserted before any backward. A loss-gradient validation on one mixed clean group (smoke, and once per
-  full-size step) checks -grad of `_compute_loss` against the reconstruction (1/T_group) sum_i A_i rho_i S_i.
+  context managers, each into its own buffer; the phase each records is `{prefix}:step{n}` (PhasedTrainer.evaluate
+  stamps it from the metric prefix), so the identity check compares `phase.split(":")[0]` with probe_diag / probe_clean.
+  The identities (counts, phases, no faults on clean, disjoint task ids) are asserted before any backward.
+- Transition layout. Each task's captured members are ordered schedule-major by a stable sort on (schedule_seed,
+  capture position) so that rollout index k*M + m shares schedule k whatever order the eval dataloader delivered them
+  in; the `schedules` blocks of `samples` are asserted single-seeded and distinct, and the schedule-seed order is
+  written to the evidence.
+- Loss validation. On one mixed clean group (smoke, and once per full-size step) -grad of `_compute_loss` is checked
+  against the reconstruction (1/T_group) sum_i A_i rho_i S_i. The advantages tensor is built on the mask's device, and
+  `current_gradient_accumulation_steps` is set to `steps_per_generation` for the call (Transformers 5.16.1 sets it only
+  inside the training loop, and this makes DAPO's `current / steps_per_generation` factor exactly 1) then deleted; the
+  backward runs in the same train-plus-checkpointing mode as scoring, and `steps_per_generation` is recorded.
