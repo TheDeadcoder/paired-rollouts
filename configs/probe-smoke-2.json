@@ -1,0 +1,12 @@
+{
+  "probe_id": "probe-smoke-2",
+  "model": "Qwen/Qwen3.5-2B",
+  "trajectory": "t1-c2-paired-s1",
+  "steps": [
+    0,
+    20
+  ],
+  "seed": 0,
+  "smoke": true,
+  "notes": "end-to-end smoke of the probe job, rerun after the bf16 fingerprint fix (probe-smoke failed at the fingerprint at 6a741a5); not pre-registered"
+}

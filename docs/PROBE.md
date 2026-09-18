@@ -59,7 +59,7 @@ reported whatever their sign.
     python scripts/build_probe_register.py --probes outputs/runs/probe-t1-c2-paired-s1-a outputs/runs/probe-t1-c2-paired-s1-b \
         --trajectory t1-c2-paired-s1 --base-from outputs/runs/probe-t1-c2-paired-s1-a --out registers/probe/t1-c2-paired-s1.json
 
-`configs/probe-smoke.json` runs the shrunk design end to end in about ten minutes; the register builder refuses it.
+`configs/probe-smoke.json` runs the shrunk design end to end in about ten minutes; the register builder refuses it. `probe-smoke` failed at the first fingerprint at 6a741a5 (numpy has no bfloat16 dtype); `configs/probe-smoke-2.json` is its rerun after the fix.
 
 ## Sizing
 
@@ -96,7 +96,9 @@ supersede the earlier text of this file:
   gradient on text-only rollouts); an always-zero coordinate contributes nothing to any inner product, so this is
   the full-parameter measurement without the structural zeros. Every later rollout must have gradients on exactly
   that set. A sha256 fingerprint of the coordinate parameters is asserted unchanged after scoring, and P and the
-  coordinate-name sha256 are written to the step file.
+  coordinate-name sha256 are written to the step file. The bytes are taken through a uint8 view of the bf16 tensor,
+  because numpy has no bfloat16 dtype; the fingerprint is the sha256 of the two raw bytes of every bf16 element in
+  coordinate order.
 - Base model. Step 0 seeds `transformers.set_seed(spec.seed)` immediately before `build_trainer` and records the
   fingerprint; the step-0 probe is a fixed reference LoRA parameterization of the base policy, not the trajectories'
   own initial adapters, so cross-checkpoint trends of Euclidean traces are coordinate-dependent. Step 0 is one probe

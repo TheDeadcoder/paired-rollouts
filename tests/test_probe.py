@@ -248,6 +248,30 @@ def test_chunked_gram_and_weighted_sum():
     assert np.allclose(tp.weighted_sum_chunked(w, torch.as_tensor(scores), 3), w @ scores)
 
 
+def test_lora_fingerprint_on_bf16_parameters():
+    torch = pytest.importorskip("torch")
+
+    class Tiny(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.lora_A = torch.nn.Parameter(torch.randn(6, 4, dtype=torch.bfloat16))
+            self.lora_B = torch.nn.Parameter(torch.randn(4, 6, dtype=torch.bfloat16))
+            self.base = torch.nn.Parameter(torch.randn(3, 3))
+
+    torch.manual_seed(0)
+    model = Tiny()
+    coords = ["lora_A", "lora_B"]
+    assert len(tp._bf16_bytes(model.lora_A.data)) == 2 * model.lora_A.numel()
+    assert len(tp._bf16_bytes(model.base.data)) == 2 * model.base.numel()
+    assert len(tp._bf16_bytes(model.lora_A.data.T)) == 2 * model.lora_A.numel()
+    before = tp.lora_fingerprint(model, coords)
+    assert len(before) == 64 and before == tp.lora_fingerprint(model, coords)
+    assert before != tp.lora_fingerprint(model, coords[::-1])
+    with torch.no_grad():
+        model.lora_B[1, 2] += 1.0
+    assert tp.lora_fingerprint(model, coords) != before
+
+
 def test_atomic_write_and_resume(tmp_path):
     spec = ProbeSpec(probe_id="p", model="m", trajectory="t1-c2-paired-s1", steps=[0])
     path = tmp_path / "step0.json"

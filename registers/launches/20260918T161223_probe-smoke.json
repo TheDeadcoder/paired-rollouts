@@ -1,0 +1,17 @@
+{
+  "app": "pairedrl-train",
+  "commit": "6a741a52a3aa4b6f9bb38f7e1d993fdd6dd34dba",
+  "entries": [
+    {
+      "call_id": "fc-01M2TMMQMSDMXYZ5X0FXQBA3A4",
+      "dashboard_url": "https://modal.com/id/fc-01M2TMMQMSDMXYZ5X0FXQBA3A4",
+      "function": "probe",
+      "run_id": "probe-smoke",
+      "spawned_utc": "2026-09-18T16:12:25+00:00",
+      "spec_path": "configs/probe-smoke.json",
+      "trajectory": "t1-c2-paired-s1"
+    }
+  ],
+  "launched_utc": "2026-09-18T16:12:23+00:00",
+  "preregistration": null
+}

@@ -215,7 +215,7 @@ def _named_has_grad(model):
 def _bf16_bytes(tensor):
     import torch
 
-    return tensor.detach().to(torch.bfloat16).cpu().contiguous().numpy().tobytes()
+    return tensor.detach().to(torch.bfloat16).cpu().contiguous().reshape(-1).view(torch.uint8).numpy().tobytes()
 
 
 def lora_fingerprint(model, coords) -> str:
