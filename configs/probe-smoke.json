@@ -1,0 +1,9 @@
+{
+  "probe_id": "probe-smoke",
+  "model": "Qwen/Qwen3.5-2B",
+  "trajectory": "t1-c2-paired-s1",
+  "steps": [0],
+  "seed": 1,
+  "smoke": true,
+  "notes": "end-to-end smoke of the probe job; not pre-registered"
+}

@@ -1,0 +1,8 @@
+{
+  "probe_id": "probe-t1-c2-paired-s1-b",
+  "model": "Qwen/Qwen3.5-2B",
+  "trajectory": "t1-c2-paired-s1",
+  "steps": [60, 80, 100],
+  "seed": 1,
+  "notes": "gradient probe H1(b) trajectory B, second half; pre-registered v1"
+}

@@ -79,3 +79,22 @@ def run(spec_dict: dict, git_commit: str) -> dict:
         os.environ.get("PAIREDRL_GIT_COMMIT", ""), provider="modal", usd_per_hour=H100_USD_PER_HOUR,
         commit_fn=runs_volume.commit, checkpoint_every=CHECKPOINT_EVERY_STEPS, reraise_attempts=1,
     )
+
+
+@app.function(
+    image=image,
+    gpu="H100",
+    timeout=24 * 3600,
+    volumes={HF_CACHE: hf_cache, RUNS: runs_volume},
+    single_use_containers=True,
+    retries=modal.Retries(max_retries=3, backoff_coefficient=1.0, initial_delay=60.0),
+)
+def probe(spec_dict: dict, git_commit: str) -> dict:
+    from pairedrl.train.probe import ProbeSpec, run_probe
+
+    spec = ProbeSpec.from_dict(spec_dict)
+    return run_probe(
+        spec, pathlib.Path(RUNS), "/root/data/tasks", pathlib.Path(RUNS) / spec.probe_id, git_commit,
+        os.environ.get("PAIREDRL_GIT_COMMIT", ""), provider="modal", usd_per_hour=H100_USD_PER_HOUR,
+        commit_fn=runs_volume.commit,
+    )

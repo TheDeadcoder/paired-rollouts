@@ -1,0 +1,8 @@
+{
+  "probe_id": "probe-gate1-c2-paired-s0",
+  "model": "Qwen/Qwen3.5-2B",
+  "trajectory": "gate1-c2-paired-s0",
+  "steps": [80, 100],
+  "seed": 0,
+  "notes": "gradient probe H1(b) trajectory A; the base model is shared with trajectory B's probe; pre-registered v1"
+}
