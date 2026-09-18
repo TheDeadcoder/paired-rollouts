@@ -13,10 +13,11 @@ For every rollout i the probe forms the score vector
     S_i = sum over completion tokens t of mask_it * grad_theta log pi_theta(y_it | prefix),
 
 over the LoRA parameters only, with the training tool mask. A group gradient is g = sum_i a_i S_i with weights
-a_i that depend on the estimator: mean-centered (THEORY 3b) a_i = (R_i - R_bar) / G; implemented (TRL's update)
-a_i = A_i / T_group with A_i = `grpo_advantages(R, "group")` and T_group = sum_i T_i the group's completion-token
-count. Every reported quantity is a within-group inner product a^T K a on the Gram matrix K_ij = S_i . S_j plus a
-running sum of the group gradients across groups:
+a_i that depend on the estimator: mean-centered (THEORY 3b) a_i = (R_i - R_bar) / G; implemented (TRL's update at
+this commit) a_i = A_i rho_i / T_ref with A_i = `grpo_advantages(R, "group")`, rho_i the per-sequence vLLM
+importance-sampling ratio the loss applies, and T_ref one batch-level token normalizer shared across every group of a
+step (TRL's DAPO `num_items_in_batch`), not the group's own token total. Every reported quantity is a within-group
+inner product a^T K a on the Gram matrix K_ij = S_i . S_j plus a running sum of the group gradients across groups:
 
     Tr Var(g) over n groups = E||g||^2 - ||E g||^2 = (sum ||g||^2) / n - ||sum g||^2 / n^2.
 
@@ -68,34 +69,62 @@ by both trajectories.
 
 ## Adaptations
 
-Departures from the letter of PREREGISTRATION section 3 H1(b) and DEVIATIONS amendment A1:
+Departures from the letter of PREREGISTRATION section 3 H1(b) and DEVIATIONS amendment A1, and the corrections that
+supersede the earlier text of this file:
 
-- Per-group DAPO normalization. The implemented weight is a_i = A_i / T_group with T_group the group's own
-  completion-token count; TRL's DAPO loss divides by the token count of the whole optimizer step, a scalar common
-  to both designs at equal token counts, so the per-group divisor changes only the shared scale and not the
-  paired-versus-independent comparison. Recorded per A1.
-- Both estimators. The mean-centered estimator of THEORY 3b decides; the implemented std-normalized update (DAPO
-  aggregation, the training tool mask) is reported alongside, with its expected-update norm and direction and the
+- Per-group normalization withdrawn. The earlier version of this file claimed the implemented weight was
+  a_i = A_i / T_group with T_group the group's own token total. That was wrong: TRL's DAPO loss divides the whole
+  generation batch by one `num_items_in_batch` (the batch's masked-token total), so groups are not reweighted by
+  their own token totals, and the loss multiplies each sequence by the vLLM importance-sampling ratio rho_i. The
+  implemented estimator is now a_i = A_i rho_i / T_ref with T_ref the mean masked-token total of a
+  24-group-by-8-generation training batch (24 x 8 x the mean masked tokens per rollout over the checkpoint's
+  rollouts), one constant that cancels from every paired-versus-independent ratio. The review's counterexample
+  (numerators (10, 0) and (0, 100), token totals 10 and 100) is a test: the batch normalizer and the per-group one
+  give different update directions, which is why the per-group one was dropped.
+- Importance ratio. rho_i is read from the captured `output["importance_sampling_ratio"]` (`vllm_importance_sampling_
+  correction=True`, mode `sequence_mask`, cap 3; 0 outside the bounds), present in eval mode too. Each step reports
+  the fraction of rollouts with rho = 0 and the min, mean, max of the nonzero ratios.
+- Both estimators. The mean-centered estimator of THEORY 3b decides; the implemented update (rho, the batch
+  normalizer, the training tool mask) is reported alongside with its expected-update norm, direction and the
   reward-contrast variance; a smaller update norm is not read as a gain (A1).
 - No random projection. With G = 8 every quantity is an exact inner product of per-rollout LoRA gradients within a
-  group plus running sums across groups, computed in the LoRA parameter space; the v1 seeded 4096-dimensional
-  projection is dropped (A1) and no projection-accuracy check is needed.
-- Resampling seeds. `transition_designs` draws the resampled and stratified groups from
-  `numpy.random.default_rng(spec.seed * 1000 + step)`, one stream per checkpoint, so the group draws are fixed and
-  reproducible.
-- Base model shared. Step 0 is one probe computation; trajectory A's and B's registers both take it, via
-  `build_probe_register --base-from`.
-- The probe RunSpec. The trainer is built eval-only at the frozen checkpoint with the trajectory's condition (C2)
-  and arm (paired), which `RunSpec.__post_init__` accepts (a non-clean arm with p = 0.25); q is 0 in generation
-  because the clean rollouts are generated clean and the grader flips are enumerated exactly afterward, not sampled.
-- Score forward. The score reproduces `GRPOTrainer._compute_loss`: input_ids = cat(prompt_ids, completion_ids),
-  attention_mask = cat(prompt_mask, completion_mask), logits_to_keep = completion_ids.size(1), the logits divided
-  by the sampling temperature inside `_get_per_token_logps_and_entropies`, and the differentiated scalar
-  (per_token_logps * mask).sum() with mask = completion_mask * tool_mask, the mask the loss itself uses (tool-result
-  tokens excluded); T_i = mask.sum().
-- Capture path. The generation output and the environments' `last_episode` records are captured by wrapping the
-  trainer instance's `_generate_and_score_completions` (the `training_group_records` pattern), rather than a
-  `ProbeTrainer.prediction_step` subclass, so `build_trainer` is reused unchanged; its `PhasedTrainer` only logs
-  group records while training, and the probe runs eval-only.
-- Gradient checkpointing stays on (inherited from `build_trainer`); the scores are single-sequence backward passes
-  (batch size one), so peak memory is bounded regardless.
+  group plus running sums across groups, computed in the LoRA parameter space; the v1 4096-dimensional projection is
+  dropped (A1).
+- Score coordinates. `PeftModel.from_pretrained` loads a checkpoint adapter with inference mode, so grad is turned
+  on for the `lora_` parameters and off for the rest. The coordinate set is fixed once per checkpoint as the LoRA
+  parameters whose gradient is not None after the first rollout's backward (the vision-tower LoRA layers get no
+  gradient on text-only rollouts); an always-zero coordinate contributes nothing to any inner product, so this is
+  the full-parameter measurement without the structural zeros. Every later rollout must have gradients on exactly
+  that set. A sha256 fingerprint of the coordinate parameters is asserted unchanged after scoring, and P and the
+  coordinate-name sha256 are written to the step file.
+- Base model. Step 0 seeds `transformers.set_seed(spec.seed)` immediately before `build_trainer` and records the
+  fingerprint; the step-0 probe is a fixed reference LoRA parameterization of the base policy, not the trajectories'
+  own initial adapters, so cross-checkpoint trends of Euclidean traces are coordinate-dependent. Step 0 is one probe
+  computation shared by both trajectories via `build_probe_register --base-from`.
+- Memory. One rollout is scored at a time into a pinned CPU matrix (n x P, n at most 64); the fp64 Gram and the
+  weighted sums are formed by moving row chunks (at most 2 GB fp64) to the GPU; `empty_cache` runs after each task.
+  The backward runs in train mode with gradient checkpointing enabled (`use_reentrant=False`; LoRA dropout is 0);
+  `torch.cuda.max_memory_allocated` after generation and after scoring is recorded.
+- One process per checkpoint. `run_probe` runs each step as a `python -m pairedrl.train.probe` subprocess so a step's
+  memory is released before the next; it resumes only a step whose recorded provenance (spec sha, trajectory, adapter
+  sha or base fingerprint, git commit, design counts) matches, refuses a mismatch (a repaired rerun needs a new probe
+  id), and mirrors `run_job`'s single re-raise so Modal's retry resumes the finished steps.
+- Evidence and recompute. Every step writes step<N>.json and a gzipped step<N>_evidence.json.gz atomically (temp then
+  rename) with the sufficient statistics (per group and task the fp64 Gram, identities, rewards, masked tokens, rho,
+  index lists, and the running-vector norms and cross terms). `scripts/recompute_probe_step.py` reproduces the summary
+  from the evidence without a GPU.
+- Decomposition and register. `checkpoint_summary` reports, next to the pooled trace, the within-task trace (mean over
+  tasks) and the between-task trace, and the outcome groups stratified by success count k; the registered rule stays
+  on the pooled quantity. The register merge requires the same coordinate-name sha256 and full design across the
+  merged step files (the two halves of trajectory B legitimately have different spec shas; those are recorded per
+  step), the trajectory's declared checkpoint set, finite and non-negative traces, and no conflicting duplicate step.
+- The probe RunSpec is eval-only at the frozen checkpoint with the trajectory's condition (C2) and arm (paired), which
+  `RunSpec.__post_init__` accepts (a non-clean arm with p = 0.25); q is 0 in generation because the clean rollouts are
+  generated clean and the grader flips are enumerated exactly afterward, not sampled.
+- Score forward and capture. The score reproduces `GRPOTrainer._compute_loss` (input_ids = cat(prompt, completion),
+  attention_mask = cat(prompt_mask, completion_mask), logits_to_keep = completion_ids.size(1), the temperature applied
+  inside `_get_per_token_logps_and_entropies`, differentiated scalar (per_token_logps * mask).sum() with
+  mask = completion_mask * tool_mask, T_i = mask.sum()). The diagnostic and clean generations are captured in separate
+  context managers, each into its own buffer, and the identities (counts, phases, no faults on clean, disjoint task
+  ids) are asserted before any backward. A loss-gradient validation on one mixed clean group (smoke, and once per
+  full-size step) checks -grad of `_compute_loss` against the reconstruction (1/T_group) sum_i A_i rho_i S_i.

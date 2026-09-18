@@ -20,11 +20,12 @@ def mean_centered_weights(rewards) -> np.ndarray:
     return (r - r.mean()) / len(r)
 
 
-def implemented_weights(rewards, token_counts, scale: str = "group") -> np.ndarray:
-    """a_i = grpo_advantages(R, scale) / sum(T_i): TRL's std-normalized advantage with per-group DAPO token
-    aggregation, T_group = sum of completion-token counts (docs/THEORY.md section 3b, docs/DEVIATIONS.md A1)."""
+def implemented_weights(rewards, rho, t_ref, scale: str = "group") -> np.ndarray:
+    """a_i = grpo_advantages(R, scale) * rho_i / T_ref: TRL's std-normalized advantage times the per-sequence vLLM
+    importance-sampling ratio rho_i, divided by one batch-level token normalizer T_ref shared across every group of
+    a step (TRL's DAPO num_items_in_batch). The earlier per-group divisor sum(T_i) was wrong (docs/PROBE.md)."""
     a = np.asarray(grpo_advantages(list(rewards), scale), dtype=float)
-    return a / float(np.sum(token_counts))
+    return a * np.asarray(rho, dtype=float) / float(t_ref)
 
 
 def quadratic(weights, gram) -> float:
@@ -41,16 +42,17 @@ def _centered_sq_norms(gram: np.ndarray) -> np.ndarray:
     return np.diag(gram) - (2.0 / g) * row + total / (g * g)
 
 
-def outcome_noise_group(gram, true_success, token_counts, q) -> dict:
+def outcome_noise_group(gram, true_success, rho, t_ref, q) -> dict:
     """One clean group under one-sided outcome noise at rate q (THEORY 3b). Observed R_i = Z_i r_i with
-    Z_i ~ Bernoulli(1 - q) independent (independent design) or shared as a single Z (paired). Returns
-    lhs = ||g_c||^2, rhs = (1/G^2) sum_i r_i ||S_i - S_bar||^2, k_success, and per estimator and design the exact
-    expected_sq_norm E||g||^2, expected_weights E a (length G) and expected_contrast_variance Var(R_i - R_j) =
-    2 E[within-group var(R), ddof 1]. Mean-centered by the closed forms; implemented by exact mask enumeration."""
+    Z_i ~ Bernoulli(1 - q) independent (independent design) or shared as a single Z (paired). The implemented
+    weights are grpo_advantages(R) * rho_i / T_ref (rho the per-sequence vLLM importance ratio, T_ref a batch-level
+    constant). Returns lhs = ||g_c||^2, rhs = (1/G^2) sum_i r_i ||S_i - S_bar||^2, k_success, and per estimator and
+    design the exact expected_sq_norm E||g||^2, expected_weights E a (length G) and expected_contrast_variance
+    Var(R_i - R_j) = 2 E[within-group var(R), ddof 1]. Mean-centered by closed forms; implemented by enumeration."""
     k_mat = np.asarray(gram, dtype=float)
     r = np.asarray(true_success, dtype=float)
     g = len(r)
-    t = np.asarray(token_counts, dtype=float)
+    rho = np.asarray(rho, dtype=float)
     a_c = (r - r.mean()) / g
     lhs = float(a_c @ k_mat @ a_c)
     rhs = float((r * _centered_sq_norms(k_mat)).sum() / (g * g))
@@ -68,7 +70,6 @@ def outcome_noise_group(gram, true_success, token_counts, q) -> dict:
         "independent": (1.0 - q) ** 2 * lhs + q * (1.0 - q) * rhs,
     }
     succ = [i for i in range(g) if r[i] > 0.5]
-    tot_tokens = float(t.sum())
     impl_sq = {"paired": 0.0, "independent": 0.0}
     impl_ea = {"paired": np.zeros(g), "independent": np.zeros(g)}
     contrast = {"paired": 0.0, "independent": 0.0}
@@ -78,13 +79,13 @@ def outcome_noise_group(gram, true_success, token_counts, q) -> dict:
         obs = np.zeros(g)
         for idx, keep in zip(succ, kept):
             obs[idx] = float(keep)
-        a = np.asarray(grpo_advantages(obs.tolist(), "group")) / tot_tokens
+        a = np.asarray(grpo_advantages(obs.tolist(), "group")) * rho / float(t_ref)
         impl_sq["independent"] += prob * float(a @ k_mat @ a)
         impl_ea["independent"] += prob * a
         contrast["independent"] += prob * 2.0 * float(np.var(obs, ddof=1))
     for keep_all, prob in ((True, 1.0 - q), (False, q)):
         obs = r.copy() if keep_all else np.zeros(g)
-        a = np.asarray(grpo_advantages(obs.tolist(), "group")) / tot_tokens
+        a = np.asarray(grpo_advantages(obs.tolist(), "group")) * rho / float(t_ref)
         impl_sq["paired"] += prob * float(a @ k_mat @ a)
         impl_ea["paired"] += prob * a
         contrast["paired"] += prob * 2.0 * float(np.var(obs, ddof=1))
@@ -118,13 +119,13 @@ def transition_designs(k_schedules, m_samples, resamples, rng) -> dict:
     return {"paired": paired, "independent_resampled": independent, "stratified": stratified}
 
 
-def group_terms(gram, rewards, token_counts, index_lists) -> dict:
+def group_terms(gram, rewards, rho, t_ref, index_lists) -> dict:
     """For each estimator, over the given groups of one task: the sum of ||g||^2, the summed weights placed back on
     the task's K*M rollout axis (so the caller forms sum_i w_i S_i once per task and design), the group count and
-    the summed within-group reward variance (ddof 1)."""
+    the summed within-group reward variance (ddof 1). Implemented weights are grpo_advantages(R) * rho_i / T_ref."""
     k_mat = np.asarray(gram, dtype=float)
     r = np.asarray(rewards, dtype=float)
-    t = np.asarray(token_counts, dtype=float)
+    rho = np.asarray(rho, dtype=float)
     n = len(r)
     reward_var_sum = float(sum(np.var(r[list(grp)], ddof=1) for grp in index_lists))
     out = {}
@@ -137,7 +138,7 @@ def group_terms(gram, rewards, token_counts, index_lists) -> dict:
             if est == "mean_centered":
                 w = (obs - obs.mean()) / len(idx)
             else:
-                w = np.asarray(grpo_advantages(obs.tolist(), "group")) / float(t[idx].sum())
+                w = np.asarray(grpo_advantages(obs.tolist(), "group")) * rho[idx] / float(t_ref)
             sub = k_mat[np.ix_(idx, idx)]
             ssn += float(w @ sub @ w)
             summed[idx] += w
@@ -152,24 +153,28 @@ def trace_variance(sum_sq_norm, sum_vector_sq_norm, n) -> float:
 
 
 def _summarize_block(block: dict, designs, primary_independent: str, q=None, with_identity=False) -> dict:
-    """One (noise, estimator) block: trace_var per design, the paired/independent ratio, expected-update norms,
-    the cosine between paired and the primary independent design, reward variances, optional identity residual."""
-    trace = {}
-    update_norm = {}
+    """One (noise, estimator) block. Per design: the pooled trace_var over all groups, trace_var_within (the mean
+    over tasks of the within-task variance), trace_var_between = trace_var - trace_var_within, and the expected
+    update norm. The registered rule uses the pooled paired/independent ratio; the within ratio is reported too,
+    with the cosine between the paired and primary-independent expected gradients, the reward variances and, for the
+    mean-centered outcome estimator, the exact identity residual (must be ~0)."""
+    trace, trace_within, trace_between, update_norm = {}, {}, {}, {}
     for d in designs:
         acc = block[d]
-        n = acc["n_groups"]
-        trace[d] = trace_variance(acc["sum_sq_norm"], acc["vec_sq_norm"], n)
-        update_norm[d] = float(np.sqrt(acc["vec_sq_norm"])) / n
-    ind = trace[primary_independent]
-    ratio = trace["paired"] / ind if ind != 0 else float("inf")
+        trace[d] = trace_variance(acc["sum_sq_norm"], acc["vec_sq_norm"], acc["n_groups"])
+        trace_within[d] = acc["within_sum"] / acc["n_within"] if acc["n_within"] else 0.0
+        trace_between[d] = trace[d] - trace_within[d]
+        update_norm[d] = float(np.sqrt(acc["vec_sq_norm"])) / acc["n_groups"]
+    ind, ind_within = trace[primary_independent], trace_within[primary_independent]
     denom = np.sqrt(block["paired"]["vec_sq_norm"] * block[primary_independent]["vec_sq_norm"])
-    cosine = float(block["cross_vec"] / denom) if denom > 0 else 0.0
     summary = {
         "trace_var": trace,
-        "ratio_paired_over_independent": ratio,
+        "trace_var_within": trace_within,
+        "trace_var_between": trace_between,
+        "ratio_paired_over_independent": trace["paired"] / ind if ind != 0 else float("inf"),
+        "ratio_within_paired_over_independent": trace_within["paired"] / ind_within if ind_within != 0 else float("inf"),
         "expected_update_norm": update_norm,
-        "cosine_paired_independent": cosine,
+        "cosine_paired_independent": float(block["cross_vec"] / denom) if denom > 0 else 0.0,
         "reward_variance": {d: block[d]["reward_variance"] for d in designs},
     }
     if with_identity and q is not None:
@@ -179,29 +184,31 @@ def _summarize_block(block: dict, designs, primary_independent: str, q=None, wit
 
 
 def checkpoint_summary(accumulators: dict) -> dict:
-    """Reported numbers for one checkpoint from the accumulated scalars and vector norms. `accumulators` carries,
-    per noise ('outcome','transition') and estimator, a per-design dict of sum_sq_norm, vec_sq_norm (||sum g||^2),
-    n_groups, reward_variance, plus cross_vec (paired . primary-independent running sums); outcome also carries
-    lhs_sum, rhs_sum, n_groups. Outcome adds lhs_mean, rhs_mean, lhs_over_rhs and the mean-centered identity
-    residual Tr Var_paired - Tr Var_indep - q(1-q)(lhs_mean - rhs_mean), which must be ~0."""
+    """Reported numbers for one checkpoint from accumulated scalars and vector norms. Each (noise, estimator)
+    per-design block carries sum_sq_norm, vec_sq_norm (||sum g||^2), n_groups (pooled), within_sum and n_within (the
+    within-task decomposition), reward_variance, plus a block-level cross_vec (paired . primary-independent running
+    sums). Outcome also carries n_groups, lhs_sum, rhs_sum and by_k (per success count k: count, lhs_sum, rhs_sum,
+    ratio_sum). Adds lhs_mean, rhs_mean, lhs_over_rhs, the per-k table and the mean-centered identity residual."""
     q = accumulators["q"]
     out = {"step": accumulators.get("step")}
     oc = accumulators["outcome"]
     n_oc = oc["n_groups"]
-    lhs_mean = oc["lhs_sum"] / n_oc
-    rhs_mean = oc["rhs_sum"] / n_oc
+    lhs_mean, rhs_mean = oc["lhs_sum"] / n_oc, oc["rhs_sum"] / n_oc
+    by_k = {}
+    for k, s in sorted(oc.get("by_k", {}).items()):
+        c = s["count"]
+        by_k[int(k)] = {"count": c, "lhs_mean": s["lhs_sum"] / c, "rhs_mean": s["rhs_sum"] / c,
+                        "lhs_over_rhs": s["ratio_sum"] / c}
     out["outcome"] = {"lhs_mean": lhs_mean, "rhs_mean": rhs_mean,
-                      "lhs_over_rhs": lhs_mean / rhs_mean if rhs_mean != 0 else float("inf")}
+                      "lhs_over_rhs": lhs_mean / rhs_mean if rhs_mean != 0 else float("inf"), "by_k": by_k}
     for est in ESTIMATORS:
         block = dict(oc[est])
-        block["lhs_mean"] = lhs_mean
-        block["rhs_mean"] = rhs_mean
+        block["lhs_mean"], block["rhs_mean"] = lhs_mean, rhs_mean
         out["outcome"][est] = _summarize_block(
             block, OUTCOME_DESIGNS, "independent", q=q, with_identity=(est == "mean_centered"))
     tr = accumulators["transition"]
-    out["transition"] = {}
-    for est in ESTIMATORS:
-        out["transition"][est] = _summarize_block(tr[est], TRANSITION_DESIGNS, "independent_resampled")
+    out["transition"] = {est: _summarize_block(tr[est], TRANSITION_DESIGNS, "independent_resampled")
+                         for est in ESTIMATORS}
     return out
 
 
@@ -249,8 +256,8 @@ def decide_trajectory(steps: dict) -> dict:
 def bandit_enumeration(theta: float = 0.0, group_size: int = 8, q: float = 0.1) -> dict:
     """THEORY 3b's aligned-scalar bandit: a_i ~ Bernoulli(sigmoid(theta)), r_i = a_i, scalar score S_i = a_i - 1/2,
     one group of `group_size` rollouts, outcome noise q. Enumerate all 2^G action tuples; each tuple's numbers come
-    from `outcome_noise_group` on the scalar Gram K_ij = S_i S_j with T_i = 1; accumulate over the tuple ensemble
-    Tr Var(g) = E||g||^2 - ||E g||^2, the expected-update norm ||E g|| and the reward-contrast variance, per
+    from `outcome_noise_group` on the scalar Gram K_ij = S_i S_j with rho_i = 1 and T_ref = G; accumulate over the
+    tuple ensemble Tr Var(g) = E||g||^2 - ||E g||^2, the expected-update norm ||E g|| and the contrast variance, per
     estimator and design. Reproduces THEORY's exact targets (contrast 0.495 / 0.450; Tr Var 0.002615 / 0.005845
     mean-centered, 0.007053 / 0.019724 implemented; updates 0.3918 / 0.3905; lhs 0.0496, rhs 0.0137)."""
     g = group_size
@@ -260,14 +267,14 @@ def bandit_enumeration(theta: float = 0.0, group_size: int = 8, q: float = 0.1) 
     contrast = {d: 0.0 for d in OUTCOME_DESIGNS}
     lhs_mean = 0.0
     rhs_mean = 0.0
-    tokens = np.ones(g)
+    rho = np.ones(g)
     for actions in itertools.product((0, 1), repeat=g):
         a_arr = np.asarray(actions, dtype=float)
         n_ones = int(a_arr.sum())
         prob = p ** n_ones * (1.0 - p) ** (g - n_ones)
         scores = a_arr - 0.5
         gram = np.outer(scores, scores)
-        grp = outcome_noise_group(gram, a_arr, tokens, q)
+        grp = outcome_noise_group(gram, a_arr, rho, g, q)
         lhs_mean += prob * grp["lhs"]
         rhs_mean += prob * grp["rhs"]
         for e in ESTIMATORS:

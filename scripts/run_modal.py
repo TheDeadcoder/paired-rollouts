@@ -85,6 +85,8 @@ def run(spec_dict: dict, git_commit: str) -> dict:
     image=image,
     gpu="H100",
     timeout=24 * 3600,
+    memory=65536,
+    cpu=8.0,
     volumes={HF_CACHE: hf_cache, RUNS: runs_volume},
     single_use_containers=True,
     retries=modal.Retries(max_retries=3, backoff_coefficient=1.0, initial_delay=60.0),
