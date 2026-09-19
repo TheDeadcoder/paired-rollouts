@@ -48,9 +48,12 @@ def _finite(obj, path="") -> list:
     return bad
 
 
-def check_step(payload, trajectory, coord_sha, git_commit) -> None:
+def check_step(payload, trajectory, coord_sha, git_commit, shared_base: bool = False) -> None:
     step = payload["step"]
-    if payload.get("trajectory") != trajectory:
+    if shared_base:
+        if step != 0 or payload.get("adapter_path") is not None:
+            raise SystemExit(f"base step: {step} with adapter {payload.get('adapter_path')!r} is not a base-model probe")
+    elif payload.get("trajectory") != trajectory:
         raise SystemExit(f"step {step}: trajectory {payload.get('trajectory')!r} != {trajectory!r}")
     design = payload.get("provenance", {}).get("design_counts")
     if design != FULL_DESIGN:
@@ -90,27 +93,29 @@ def main() -> None:
             if step in checkpoints and checkpoints[step] != payload:
                 raise SystemExit(f"conflicting duplicate step {step} across {args.probes}")
             checkpoints[step] = payload
-    base_fingerprint = None
+    base_fingerprint = base_trajectory = None
     if args.base_from:
         _, steps = load_probe(args.base_from)
         if 0 not in steps:
             raise SystemExit(f"{args.base_from}: no step0.json to take the base model from")
         checkpoints[0] = steps[0]
         base_fingerprint = steps[0].get("provenance", {}).get("base_fingerprint")
+        base_trajectory = steps[0].get("trajectory")
 
     if set(checkpoints) != DECLARED_STEPS[args.trajectory]:
         raise SystemExit(f"merged steps {sorted(checkpoints)} != declared {sorted(DECLARED_STEPS[args.trajectory])}")
     first = checkpoints[min(checkpoints)]
     coord_sha = first.get("coordinate_names_sha256")
     git_commit = first.get("git_commit")
-    for payload in checkpoints.values():
-        check_step(payload, args.trajectory, coord_sha, git_commit)
+    for step, payload in checkpoints.items():
+        check_step(payload, args.trajectory, coord_sha, git_commit, shared_base=bool(args.base_from) and step == 0)
 
     summaries = {step: payload["summary"] for step, payload in checkpoints.items()}
     verdict = decide_trajectory(summaries)
     register = {
         "trajectory": args.trajectory, "steps": sorted(checkpoints), "git_commit": git_commit,
         "coordinate_names_sha256": coord_sha, "base_fingerprint": base_fingerprint,
+        "base_from": args.base_from, "base_trajectory": base_trajectory,
         "spec_sha256_by_step": {str(s): checkpoints[s].get("provenance", {}).get("spec_sha256") for s in sorted(checkpoints)},
         "checkpoints": {str(step): checkpoints[step] for step in sorted(checkpoints)}, "verdict": verdict,
     }

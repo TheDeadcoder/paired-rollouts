@@ -1,0 +1,2442 @@
+{
+  "base_fingerprint": "ec21ed4f7a2a2fd2b2be3bcea166005e02d3bb5a5a1f1b02bc19fd1953b80562",
+  "base_from": "outputs/runs/probe-t1-c2-paired-s1-a",
+  "base_trajectory": "t1-c2-paired-s1",
+  "checkpoints": {
+    "0": {
+      "P": 33638400,
+      "adapter_path": null,
+      "clean_task_table": [
+        {
+          "k_success": 7,
+          "lhs": 66342.79171557154,
+          "rhs": 340624.89674568677,
+          "task_id": "heldout-00021"
+        },
+        {
+          "k_success": 4,
+          "lhs": 59090.02305573406,
+          "rhs": 92417.1835772213,
+          "task_id": "heldout-00017"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 240644.17922635557,
+          "task_id": "heldout-00029"
+        },
+        {
+          "k_success": 5,
+          "lhs": 137453.97316523222,
+          "rhs": 400169.001680399,
+          "task_id": "heldout-00019"
+        },
+        {
+          "k_success": 5,
+          "lhs": 247517.97657204236,
+          "rhs": 489096.1095585094,
+          "task_id": "heldout-00024"
+        },
+        {
+          "k_success": 7,
+          "lhs": 11390.31843455328,
+          "rhs": 112047.63084242113,
+          "task_id": "heldout-00033"
+        },
+        {
+          "k_success": 6,
+          "lhs": 229487.0394640942,
+          "rhs": 455240.01989146444,
+          "task_id": "heldout-00046"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 181507.44286468328,
+          "task_id": "heldout-00014"
+        },
+        {
+          "k_success": 6,
+          "lhs": 87490.87881833105,
+          "rhs": 215529.74178261618,
+          "task_id": "heldout-00052"
+        },
+        {
+          "k_success": 1,
+          "lhs": 39928.666539365935,
+          "rhs": 39928.666539365935,
+          "task_id": "heldout-00055"
+        },
+        {
+          "k_success": 7,
+          "lhs": 136137.00209832354,
+          "rhs": 581889.8101563405,
+          "task_id": "heldout-00042"
+        },
+        {
+          "k_success": 4,
+          "lhs": 50545.227663806494,
+          "rhs": 81618.79782791986,
+          "task_id": "heldout-00057"
+        },
+        {
+          "k_success": 4,
+          "lhs": 160557.50926661043,
+          "rhs": 210485.69245794392,
+          "task_id": "heldout-00037"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 378009.52744315926,
+          "task_id": "heldout-00018"
+        },
+        {
+          "k_success": 6,
+          "lhs": 52201.13178907586,
+          "rhs": 175503.16061675828,
+          "task_id": "heldout-00040"
+        },
+        {
+          "k_success": 6,
+          "lhs": 84310.80980842627,
+          "rhs": 210175.68942504373,
+          "task_id": "heldout-00039"
+        },
+        {
+          "k_success": 6,
+          "lhs": 256266.40325697797,
+          "rhs": 573693.5905347356,
+          "task_id": "heldout-00034"
+        },
+        {
+          "k_success": 6,
+          "lhs": 143712.55414261817,
+          "rhs": 323285.3703510263,
+          "task_id": "heldout-00000"
+        },
+        {
+          "k_success": 7,
+          "lhs": 84943.0228391226,
+          "rhs": 598893.4763537487,
+          "task_id": "heldout-00026"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 345777.68819285557,
+          "task_id": "heldout-00054"
+        },
+        {
+          "k_success": 3,
+          "lhs": 215405.11933168644,
+          "rhs": 314629.40992349293,
+          "task_id": "heldout-00009"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 260366.61233872344,
+          "task_id": "heldout-00025"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 726397.1027308998,
+          "task_id": "heldout-00030"
+        },
+        {
+          "k_success": 7,
+          "lhs": 181435.1630051123,
+          "rhs": 317519.00317202276,
+          "task_id": "heldout-00063"
+        },
+        {
+          "k_success": 7,
+          "lhs": 41969.519593004305,
+          "rhs": 299790.20430193597,
+          "task_id": "heldout-00061"
+        },
+        {
+          "k_success": 5,
+          "lhs": 55413.971961051444,
+          "rhs": 139666.4051360143,
+          "task_id": "heldout-00056"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 180007.75162786432,
+          "task_id": "heldout-00028"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 493265.8038587246,
+          "task_id": "heldout-00031"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 129719.77248051563,
+          "task_id": "heldout-00038"
+        },
+        {
+          "k_success": 4,
+          "lhs": 309174.461295894,
+          "rhs": 444260.0449357461,
+          "task_id": "heldout-00008"
+        },
+        {
+          "k_success": 4,
+          "lhs": 258013.35201216175,
+          "rhs": 457818.4212035694,
+          "task_id": "heldout-00022"
+        },
+        {
+          "k_success": 6,
+          "lhs": 120523.15062881967,
+          "rhs": 287794.4788470167,
+          "task_id": "heldout-00051"
+        },
+        {
+          "k_success": 7,
+          "lhs": 74058.27848430494,
+          "rhs": 468754.1491446708,
+          "task_id": "heldout-00058"
+        },
+        {
+          "k_success": 7,
+          "lhs": 31491.64674449447,
+          "rhs": 191334.8410214933,
+          "task_id": "heldout-00048"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 233942.89725528352,
+          "task_id": "heldout-00043"
+        },
+        {
+          "k_success": 2,
+          "lhs": 114750.52121705901,
+          "rhs": 135340.038962296,
+          "task_id": "heldout-00020"
+        },
+        {
+          "k_success": 4,
+          "lhs": 60709.31326785864,
+          "rhs": 114445.16167055012,
+          "task_id": "heldout-00023"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 130676.35683491123,
+          "task_id": "heldout-00015"
+        },
+        {
+          "k_success": 5,
+          "lhs": 164062.60254063955,
+          "rhs": 480050.3891356685,
+          "task_id": "heldout-00036"
+        },
+        {
+          "k_success": 2,
+          "lhs": 244231.02729602397,
+          "rhs": 278064.3329840575,
+          "task_id": "heldout-00049"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 253512.62803659582,
+          "task_id": "heldout-00032"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 265864.90972205007,
+          "task_id": "heldout-00003"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 391681.6188104354,
+          "task_id": "heldout-00004"
+        },
+        {
+          "k_success": 6,
+          "lhs": 190338.92979252423,
+          "rhs": 582157.8154189251,
+          "task_id": "heldout-00041"
+        },
+        {
+          "k_success": 5,
+          "lhs": 121033.28978370359,
+          "rhs": 259465.1761401,
+          "task_id": "heldout-00005"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 320177.51149885845,
+          "task_id": "heldout-00045"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 134009.31432876227,
+          "task_id": "heldout-00006"
+        },
+        {
+          "k_success": 4,
+          "lhs": 87277.95401143699,
+          "rhs": 168645.39670857758,
+          "task_id": "heldout-00002"
+        },
+        {
+          "k_success": 3,
+          "lhs": 152144.29889162994,
+          "rhs": 209849.0571389213,
+          "task_id": "heldout-00059"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 518877.53203412145,
+          "task_id": "heldout-00013"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 195669.5397213485,
+          "task_id": "heldout-00050"
+        },
+        {
+          "k_success": 5,
+          "lhs": 143589.2029745154,
+          "rhs": 284845.75282634975,
+          "task_id": "heldout-00053"
+        },
+        {
+          "k_success": 1,
+          "lhs": 92943.84407187815,
+          "rhs": 92943.84407187812,
+          "task_id": "heldout-00062"
+        },
+        {
+          "k_success": 6,
+          "lhs": 218569.90150506777,
+          "rhs": 247434.91554883268,
+          "task_id": "heldout-00016"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 118268.42369135364,
+          "task_id": "heldout-00044"
+        },
+        {
+          "k_success": 7,
+          "lhs": 90718.47765440002,
+          "rhs": 547784.8892199527,
+          "task_id": "heldout-00007"
+        },
+        {
+          "k_success": 7,
+          "lhs": 37894.498551572215,
+          "rhs": 201138.33293644452,
+          "task_id": "heldout-00010"
+        },
+        {
+          "k_success": 7,
+          "lhs": 195465.0915078305,
+          "rhs": 255802.13731377944,
+          "task_id": "heldout-00027"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 265340.55463813106,
+          "task_id": "heldout-00011"
+        },
+        {
+          "k_success": 3,
+          "lhs": 71494.31412503557,
+          "rhs": 114987.18412030819,
+          "task_id": "heldout-00060"
+        },
+        {
+          "k_success": 6,
+          "lhs": 121922.65352429035,
+          "rhs": 399228.35863025207,
+          "task_id": "heldout-00012"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 293578.163384628,
+          "task_id": "heldout-00035"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 269054.3244801853,
+          "task_id": "heldout-00001"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 550357.2063172313,
+          "task_id": "heldout-00047"
+        }
+      ],
+      "coordinate_names_sha256": "40a1d6a37790c82b3abe34c1f1e661dc4f3f04126d7880f4c11b41980e5febf4",
+      "counts": {
+        "clean_groups": 64,
+        "clean_rollouts": 512,
+        "diagnostic_rollouts": 1024,
+        "diagnostic_tasks": 16,
+        "groups_per_design": {
+          "independent_resampled": 1024,
+          "paired": 128,
+          "stratified": 1024
+        },
+        "rho_nonzero_min_mean_max": [
+          9.45228451065816e-10,
+          0.3636868845268004,
+          2.810711622238159
+        ],
+        "rho_zero_fraction": 0.056640625
+      },
+      "deployed_commit": "ec81462a1057c8696899bd0c75cadc0ee81ab2c7",
+      "diagnostic_task_table": [
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 6149034.909038123
+          },
+          "paired": {
+            "sum_sq_norm": 305605.36933133926
+          },
+          "stratified": {
+            "sum_sq_norm": 6632670.662654802
+          },
+          "task_id": "diagnostic-00010"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 8373048.776690069
+          },
+          "paired": {
+            "sum_sq_norm": 790135.6479098699
+          },
+          "stratified": {
+            "sum_sq_norm": 8472935.20333324
+          },
+          "task_id": "diagnostic-00003"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 8740404.02127049
+          },
+          "paired": {
+            "sum_sq_norm": 856348.1365725491
+          },
+          "stratified": {
+            "sum_sq_norm": 8237015.789597841
+          },
+          "task_id": "diagnostic-00014"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 3981810.0973373903
+          },
+          "paired": {
+            "sum_sq_norm": 114421.63912123843
+          },
+          "stratified": {
+            "sum_sq_norm": 5093676.939413513
+          },
+          "task_id": "diagnostic-00000"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 343981.1747194008
+          },
+          "paired": {
+            "sum_sq_norm": 56295.76890844437
+          },
+          "stratified": {
+            "sum_sq_norm": 568637.0161631244
+          },
+          "task_id": "diagnostic-00011"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 5274579.941545861
+          },
+          "paired": {
+            "sum_sq_norm": 736569.385381514
+          },
+          "stratified": {
+            "sum_sq_norm": 7414963.583543298
+          },
+          "task_id": "diagnostic-00015"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 8494678.93409092
+          },
+          "paired": {
+            "sum_sq_norm": 434745.5631968368
+          },
+          "stratified": {
+            "sum_sq_norm": 10272603.299834244
+          },
+          "task_id": "diagnostic-00009"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 8471726.71355523
+          },
+          "paired": {
+            "sum_sq_norm": 532060.0479102946
+          },
+          "stratified": {
+            "sum_sq_norm": 10584673.873514561
+          },
+          "task_id": "diagnostic-00008"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 5867228.996110338
+          },
+          "paired": {
+            "sum_sq_norm": 245678.50659009075
+          },
+          "stratified": {
+            "sum_sq_norm": 6588905.881530946
+          },
+          "task_id": "diagnostic-00001"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 7313317.036568957
+          },
+          "paired": {
+            "sum_sq_norm": 862282.09432211
+          },
+          "stratified": {
+            "sum_sq_norm": 6379811.602937207
+          },
+          "task_id": "diagnostic-00006"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 9044185.947872473
+          },
+          "paired": {
+            "sum_sq_norm": 878826.3872286531
+          },
+          "stratified": {
+            "sum_sq_norm": 9035722.595053496
+          },
+          "task_id": "diagnostic-00004"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 8536864.986549895
+          },
+          "paired": {
+            "sum_sq_norm": 807032.3896485016
+          },
+          "stratified": {
+            "sum_sq_norm": 8757225.93899485
+          },
+          "task_id": "diagnostic-00013"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 9145639.780826587
+          },
+          "paired": {
+            "sum_sq_norm": 589951.3205429899
+          },
+          "stratified": {
+            "sum_sq_norm": 9459498.913071217
+          },
+          "task_id": "diagnostic-00005"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 10134939.47487782
+          },
+          "paired": {
+            "sum_sq_norm": 660200.4646184822
+          },
+          "stratified": {
+            "sum_sq_norm": 10931902.287088115
+          },
+          "task_id": "diagnostic-00007"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 1514490.469569536
+          },
+          "paired": {
+            "sum_sq_norm": 160392.0615651033
+          },
+          "stratified": {
+            "sum_sq_norm": 1278074.4577136862
+          },
+          "task_id": "diagnostic-00012"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 7639313.226410115
+          },
+          "paired": {
+            "sum_sq_norm": 148507.43960758863
+          },
+          "stratified": {
+            "sum_sq_norm": 8971379.551636003
+          },
+          "task_id": "diagnostic-00002"
+        }
+      ],
+      "generation_seconds": 2075.2,
+      "git_commit": "ec81462a1057c8696899bd0c75cadc0ee81ab2c7",
+      "lora_fingerprint": "ec21ed4f7a2a2fd2b2be3bcea166005e02d3bb5a5a1f1b02bc19fd1953b80562",
+      "loss_validation": null,
+      "peak_mem_generation_gb": 53.95,
+      "peak_mem_scoring_gb": 58.0,
+      "provenance": {
+        "adapter_sha256": null,
+        "base_fingerprint": "ec21ed4f7a2a2fd2b2be3bcea166005e02d3bb5a5a1f1b02bc19fd1953b80562",
+        "design_counts": {
+          "clean_rollouts": 8,
+          "clean_tasks": 64,
+          "diagnostic_tasks": 16,
+          "resamples": 64,
+          "samples": 8,
+          "schedules": 8
+        },
+        "git_commit": "ec81462a1057c8696899bd0c75cadc0ee81ab2c7",
+        "spec_sha256": "4a774fd59833d4d9bfac7c23734fc038fdd25cea2f4cf7fe69d6b9f0b925bd16",
+        "trajectory": "t1-c2-paired-s1"
+      },
+      "provider": "modal",
+      "scoring_seconds": 2714.9,
+      "step": 0,
+      "summary": {
+        "outcome": {
+          "by_k": {
+            "1": {
+              "count": 2,
+              "lhs_mean": 66436.25530562203,
+              "lhs_over_rhs": 1.0,
+              "rhs_mean": 66436.25530562203
+            },
+            "2": {
+              "count": 2,
+              "lhs_mean": 179490.77425654148,
+              "lhs_over_rhs": 0.8630969314757784,
+              "rhs_mean": 206702.18597317673
+            },
+            "3": {
+              "count": 3,
+              "lhs_mean": 146347.910782784,
+              "lhs_over_rhs": 0.6771359976565968,
+              "rhs_mean": 213155.21706090742
+            },
+            "4": {
+              "count": 7,
+              "lhs_mean": 140766.8343676432,
+              "lhs_over_rhs": 0.618422221305866,
+              "rhs_mean": 224241.52834021836
+            },
+            "5": {
+              "count": 6,
+              "lhs_mean": 144845.16949953078,
+              "lhs_over_rhs": 0.42644159332922743,
+              "rhs_mean": 342215.4724128402
+            },
+            "6": {
+              "count": 10,
+              "lhs_mean": 150482.34527302257,
+              "lhs_over_rhs": 0.4434325089943007,
+              "rhs_mean": 347004.31410466705
+            },
+            "7": {
+              "count": 11,
+              "lhs_mean": 86531.43732984453,
+              "lhs_over_rhs": 0.2567581869452415,
+              "rhs_mean": 355961.7610189542
+            },
+            "8": {
+              "count": 23,
+              "lhs_mean": 0.0,
+              "lhs_over_rhs": 0.0,
+              "rhs_mean": 298987.25484859466
+            }
+          },
+          "implemented": {
+            "cosine_paired_independent": 0.9980604716383074,
+            "expected_update_norm": {
+              "independent": 0.0007675376466916054,
+              "paired": 0.0008267771443961401
+            },
+            "ratio_paired_over_independent": 0.7818273673720503,
+            "ratio_within_paired_over_independent": 0.20221306557257424,
+            "reward_variance": {
+              "independent": 0.3563839285714286,
+              "paired": 0.2420758928571429
+            },
+            "trace_var": {
+              "independent": 5.767704566515131e-05,
+              "paired": 4.5093492770182775e-05
+            },
+            "trace_var_between": {
+              "independent": 3.5039016274192254e-05,
+              "paired": 4.051578744851491e-05
+            },
+            "trace_var_within": {
+              "independent": 2.2638029390959053e-05,
+              "paired": 4.5777053216678655e-06
+            }
+          },
+          "lhs_mean": 81906.3423812794,
+          "lhs_over_rhs": 0.27486711098878247,
+          "mean_centered": {
+            "cosine_paired_independent": 1.0,
+            "expected_update_norm": {
+              "independent": 32.875565442844845,
+              "paired": 32.875565442844845
+            },
+            "identity_residual": -6.548361852765083e-11,
+            "ratio_paired_over_independent": 0.7888067203021002,
+            "ratio_within_paired_over_independent": 0.2748671109887824,
+            "reward_variance": {
+              "independent": 0.3563839285714286,
+              "paired": 0.2420758928571429
+            },
+            "trace_var": {
+              "independent": 92082.00623867234,
+              "paired": 72634.90533996467
+            },
+            "trace_var_between": {
+              "independent": 65263.33452564958,
+              "paired": 65263.334525649516
+            },
+            "trace_var_within": {
+              "independent": 26818.671713022766,
+              "paired": 7371.570814315148
+            }
+          },
+          "rhs_mean": 297985.2412558084
+        },
+        "step": 0,
+        "transition": {
+          "implemented": {
+            "cosine_paired_independent": 0.7571944627287055,
+            "expected_update_norm": {
+              "independent_resampled": 0.0005793514690561456,
+              "paired": 0.0004847915589460553,
+              "stratified": 0.0006467626960302255
+            },
+            "ratio_paired_over_independent": 0.6452724295136745,
+            "ratio_within_paired_over_independent": 0.6368517316620802,
+            "reward_variance": {
+              "independent_resampled": 0.33820452008928564,
+              "paired": 0.22265625,
+              "stratified": 0.3605957031249999
+            },
+            "trace_var": {
+              "independent_resampled": 4.464334027492377e-05,
+              "paired": 2.8807116640805735e-05,
+              "stratified": 4.71053704449014e-05
+            },
+            "trace_var_between": {
+              "independent_resampled": 4.8196418122751765e-06,
+              "paired": 3.4453253136794556e-06,
+              "stratified": 6.0145252237085535e-06
+            },
+            "trace_var_within": {
+              "independent_resampled": 3.9823698462648594e-05,
+              "paired": 2.536179132712628e-05,
+              "stratified": 4.109084522119285e-05
+            }
+          },
+          "mean_centered": {
+            "cosine_paired_independent": 0.70443838669957,
+            "expected_update_norm": {
+              "independent_resampled": 31.119225950350724,
+              "paired": 22.920204502670444,
+              "stratified": 32.86991513022835
+            },
+            "ratio_paired_over_independent": 0.600687897475077,
+            "ratio_within_paired_over_independent": 0.6018724405034491,
+            "reward_variance": {
+              "independent_resampled": 0.33820452008928564,
+              "paired": 0.22265625,
+              "stratified": 0.3605957031249999
+            },
+            "trace_var": {
+              "independent_resampled": 105501.55909561938,
+              "paired": 63373.50971349019,
+              "stratified": 114817.71086300361
+            },
+            "trace_var_between": {
+              "independent_resampled": 12725.112353650242,
+              "paired": 7533.923291662955,
+              "stratified": 14560.889775152624
+            },
+            "trace_var_within": {
+              "independent_resampled": 92776.44674196914,
+              "paired": 55839.58642182723,
+              "stratified": 100256.82108785099
+            }
+          }
+        }
+      },
+      "t_ref": 337415.25,
+      "trajectory": "t1-c2-paired-s1"
+    },
+    "100": {
+      "P": 33638400,
+      "adapter_path": "/runs/gate1-c2-paired-s0/trainer/checkpoint-100",
+      "clean_task_table": [
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 307191.6227735202,
+          "task_id": "heldout-00021"
+        },
+        {
+          "k_success": 4,
+          "lhs": 76341.29730575865,
+          "rhs": 106190.32229556359,
+          "task_id": "heldout-00017"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 167949.9443802582,
+          "task_id": "heldout-00029"
+        },
+        {
+          "k_success": 7,
+          "lhs": 104396.1579724212,
+          "rhs": 360406.6027490571,
+          "task_id": "heldout-00019"
+        },
+        {
+          "k_success": 6,
+          "lhs": 152878.27030769543,
+          "rhs": 529193.0096011453,
+          "task_id": "heldout-00024"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 82465.79945277977,
+          "task_id": "heldout-00033"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 527325.5036125773,
+          "task_id": "heldout-00046"
+        },
+        {
+          "k_success": 7,
+          "lhs": 88637.28409788008,
+          "rhs": 255692.84340136897,
+          "task_id": "heldout-00014"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 192597.6355343516,
+          "task_id": "heldout-00052"
+        },
+        {
+          "k_success": 0,
+          "lhs": 0.0,
+          "rhs": 0.0,
+          "task_id": "heldout-00055"
+        },
+        {
+          "k_success": 5,
+          "lhs": 286823.0384160255,
+          "rhs": 285704.21939729137,
+          "task_id": "heldout-00042"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 130874.69923970375,
+          "task_id": "heldout-00057"
+        },
+        {
+          "k_success": 6,
+          "lhs": 130990.73496217035,
+          "rhs": 341647.4862848134,
+          "task_id": "heldout-00037"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 184890.46409634897,
+          "task_id": "heldout-00018"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 154371.1940016186,
+          "task_id": "heldout-00040"
+        },
+        {
+          "k_success": 7,
+          "lhs": 133633.13210362438,
+          "rhs": 353273.10186518787,
+          "task_id": "heldout-00039"
+        },
+        {
+          "k_success": 5,
+          "lhs": 273539.8006022903,
+          "rhs": 525195.9332601299,
+          "task_id": "heldout-00034"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 296381.62166246865,
+          "task_id": "heldout-00000"
+        },
+        {
+          "k_success": 7,
+          "lhs": 137195.89546928526,
+          "rhs": 406973.32584561466,
+          "task_id": "heldout-00026"
+        },
+        {
+          "k_success": 7,
+          "lhs": 20588.454311621208,
+          "rhs": 244223.34757710295,
+          "task_id": "heldout-00054"
+        },
+        {
+          "k_success": 3,
+          "lhs": 218356.34357162676,
+          "rhs": 302248.0070161399,
+          "task_id": "heldout-00009"
+        },
+        {
+          "k_success": 7,
+          "lhs": 19922.645796900804,
+          "rhs": 241948.81624316607,
+          "task_id": "heldout-00025"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 378937.58400145156,
+          "task_id": "heldout-00030"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 320246.7499880403,
+          "task_id": "heldout-00063"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 267102.558768265,
+          "task_id": "heldout-00061"
+        },
+        {
+          "k_success": 5,
+          "lhs": 145314.35979173763,
+          "rhs": 136293.06214235385,
+          "task_id": "heldout-00056"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 140872.42800098337,
+          "task_id": "heldout-00028"
+        },
+        {
+          "k_success": 7,
+          "lhs": 175361.1577509653,
+          "rhs": 314489.4162860189,
+          "task_id": "heldout-00031"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 96510.02246543618,
+          "task_id": "heldout-00038"
+        },
+        {
+          "k_success": 4,
+          "lhs": 343832.46839920874,
+          "rhs": 481143.173798186,
+          "task_id": "heldout-00008"
+        },
+        {
+          "k_success": 6,
+          "lhs": 242028.1354180392,
+          "rhs": 575456.7872637548,
+          "task_id": "heldout-00022"
+        },
+        {
+          "k_success": 5,
+          "lhs": 43926.41556741607,
+          "rhs": 121608.59958705245,
+          "task_id": "heldout-00051"
+        },
+        {
+          "k_success": 7,
+          "lhs": 41833.703706957334,
+          "rhs": 271072.98077645054,
+          "task_id": "heldout-00058"
+        },
+        {
+          "k_success": 7,
+          "lhs": 68863.97769846593,
+          "rhs": 149527.27067458542,
+          "task_id": "heldout-00048"
+        },
+        {
+          "k_success": 7,
+          "lhs": 37563.728714853634,
+          "rhs": 182234.76498254752,
+          "task_id": "heldout-00043"
+        },
+        {
+          "k_success": 6,
+          "lhs": 79776.33674892334,
+          "rhs": 308278.3283484554,
+          "task_id": "heldout-00020"
+        },
+        {
+          "k_success": 7,
+          "lhs": 18512.62064282671,
+          "rhs": 167685.2406712971,
+          "task_id": "heldout-00023"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 91726.39184932644,
+          "task_id": "heldout-00015"
+        },
+        {
+          "k_success": 6,
+          "lhs": 186032.62981176292,
+          "rhs": 752438.2364122656,
+          "task_id": "heldout-00036"
+        },
+        {
+          "k_success": 1,
+          "lhs": 94337.63607314354,
+          "rhs": 94337.63607314354,
+          "task_id": "heldout-00049"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 202537.63784211554,
+          "task_id": "heldout-00032"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 195156.37599154143,
+          "task_id": "heldout-00003"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 152270.75390655757,
+          "task_id": "heldout-00004"
+        },
+        {
+          "k_success": 6,
+          "lhs": 282623.93078443373,
+          "rhs": 685255.9064227988,
+          "task_id": "heldout-00041"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 465896.9051542412,
+          "task_id": "heldout-00005"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 513091.6125813514,
+          "task_id": "heldout-00045"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 119920.63390556164,
+          "task_id": "heldout-00006"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 223465.4811306055,
+          "task_id": "heldout-00002"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 259422.35849413625,
+          "task_id": "heldout-00059"
+        },
+        {
+          "k_success": 7,
+          "lhs": 93316.59215102371,
+          "rhs": 283953.3796073538,
+          "task_id": "heldout-00013"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 358290.5622791637,
+          "task_id": "heldout-00050"
+        },
+        {
+          "k_success": 6,
+          "lhs": 210452.2454734957,
+          "rhs": 426457.35992804426,
+          "task_id": "heldout-00053"
+        },
+        {
+          "k_success": 0,
+          "lhs": 0.0,
+          "rhs": 0.0,
+          "task_id": "heldout-00062"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 487208.5248080313,
+          "task_id": "heldout-00016"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 138653.74656204128,
+          "task_id": "heldout-00044"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 481563.1425019203,
+          "task_id": "heldout-00007"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 174452.9352573749,
+          "task_id": "heldout-00010"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 170653.53257779073,
+          "task_id": "heldout-00027"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 226750.42608919018,
+          "task_id": "heldout-00011"
+        },
+        {
+          "k_success": 6,
+          "lhs": 33966.776949747975,
+          "rhs": 155906.04528641026,
+          "task_id": "heldout-00060"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 265625.98924793396,
+          "task_id": "heldout-00012"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 189366.33532175914,
+          "task_id": "heldout-00035"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 230571.97040398378,
+          "task_id": "heldout-00001"
+        },
+        {
+          "k_success": 6,
+          "lhs": 72623.214937764,
+          "rhs": 375525.1482938327,
+          "task_id": "heldout-00047"
+        }
+      ],
+      "coordinate_names_sha256": "40a1d6a37790c82b3abe34c1f1e661dc4f3f04126d7880f4c11b41980e5febf4",
+      "counts": {
+        "clean_groups": 64,
+        "clean_rollouts": 512,
+        "diagnostic_rollouts": 1024,
+        "diagnostic_tasks": 16,
+        "groups_per_design": {
+          "independent_resampled": 1024,
+          "paired": 128,
+          "stratified": 1024
+        },
+        "rho_nonzero_min_mean_max": [
+          8.229132042458787e-09,
+          0.4400131257885512,
+          2.7171473503112793
+        ],
+        "rho_zero_fraction": 0.048828125
+      },
+      "deployed_commit": "ec81462a1057c8696899bd0c75cadc0ee81ab2c7",
+      "diagnostic_task_table": [
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 3756977.4490795177
+          },
+          "paired": {
+            "sum_sq_norm": 244812.58614698894
+          },
+          "stratified": {
+            "sum_sq_norm": 2723468.9997470286
+          },
+          "task_id": "diagnostic-00010"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 15424531.105864946
+          },
+          "paired": {
+            "sum_sq_norm": 574685.47895218
+          },
+          "stratified": {
+            "sum_sq_norm": 16995364.863479506
+          },
+          "task_id": "diagnostic-00003"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 17227669.48943334
+          },
+          "paired": {
+            "sum_sq_norm": 1536331.4000673904
+          },
+          "stratified": {
+            "sum_sq_norm": 18246889.912866738
+          },
+          "task_id": "diagnostic-00014"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 8092082.535771833
+          },
+          "paired": {
+            "sum_sq_norm": 57421.79462586174
+          },
+          "stratified": {
+            "sum_sq_norm": 11090868.24499073
+          },
+          "task_id": "diagnostic-00000"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 0.0
+          },
+          "paired": {
+            "sum_sq_norm": 0.0
+          },
+          "stratified": {
+            "sum_sq_norm": 0.0
+          },
+          "task_id": "diagnostic-00011"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 15080703.251029933
+          },
+          "paired": {
+            "sum_sq_norm": 1389688.0908034411
+          },
+          "stratified": {
+            "sum_sq_norm": 14798352.679300282
+          },
+          "task_id": "diagnostic-00015"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 8558715.816919588
+          },
+          "paired": {
+            "sum_sq_norm": 243481.89756479103
+          },
+          "stratified": {
+            "sum_sq_norm": 9196686.902789686
+          },
+          "task_id": "diagnostic-00009"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 12876429.455898194
+          },
+          "paired": {
+            "sum_sq_norm": 537712.1232780878
+          },
+          "stratified": {
+            "sum_sq_norm": 14629917.031474285
+          },
+          "task_id": "diagnostic-00008"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 10095168.177999517
+          },
+          "paired": {
+            "sum_sq_norm": 351075.1540063217
+          },
+          "stratified": {
+            "sum_sq_norm": 11247193.709663521
+          },
+          "task_id": "diagnostic-00001"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 2779650.915249476
+          },
+          "paired": {
+            "sum_sq_norm": 267516.08833292243
+          },
+          "stratified": {
+            "sum_sq_norm": 2170341.095327324
+          },
+          "task_id": "diagnostic-00006"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 12622894.682044735
+          },
+          "paired": {
+            "sum_sq_norm": 573135.272679449
+          },
+          "stratified": {
+            "sum_sq_norm": 13693164.21143635
+          },
+          "task_id": "diagnostic-00004"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 12401838.522182116
+          },
+          "paired": {
+            "sum_sq_norm": 399238.4396306157
+          },
+          "stratified": {
+            "sum_sq_norm": 14748729.987365447
+          },
+          "task_id": "diagnostic-00013"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 11599990.280400604
+          },
+          "paired": {
+            "sum_sq_norm": 226373.3875222392
+          },
+          "stratified": {
+            "sum_sq_norm": 13004431.343552088
+          },
+          "task_id": "diagnostic-00005"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 6164171.996247885
+          },
+          "paired": {
+            "sum_sq_norm": 495095.0198470749
+          },
+          "stratified": {
+            "sum_sq_norm": 7667060.463452613
+          },
+          "task_id": "diagnostic-00007"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 318134.5043976551
+          },
+          "paired": {
+            "sum_sq_norm": 35493.33238696247
+          },
+          "stratified": {
+            "sum_sq_norm": 186258.6606541491
+          },
+          "task_id": "diagnostic-00012"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 13325356.93332743
+          },
+          "paired": {
+            "sum_sq_norm": 291526.3589225108
+          },
+          "stratified": {
+            "sum_sq_norm": 13141645.549219595
+          },
+          "task_id": "diagnostic-00002"
+        }
+      ],
+      "generation_seconds": 2240.4,
+      "git_commit": "ec81462a1057c8696899bd0c75cadc0ee81ab2c7",
+      "lora_fingerprint": "268ab231a892c4b199438fa91b0172b404f7c4020ac26af69fb044b045c4bdc0",
+      "loss_validation": null,
+      "peak_mem_generation_gb": 53.95,
+      "peak_mem_scoring_gb": 58.0,
+      "provenance": {
+        "adapter_sha256": "8c9b9e495d2f7e9aec273d0441a9ad021d709e3a5de1bb88b119be20ed84b560",
+        "base_fingerprint": null,
+        "design_counts": {
+          "clean_rollouts": 8,
+          "clean_tasks": 64,
+          "diagnostic_tasks": 16,
+          "resamples": 64,
+          "samples": 8,
+          "schedules": 8
+        },
+        "git_commit": "ec81462a1057c8696899bd0c75cadc0ee81ab2c7",
+        "spec_sha256": "d673a84d4f67a9fd01c9aad34befebb3a42bb3e0e87fc35bf7352d4548cd1286",
+        "trajectory": "gate1-c2-paired-s0"
+      },
+      "provider": "modal",
+      "scoring_seconds": 2682.3,
+      "step": 100,
+      "summary": {
+        "outcome": {
+          "by_k": {
+            "0": {
+              "count": 2,
+              "lhs_mean": 0.0,
+              "lhs_over_rhs": 0.0,
+              "rhs_mean": 0.0
+            },
+            "1": {
+              "count": 1,
+              "lhs_mean": 94337.63607314354,
+              "lhs_over_rhs": 1.0,
+              "rhs_mean": 94337.63607314354
+            },
+            "3": {
+              "count": 1,
+              "lhs_mean": 218356.34357162676,
+              "lhs_over_rhs": 0.7224409706693835,
+              "rhs_mean": 302248.0070161399
+            },
+            "4": {
+              "count": 2,
+              "lhs_mean": 210086.8828524837,
+              "lhs_over_rhs": 0.7167629123697477,
+              "rhs_mean": 293666.74804687477
+            },
+            "5": {
+              "count": 4,
+              "lhs_mean": 187400.90359436738,
+              "lhs_over_rhs": 0.7380379205353479,
+              "rhs_mean": 267200.4535967069
+            },
+            "6": {
+              "count": 9,
+              "lhs_mean": 154596.91948822583,
+              "lhs_over_rhs": 0.3240095562215525,
+              "rhs_mean": 461128.70087128016
+            },
+            "7": {
+              "count": 12,
+              "lhs_mean": 78318.77920140211,
+              "lhs_over_rhs": 0.277998786590915,
+              "rhs_mean": 269290.0908899792
+            },
+            "8": {
+              "count": 33,
+              "lhs_mean": 0.0,
+              "lhs_over_rhs": 0.0,
+              "rhs_mean": 248313.4286024979
+            }
+          },
+          "implemented": {
+            "cosine_paired_independent": 0.9985808043714993,
+            "expected_update_norm": {
+              "independent": 0.0005115043238042123,
+              "paired": 0.0005450519666188258
+            },
+            "ratio_paired_over_independent": 0.4595234393356773,
+            "ratio_within_paired_over_independent": 0.07332385775684061,
+            "reward_variance": {
+              "independent": 0.29089285714285723,
+              "paired": 0.15368303571428568
+            },
+            "trace_var": {
+              "independent": 4.6370790612868235e-05,
+              "paired": 2.130846518713975e-05
+            },
+            "trace_var_between": {
+              "independent": 1.6904873932510346e-05,
+              "paired": 1.9147910503794273e-05
+            },
+            "trace_var_within": {
+              "independent": 2.946591668035789e-05,
+              "paired": 2.160554683345479e-06
+            }
+          },
+          "lhs_mean": 59588.57789903228,
+          "lhs_over_rhs": 0.2163329246764583,
+          "mean_centered": {
+            "cosine_paired_independent": 1.0,
+            "expected_update_norm": {
+              "independent": 29.062346774032694,
+              "paired": 29.062346774032694
+            },
+            "identity_residual": 1.4551915228366852e-11,
+            "ratio_paired_over_independent": 0.7309690936086892,
+            "ratio_within_paired_over_independent": 0.2163329246764583,
+            "reward_variance": {
+              "independent": 0.29089285714285723,
+              "paired": 0.15368303571428568
+            },
+            "trace_var": {
+              "independent": 72212.49238941484,
+              "paired": 52785.10010911493
+            },
+            "trace_var_between": {
+              "independent": 47422.12809820202,
+              "paired": 47422.128098202025
+            },
+            "trace_var_within": {
+              "independent": 24790.36429121282,
+              "paired": 5362.972010912904
+            }
+          },
+          "rhs_mean": 275448.49212458695
+        },
+        "step": 100,
+        "transition": {
+          "implemented": {
+            "cosine_paired_independent": 0.633996977673165,
+            "expected_update_norm": {
+              "independent_resampled": 0.0006132900064075785,
+              "paired": 0.0004863700695873013,
+              "stratified": 0.0005975296970973862
+            },
+            "ratio_paired_over_independent": 0.6971524900813211,
+            "ratio_within_paired_over_independent": 0.7022903637462646,
+            "reward_variance": {
+              "independent_resampled": 0.31794084821428564,
+              "paired": 0.15597098214285715,
+              "stratified": 0.32519531249999994
+            },
+            "trace_var": {
+              "independent_resampled": 4.14343214998377e-05,
+              "paired": 2.8886040408441873e-05,
+              "stratified": 3.820973028609807e-05
+            },
+            "trace_var_between": {
+              "independent_resampled": 5.1874354356718636e-06,
+              "paired": 3.4302016097694363e-06,
+              "stratified": 5.002682241172218e-06
+            },
+            "trace_var_within": {
+              "independent_resampled": 3.624688606416584e-05,
+              "paired": 2.5455838798672436e-05,
+              "stratified": 3.3207048044925855e-05
+            }
+          },
+          "mean_centered": {
+            "cosine_paired_independent": 0.5934096599446882,
+            "expected_update_norm": {
+              "independent_resampled": 39.89395048320494,
+              "paired": 21.631438819255834,
+              "stratified": 42.63912577088881
+            },
+            "ratio_paired_over_independent": 0.3854177999351682,
+            "ratio_within_paired_over_independent": 0.3891982937487953,
+            "reward_variance": {
+              "independent_resampled": 0.31794084821428564,
+              "paired": 0.15597098214285715,
+              "stratified": 0.32519531249999994
+            },
+            "trace_var": {
+              "independent_resampled": 145209.56169516273,
+              "paired": 55966.3497980997,
+              "stratified": 157889.30110126713
+            },
+            "trace_var_between": {
+              "independent_resampled": 18245.823427872587,
+              "paired": 6552.279496501746,
+              "stratified": 20368.26734856164
+            },
+            "trace_var_within": {
+              "independent_resampled": 126963.73826729014,
+              "paired": 49414.07030159795,
+              "stratified": 137521.0337527055
+            }
+          }
+        }
+      },
+      "t_ref": 327360.125,
+      "trajectory": "gate1-c2-paired-s0"
+    },
+    "80": {
+      "P": 33638400,
+      "adapter_path": "/runs/gate1-c2-paired-s0/trainer/checkpoint-80",
+      "clean_task_table": [
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 336290.4081513694,
+          "task_id": "heldout-00021"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 174115.50555404415,
+          "task_id": "heldout-00017"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 211740.0369303684,
+          "task_id": "heldout-00029"
+        },
+        {
+          "k_success": 6,
+          "lhs": 118102.96920289444,
+          "rhs": 257461.33520924207,
+          "task_id": "heldout-00019"
+        },
+        {
+          "k_success": 5,
+          "lhs": 149693.72358123484,
+          "rhs": 420381.559048222,
+          "task_id": "heldout-00024"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 108134.48727749455,
+          "task_id": "heldout-00033"
+        },
+        {
+          "k_success": 7,
+          "lhs": 29854.16122812762,
+          "rhs": 324715.4843682721,
+          "task_id": "heldout-00046"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 134217.23581922735,
+          "task_id": "heldout-00014"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 210061.56666444917,
+          "task_id": "heldout-00052"
+        },
+        {
+          "k_success": 0,
+          "lhs": 0.0,
+          "rhs": 0.0,
+          "task_id": "heldout-00055"
+        },
+        {
+          "k_success": 6,
+          "lhs": 229545.2091547995,
+          "rhs": 460406.8506718753,
+          "task_id": "heldout-00042"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 144979.50041334645,
+          "task_id": "heldout-00057"
+        },
+        {
+          "k_success": 6,
+          "lhs": 219150.02118411736,
+          "rhs": 376432.2443545333,
+          "task_id": "heldout-00037"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 149513.64767650858,
+          "task_id": "heldout-00018"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 159238.45183840598,
+          "task_id": "heldout-00040"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 516304.7940644837,
+          "task_id": "heldout-00039"
+        },
+        {
+          "k_success": 6,
+          "lhs": 258899.89517370562,
+          "rhs": 630628.6208884402,
+          "task_id": "heldout-00034"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 280700.12058979797,
+          "task_id": "heldout-00000"
+        },
+        {
+          "k_success": 5,
+          "lhs": 143505.38597590337,
+          "rhs": 293158.9840367959,
+          "task_id": "heldout-00026"
+        },
+        {
+          "k_success": 7,
+          "lhs": 127634.37312759286,
+          "rhs": 290579.64345420664,
+          "task_id": "heldout-00054"
+        },
+        {
+          "k_success": 2,
+          "lhs": 99231.04388150765,
+          "rhs": 112680.96504656514,
+          "task_id": "heldout-00009"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 233458.56190995284,
+          "task_id": "heldout-00025"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 423579.6597568783,
+          "task_id": "heldout-00030"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 388526.63693264325,
+          "task_id": "heldout-00063"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 264391.5851524907,
+          "task_id": "heldout-00061"
+        },
+        {
+          "k_success": 5,
+          "lhs": 53263.26139825565,
+          "rhs": 95860.90285448851,
+          "task_id": "heldout-00056"
+        },
+        {
+          "k_success": 7,
+          "lhs": 16684.70032155966,
+          "rhs": 138331.92799923703,
+          "task_id": "heldout-00028"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 463501.51252196165,
+          "task_id": "heldout-00031"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 95999.49314100706,
+          "task_id": "heldout-00038"
+        },
+        {
+          "k_success": 7,
+          "lhs": 195032.99607202408,
+          "rhs": 788599.9792387882,
+          "task_id": "heldout-00008"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 615981.401809491,
+          "task_id": "heldout-00022"
+        },
+        {
+          "k_success": 5,
+          "lhs": 58722.36231093895,
+          "rhs": 160227.38931929984,
+          "task_id": "heldout-00051"
+        },
+        {
+          "k_success": 7,
+          "lhs": 71744.74546464758,
+          "rhs": 457809.64704957674,
+          "task_id": "heldout-00058"
+        },
+        {
+          "k_success": 7,
+          "lhs": 23343.722374949084,
+          "rhs": 171759.90307025184,
+          "task_id": "heldout-00048"
+        },
+        {
+          "k_success": 7,
+          "lhs": 14155.036761949676,
+          "rhs": 122380.96851768915,
+          "task_id": "heldout-00043"
+        },
+        {
+          "k_success": 6,
+          "lhs": 172197.78874144665,
+          "rhs": 267483.883288718,
+          "task_id": "heldout-00020"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 164905.30674769386,
+          "task_id": "heldout-00023"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 121339.18449820358,
+          "task_id": "heldout-00015"
+        },
+        {
+          "k_success": 7,
+          "lhs": 36912.65841608234,
+          "rhs": 493468.66199734993,
+          "task_id": "heldout-00036"
+        },
+        {
+          "k_success": 3,
+          "lhs": 304247.04564864637,
+          "rhs": 374420.63065565506,
+          "task_id": "heldout-00049"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 131921.01227060353,
+          "task_id": "heldout-00032"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 201948.20716968097,
+          "task_id": "heldout-00003"
+        },
+        {
+          "k_success": 7,
+          "lhs": 23246.662405950196,
+          "rhs": 220951.88937743538,
+          "task_id": "heldout-00004"
+        },
+        {
+          "k_success": 6,
+          "lhs": 270581.2929557837,
+          "rhs": 382832.14528645383,
+          "task_id": "heldout-00041"
+        },
+        {
+          "k_success": 7,
+          "lhs": 52143.735874407794,
+          "rhs": 405106.8359301414,
+          "task_id": "heldout-00005"
+        },
+        {
+          "k_success": 7,
+          "lhs": 58741.48891226583,
+          "rhs": 263133.32557769894,
+          "task_id": "heldout-00045"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 154623.43982358946,
+          "task_id": "heldout-00006"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 242729.53395170078,
+          "task_id": "heldout-00002"
+        },
+        {
+          "k_success": 4,
+          "lhs": 73214.65553141286,
+          "rhs": 141404.05221079173,
+          "task_id": "heldout-00059"
+        },
+        {
+          "k_success": 7,
+          "lhs": 53578.36866565855,
+          "rhs": 405913.86560010805,
+          "task_id": "heldout-00013"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 268427.5409396867,
+          "task_id": "heldout-00050"
+        },
+        {
+          "k_success": 7,
+          "lhs": 170395.7876944241,
+          "rhs": 492934.96320003655,
+          "task_id": "heldout-00053"
+        },
+        {
+          "k_success": 2,
+          "lhs": 255838.0093944525,
+          "rhs": 283768.6509057423,
+          "task_id": "heldout-00062"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 721165.4456798397,
+          "task_id": "heldout-00016"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 139429.13488416647,
+          "task_id": "heldout-00044"
+        },
+        {
+          "k_success": 7,
+          "lhs": 178320.71871783287,
+          "rhs": 590325.757193712,
+          "task_id": "heldout-00007"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 130496.4788108501,
+          "task_id": "heldout-00010"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 176905.37813871834,
+          "task_id": "heldout-00027"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 209473.71143264498,
+          "task_id": "heldout-00011"
+        },
+        {
+          "k_success": 6,
+          "lhs": 46103.052074163716,
+          "rhs": 166332.59263296388,
+          "task_id": "heldout-00060"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 375286.95907598874,
+          "task_id": "heldout-00012"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 366349.03349789506,
+          "task_id": "heldout-00035"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 237108.94450089333,
+          "task_id": "heldout-00001"
+        },
+        {
+          "k_success": 8,
+          "lhs": 0.0,
+          "rhs": 357841.57039123774,
+          "task_id": "heldout-00047"
+        }
+      ],
+      "coordinate_names_sha256": "40a1d6a37790c82b3abe34c1f1e661dc4f3f04126d7880f4c11b41980e5febf4",
+      "counts": {
+        "clean_groups": 64,
+        "clean_rollouts": 512,
+        "diagnostic_rollouts": 1024,
+        "diagnostic_tasks": 16,
+        "groups_per_design": {
+          "independent_resampled": 1024,
+          "paired": 128,
+          "stratified": 1024
+        },
+        "rho_nonzero_min_mean_max": [
+          7.124946466152693e-11,
+          0.4809496703184393,
+          2.9759507179260254
+        ],
+        "rho_zero_fraction": 0.0390625
+      },
+      "deployed_commit": "ec81462a1057c8696899bd0c75cadc0ee81ab2c7",
+      "diagnostic_task_table": [
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 7068087.028878817
+          },
+          "paired": {
+            "sum_sq_norm": 303130.3565597191
+          },
+          "stratified": {
+            "sum_sq_norm": 6856781.599963588
+          },
+          "task_id": "diagnostic-00010"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 14406822.16136482
+          },
+          "paired": {
+            "sum_sq_norm": 808473.1847688284
+          },
+          "stratified": {
+            "sum_sq_norm": 16023910.825467303
+          },
+          "task_id": "diagnostic-00003"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 17145104.142011482
+          },
+          "paired": {
+            "sum_sq_norm": 1597559.3908597634
+          },
+          "stratified": {
+            "sum_sq_norm": 18248507.26505435
+          },
+          "task_id": "diagnostic-00014"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 7671352.988859249
+          },
+          "paired": {
+            "sum_sq_norm": 0.0
+          },
+          "stratified": {
+            "sum_sq_norm": 10474136.125665482
+          },
+          "task_id": "diagnostic-00000"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 206628.00220255254
+          },
+          "paired": {
+            "sum_sq_norm": 43308.1068440748
+          },
+          "stratified": {
+            "sum_sq_norm": 250343.52881921473
+          },
+          "task_id": "diagnostic-00011"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 15538900.508767864
+          },
+          "paired": {
+            "sum_sq_norm": 1252990.3828533846
+          },
+          "stratified": {
+            "sum_sq_norm": 15684668.794284998
+          },
+          "task_id": "diagnostic-00015"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 9622561.932342794
+          },
+          "paired": {
+            "sum_sq_norm": 251563.66297378522
+          },
+          "stratified": {
+            "sum_sq_norm": 11579359.11391107
+          },
+          "task_id": "diagnostic-00009"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 9860049.64504826
+          },
+          "paired": {
+            "sum_sq_norm": 312836.1256547419
+          },
+          "stratified": {
+            "sum_sq_norm": 12482582.538551256
+          },
+          "task_id": "diagnostic-00008"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 7679093.786882648
+          },
+          "paired": {
+            "sum_sq_norm": 178023.39134078272
+          },
+          "stratified": {
+            "sum_sq_norm": 8211070.769835447
+          },
+          "task_id": "diagnostic-00001"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 360173.02644683723
+          },
+          "paired": {
+            "sum_sq_norm": 73094.59734870549
+          },
+          "stratified": {
+            "sum_sq_norm": 707652.5804318506
+          },
+          "task_id": "diagnostic-00006"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 11773380.94345998
+          },
+          "paired": {
+            "sum_sq_norm": 624329.9838882403
+          },
+          "stratified": {
+            "sum_sq_norm": 13374814.588034192
+          },
+          "task_id": "diagnostic-00004"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 14791351.83095602
+          },
+          "paired": {
+            "sum_sq_norm": 216239.90469426283
+          },
+          "stratified": {
+            "sum_sq_norm": 16836295.71536612
+          },
+          "task_id": "diagnostic-00013"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 12676310.841788247
+          },
+          "paired": {
+            "sum_sq_norm": 480784.4117976181
+          },
+          "stratified": {
+            "sum_sq_norm": 14972867.234777022
+          },
+          "task_id": "diagnostic-00005"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 7899141.741558613
+          },
+          "paired": {
+            "sum_sq_norm": 596243.9245823467
+          },
+          "stratified": {
+            "sum_sq_norm": 6789104.728497257
+          },
+          "task_id": "diagnostic-00007"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 2873469.391277924
+          },
+          "paired": {
+            "sum_sq_norm": 227576.73610895313
+          },
+          "stratified": {
+            "sum_sq_norm": 3492526.408336939
+          },
+          "task_id": "diagnostic-00012"
+        },
+        {
+          "independent_resampled": {
+            "sum_sq_norm": 12083793.0030609
+          },
+          "paired": {
+            "sum_sq_norm": 381961.7139101631
+          },
+          "stratified": {
+            "sum_sq_norm": 14161932.319198543
+          },
+          "task_id": "diagnostic-00002"
+        }
+      ],
+      "generation_seconds": 2274.0,
+      "git_commit": "ec81462a1057c8696899bd0c75cadc0ee81ab2c7",
+      "lora_fingerprint": "e00df393e4551a7f761fb67cc6e970ef3a6436ac2e0b90bd0bd16b3f3f4ad60d",
+      "loss_validation": null,
+      "peak_mem_generation_gb": 53.95,
+      "peak_mem_scoring_gb": 58.0,
+      "provenance": {
+        "adapter_sha256": "abc1991c5bb1ed088adf0aa56ca2c72887a36575de45fa245cfdef0d88f48010",
+        "base_fingerprint": null,
+        "design_counts": {
+          "clean_rollouts": 8,
+          "clean_tasks": 64,
+          "diagnostic_tasks": 16,
+          "resamples": 64,
+          "samples": 8,
+          "schedules": 8
+        },
+        "git_commit": "ec81462a1057c8696899bd0c75cadc0ee81ab2c7",
+        "spec_sha256": "d673a84d4f67a9fd01c9aad34befebb3a42bb3e0e87fc35bf7352d4548cd1286",
+        "trajectory": "gate1-c2-paired-s0"
+      },
+      "provider": "modal",
+      "scoring_seconds": 2719.1,
+      "step": 80,
+      "summary": {
+        "outcome": {
+          "by_k": {
+            "0": {
+              "count": 1,
+              "lhs_mean": 0.0,
+              "lhs_over_rhs": 0.0,
+              "rhs_mean": 0.0
+            },
+            "2": {
+              "count": 2,
+              "lhs_mean": 177534.52663798007,
+              "lhs_over_rhs": 0.8911048202147567,
+              "rhs_mean": 198224.80797615374
+            },
+            "3": {
+              "count": 1,
+              "lhs_mean": 304247.04564864637,
+              "lhs_over_rhs": 0.8125808802679318,
+              "rhs_mean": 374420.63065565506
+            },
+            "4": {
+              "count": 1,
+              "lhs_mean": 73214.65553141286,
+              "lhs_over_rhs": 0.5177691472537959,
+              "rhs_mean": 141404.05221079173
+            },
+            "5": {
+              "count": 4,
+              "lhs_mean": 101296.18331658319,
+              "lhs_over_rhs": 0.4419321518924083,
+              "rhs_mean": 242407.20881470156
+            },
+            "6": {
+              "count": 7,
+              "lhs_mean": 187797.17549813018,
+              "lhs_over_rhs": 0.511105959568269,
+              "rhs_mean": 363082.5246188895
+            },
+            "7": {
+              "count": 14,
+              "lhs_mean": 75127.79685981944,
+              "lhs_over_rhs": 0.187078954302937,
+              "rhs_mean": 369000.91804103606
+            },
+            "8": {
+              "count": 34,
+              "lhs_mean": 0.0,
+              "lhs_over_rhs": 0.0,
+              "rhs_mean": 262078.98494168563
+            }
+          },
+          "implemented": {
+            "cosine_paired_independent": 0.997929636340225,
+            "expected_update_norm": {
+              "independent": 0.0004990310570196592,
+              "paired": 0.0005350434573817809
+            },
+            "ratio_paired_over_independent": 0.3661727564433552,
+            "ratio_within_paired_over_independent": 0.05209036700202086,
+            "reward_variance": {
+              "independent": 0.2899888392857145,
+              "paired": 0.14916294642857136
+            },
+            "trace_var": {
+              "independent": 5.539867375634625e-05,
+              "paired": 2.0285485072667468e-05
+            },
+            "trace_var_between": {
+              "independent": 1.590623444764176e-05,
+              "paired": 1.8228309415272015e-05
+            },
+            "trace_var_within": {
+              "independent": 3.9492439308704486e-05,
+              "paired": 2.057175657395452e-06
+            }
+          },
+          "lhs_mean": 54751.32612885524,
+          "lhs_over_rhs": 0.18940815893745852,
+          "mean_centered": {
+            "cosine_paired_independent": 1.0,
+            "expected_update_norm": {
+              "independent": 25.850813417504256,
+              "paired": 25.850813417504256
+            },
+            "identity_residual": 2.9103830456733704e-11,
+            "ratio_paired_over_independent": 0.6974259479299703,
+            "ratio_within_paired_over_independent": 0.1894081589374584,
+            "reward_variance": {
+              "independent": 0.2899888392857145,
+              "paired": 0.14916294642857136
+            },
+            "trace_var": {
+              "independent": 69696.18653549711,
+              "paired": 48607.9289616231
+            },
+            "trace_var_between": {
+              "independent": 43680.3096100261,
+              "paired": 43680.30961002613
+            },
+            "trace_var_within": {
+              "independent": 26015.87692547101,
+              "paired": 4927.61935159697
+            }
+          },
+          "rhs_mean": 289065.2991719
+        },
+        "step": 80,
+        "transition": {
+          "implemented": {
+            "cosine_paired_independent": 0.6543196288530807,
+            "expected_update_norm": {
+              "independent_resampled": 0.0004611493203759099,
+              "paired": 0.0003627653774206949,
+              "stratified": 0.0005007296793809882
+            },
+            "ratio_paired_over_independent": 0.6460319319177577,
+            "ratio_within_paired_over_independent": 0.6426466665875548,
+            "reward_variance": {
+              "independent_resampled": 0.30360630580357134,
+              "paired": 0.14899553571428575,
+              "stratified": 0.3252301897321427
+            },
+            "trace_var": {
+              "independent_resampled": 2.625223782341858e-05,
+              "paired": 1.6959783918227534e-05,
+              "stratified": 2.9644184690544192e-05
+            },
+            "trace_var_between": {
+              "independent_resampled": 3.0498038833189077e-06,
+              "paired": 2.048817089904534e-06,
+              "stratified": 3.7869212714509187e-06
+            },
+            "trace_var_within": {
+              "independent_resampled": 2.3202433940099673e-05,
+              "paired": 1.4910966828323e-05,
+              "stratified": 2.5857263419093274e-05
+            }
+          },
+          "mean_centered": {
+            "cosine_paired_independent": 0.6666391231747554,
+            "expected_update_norm": {
+              "independent_resampled": 39.97302336482031,
+              "paired": 22.6922366659925,
+              "stratified": 44.41348167741404
+            },
+            "ratio_paired_over_independent": 0.3883323501909273,
+            "ratio_within_paired_over_independent": 0.39039462019722215,
+            "reward_variance": {
+              "independent_resampled": 0.30360630580357134,
+              "paired": 0.14899553571428575,
+              "stratified": 0.3252301897321427
+            },
+            "trace_var": {
+              "independent_resampled": 146503.93569888317,
+              "paired": 56892.2176621678,
+              "stratified": 164186.1869189176
+            },
+            "trace_var_between": {
+              "independent_resampled": 18140.357161950422,
+              "paired": 6779.767172085645,
+              "stratified": 21360.53091849835
+            },
+            "trace_var_within": {
+              "independent_resampled": 128363.57853693275,
+              "paired": 50112.450490082156,
+              "stratified": 142825.65600041926
+            }
+          }
+        }
+      },
+      "t_ref": 325881.375,
+      "trajectory": "gate1-c2-paired-s0"
+    }
+  },
+  "coordinate_names_sha256": "40a1d6a37790c82b3abe34c1f1e661dc4f3f04126d7880f4c11b41980e5febf4",
+  "git_commit": "ec81462a1057c8696899bd0c75cadc0ee81ab2c7",
+  "spec_sha256_by_step": {
+    "0": "4a774fd59833d4d9bfac7c23734fc038fdd25cea2f4cf7fe69d6b9f0b925bd16",
+    "100": "d673a84d4f67a9fd01c9aad34befebb3a42bb3e0e87fc35bf7352d4548cd1286",
+    "80": "d673a84d4f67a9fd01c9aad34befebb3a42bb3e0e87fc35bf7352d4548cd1286"
+  },
+  "steps": [
+    0,
+    80,
+    100
+  ],
+  "trajectory": "gate1-c2-paired-s0",
+  "verdict": {
+    "outcome_noise_every_checkpoint": true,
+    "p13": {
+      "base_lhs_at_most_half_rhs": true,
+      "outcome_ratio_falls": true,
+      "transition_ratio_below_one_majority": true
+    },
+    "passes": true,
+    "ratios_by_step": {
+      "outcome": {
+        "0": 0.7888067203021002,
+        "80": 0.6974259479299703,
+        "100": 0.7309690936086892
+      },
+      "transition_resampled": {
+        "0": 0.600687897475077,
+        "80": 0.3883323501909273,
+        "100": 0.3854177999351682
+      }
+    },
+    "transition_noise_majority": true
+  }
+}

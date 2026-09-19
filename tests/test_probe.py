@@ -339,6 +339,25 @@ def test_register_accepts_declared_set(monkeypatch, tmp_path):
     assert reg["steps"] == [0, 20, 40, 60, 80, 100] and reg["verdict"]["passes"]
 
 
+def test_register_shares_the_base_across_trajectories(monkeypatch, tmp_path):
+    a = _write_probe_dir(tmp_path, "probe-a", [0, 20, 40], "t1-c2-paired-s1")
+    g = _write_probe_dir(tmp_path, "probe-g", [80, 100], "gate1-c2-paired-s0")
+    out = tmp_path / "gate.json"
+    _run_register(monkeypatch, ["--probes", str(g), "--trajectory", "gate1-c2-paired-s0", "--base-from", str(a), "--out", str(out)])
+    reg = json.loads(out.read_text())
+    assert reg["steps"] == [0, 80, 100] and reg["base_trajectory"] == "t1-c2-paired-s1" and reg["base_from"] == str(a)
+    assert reg["checkpoints"]["0"]["trajectory"] == "t1-c2-paired-s1" and reg["checkpoints"]["80"]["trajectory"] == "gate1-c2-paired-s0"
+    a0 = _write_probe_dir(tmp_path, "probe-a0", [0], "t1-c2-paired-s1")
+    with pytest.raises(SystemExit, match="trajectory"):
+        _run_register(monkeypatch, ["--probes", str(g), str(a0), "--trajectory", "gate1-c2-paired-s0", "--out", str(tmp_path / "x.json")])
+    adapted = _write_probe_dir(tmp_path, "probe-adapted", [0], "t1-c2-paired-s1")
+    payload = json.loads((adapted / "step0.json").read_text())
+    payload["adapter_path"] = "runs/t1-c2-paired-s1/trainer/checkpoint-20"
+    (adapted / "step0.json").write_text(json.dumps(payload))
+    with pytest.raises(SystemExit):
+        _run_register(monkeypatch, ["--probes", str(g), "--trajectory", "gate1-c2-paired-s0", "--base-from", str(adapted), "--out", str(tmp_path / "y.json")])
+
+
 def test_register_refuses_missing_wrong_smoke_duplicate(monkeypatch, tmp_path):
     a = _write_probe_dir(tmp_path, "probe-a", [0, 20, 40], "t1-c2-paired-s1")
     with pytest.raises(SystemExit):

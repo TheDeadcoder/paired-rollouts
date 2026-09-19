@@ -58,6 +58,10 @@ reported whatever their sign.
     python scripts/collect_modal.py --register registers/launches/<utc>_probe-b1.json --with-weights
     python scripts/build_probe_register.py --probes outputs/runs/probe-t1-c2-paired-s1-a outputs/runs/probe-t1-c2-paired-s1-b \
         --trajectory t1-c2-paired-s1 --base-from outputs/runs/probe-t1-c2-paired-s1-a --out registers/probe/t1-c2-paired-s1.json
+    python scripts/build_probe_register.py --probes outputs/runs/probe-gate1-c2-paired-s0 \
+        --trajectory gate1-c2-paired-s0 --base-from outputs/runs/probe-t1-c2-paired-s1-a --out registers/probe/gate1-c2-paired-s0.json
+
+The step taken through `--base-from` is the shared base-model computation and may come from the other trajectory's probe; the builder checks that it is step 0 without an adapter, keeps the coordinate-sha, design and commit checks on it, and records `base_from` and `base_trajectory`.
 
 `configs/probe-smoke.json` runs the shrunk design end to end in about ten minutes; the register builder refuses it. `probe-smoke` failed at the first fingerprint at 6a741a5 (numpy has no bfloat16 dtype); `configs/probe-smoke-2.json` is its rerun after the fix.
 
