@@ -1,0 +1,35 @@
+{
+  "app": "pairedrl-train",
+  "commit": "ec81462a1057c8696899bd0c75cadc0ee81ab2c7",
+  "entries": [
+    {
+      "call_id": "fc-01M2TSG9P2KVZ00RDKY3PP1XNG",
+      "dashboard_url": "https://modal.com/id/fc-01M2TSG9P2KVZ00RDKY3PP1XNG",
+      "function": "probe",
+      "run_id": "probe-t1-c2-paired-s1-a",
+      "spawned_utc": "2026-09-18T17:37:22+00:00",
+      "spec_path": "configs/probe-t1-c2-paired-s1-a.json",
+      "trajectory": "t1-c2-paired-s1"
+    },
+    {
+      "call_id": "fc-01M2TSGA0HTKRP0FVYJ4E40SHZ",
+      "dashboard_url": "https://modal.com/id/fc-01M2TSGA0HTKRP0FVYJ4E40SHZ",
+      "function": "probe",
+      "run_id": "probe-t1-c2-paired-s1-b",
+      "spawned_utc": "2026-09-18T17:37:23+00:00",
+      "spec_path": "configs/probe-t1-c2-paired-s1-b.json",
+      "trajectory": "t1-c2-paired-s1"
+    },
+    {
+      "call_id": "fc-01M2TSGAA8P1A46E0WJ6ZCQR07",
+      "dashboard_url": "https://modal.com/id/fc-01M2TSGAA8P1A46E0WJ6ZCQR07",
+      "function": "probe",
+      "run_id": "probe-gate1-c2-paired-s0",
+      "spawned_utc": "2026-09-18T17:37:23+00:00",
+      "spec_path": "configs/probe-gate1-c2-paired-s0.json",
+      "trajectory": "gate1-c2-paired-s0"
+    }
+  ],
+  "launched_utc": "2026-09-18T17:37:21+00:00",
+  "preregistration": "v1"
+}

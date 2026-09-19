@@ -138,7 +138,7 @@ supersede the earlier text of this file:
   capture position) so that rollout index k*M + m shares schedule k whatever order the eval dataloader delivered them
   in; the `schedules` blocks of `samples` are asserted single-seeded and distinct, and the schedule-seed order is
   written to the evidence.
-- Loss validation. On one mixed clean group (smoke, and once per full-size step) -grad of `_compute_loss` is checked
+- Loss validation. On one mixed clean group (the smoke, or a spec with `validate_loss` set; the three full-size specs leave it off, because a batched backward over an 8-rollout group keeps every sequence's logits in the autograd graph next to vLLM's reservation, and the smoke's step-0 validation already exercised the same code path at cosine 0.99994 and relative L2 0.017; the smoke's step-20 validation was skipped because all four tiny clean groups were all-correct, so there was no mixed group) -grad of `_compute_loss` is checked
   against the reconstruction (1/T_group) sum_i A_i rho_i S_i. The advantages tensor is built on the mask's device, and
   `current_gradient_accumulation_steps` is set to `steps_per_generation` for the call (Transformers 5.16.1 sets it only
   inside the training loop, and this makes DAPO's `current / steps_per_generation` factor exactly 1) then deleted; the
