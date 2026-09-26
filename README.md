@@ -131,11 +131,14 @@ The decision scripts accept only runs that pass `scripts/verify_run.py` (complet
 ## Citation
 
 ```bibtex
-@misc{sakib2026luck,
-  title  = {Luck Is Not Skill: When Do Paired Rollouts Help Group-Relative RL of LLM Agents?},
-  author = {Nazmus Sakib Touhid},
-  year   = {2026},
-  url    = {https://github.com/TheDeadcoder/paired-rollouts}
+@misc{sakib2026luckskillpairedrollouts,
+      title={Luck Is Not Skill: When Do Paired Rollouts Help Group-Relative RL of LLM Agents?}, 
+      author={Nazmus Sakib},
+      year={2026},
+      eprint={2609.24144},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2609.24144}, 
 }
 ```
 
