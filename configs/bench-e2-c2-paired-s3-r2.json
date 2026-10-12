@@ -1,0 +1,20 @@
+{
+  "run_id": "bench-e2-c2-paired-s3-r2",
+  "model": "Qwen/Qwen3.5-2B",
+  "condition": "C2",
+  "arm": "paired",
+  "p": 0.25,
+  "q": 0.0,
+  "seed": 3,
+  "steps": 4,
+  "prompts_per_step": 24,
+  "num_generations": 8,
+  "eval_profile": "core",
+  "eval_tasks": 128,
+  "final_eval_tasks": 8,
+  "per_device_eval_batch_size": 128,
+  "checkpoint_steps": 4,
+  "diagnostic_steps": [],
+  "vllm_gpu_memory_utilization": 0.2,
+  "notes": "concurrency benchmark, not pre-registered; E2: concurrent C2 pair at vLLM memory 0.20, 4 steps, core evaluation of 128 validation tasks at batch 128, final sets cut to 8 tasks; rerun of bench-e2-c2-paired-s3 under a new run id after the initial-adapter seeding fix (af63f99), which the step-0 input check required (the first run stopped at step 0 with differing adapters)"
+}
