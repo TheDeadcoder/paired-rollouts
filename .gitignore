@@ -23,6 +23,9 @@ wandb/
 *.bin
 *.gguf
 
+# Local working notes (paper, plans); never committed
+notes/
+
 # OS and editors
 .DS_Store
 .idea/
