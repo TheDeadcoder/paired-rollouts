@@ -1,0 +1,62 @@
+{
+  "app": "root@165.245.128.135",
+  "commit": "c002380eb8c6b6942d2b3d231dd5886fbddf58ed",
+  "entries": [
+    {
+      "call_id": "root@165.245.128.135:bench-e2-c2-paired-s3-r2",
+      "container": "pairedrl",
+      "host": "root@165.245.128.135",
+      "host_run_dir": "/root/work/runs/bench-e2-c2-paired-s3-r2",
+      "pair": true,
+      "queue_entry": "e0006",
+      "run_id": "bench-e2-c2-paired-s3-r2",
+      "slot": 0,
+      "spawned_utc": "2026-10-12T16:43:17+00:00",
+      "spec_path": "configs/bench-e2-c2-paired-s3-r2.json"
+    },
+    {
+      "call_id": "root@165.245.128.135:bench-e2-c2-independent-s3-r2",
+      "container": "pairedrl",
+      "host": "root@165.245.128.135",
+      "host_run_dir": "/root/work/runs/bench-e2-c2-independent-s3-r2",
+      "pair": true,
+      "queue_entry": "e0006",
+      "run_id": "bench-e2-c2-independent-s3-r2",
+      "slot": 1,
+      "spawned_utc": "2026-10-12T16:43:17+00:00",
+      "spec_path": "configs/bench-e2-c2-independent-s3-r2.json"
+    },
+    {
+      "call_id": "root@165.245.128.135:bench-e3-c2-paired-s3-r2",
+      "container": "pairedrl",
+      "host": "root@165.245.128.135",
+      "host_run_dir": "/root/work/runs/bench-e3-c2-paired-s3-r2",
+      "pair": true,
+      "queue_entry": "e0007",
+      "run_id": "bench-e3-c2-paired-s3-r2",
+      "slot": 0,
+      "spawned_utc": "2026-10-12T16:43:17+00:00",
+      "spec_path": "configs/bench-e3-c2-paired-s3-r2.json"
+    },
+    {
+      "call_id": "root@165.245.128.135:bench-e3-c2-independent-s3-r2",
+      "container": "pairedrl",
+      "host": "root@165.245.128.135",
+      "host_run_dir": "/root/work/runs/bench-e3-c2-independent-s3-r2",
+      "pair": true,
+      "queue_entry": "e0007",
+      "run_id": "bench-e3-c2-independent-s3-r2",
+      "slot": 1,
+      "spawned_utc": "2026-10-12T16:43:17+00:00",
+      "spec_path": "configs/bench-e3-c2-independent-s3-r2.json"
+    }
+  ],
+  "launched_utc": "2026-10-12T16:43:17+00:00",
+  "preregistration": null,
+  "queue": {
+    "append": false,
+    "checkout": "/work/checkouts/c002380eb8c6b6942d2b3d231dd5886fbddf58ed",
+    "host_queue_dir": "/root/work/runs/queue",
+    "queue_dir": "/work/runs/queue"
+  }
+}
