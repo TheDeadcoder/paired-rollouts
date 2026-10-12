@@ -1,0 +1,91 @@
+{
+  "app": "pairedrl-archive",
+  "code_sha256": {
+    "scripts/upload_weights.py": "b0be8d9d27f95f8ad45ab23398bf34319a69107ade8874bf632112fb556cfcfb",
+    "scripts/verify_run.py": "a6b0b14591ed8910bf6e375bec50addd8b9c20a5c6fef7664622ad5d2b2abe76",
+    "src/pairedrl/analysis/curves.py": "cd887e9ae31e08ea5f57c775996b85136640f6261baa6d7cd42a1df36b9c45a1",
+    "src/pairedrl/ops/archive.py": "96ae942e5a8c183400be0fc732156f6956bc2ce3f59bd9ccaa7df2b79f5d5ffc"
+  },
+  "commit": "8b0c4592515b4fc14917ab9364a99fe20f6d85ff-dirty",
+  "dirty_paths": [
+    ".gitignore",
+    "scripts/upload_weights.py",
+    "scripts/verify_run.py",
+    "tests/test_acceptance.py",
+    "scripts/archive_modal.py",
+    "scripts/archive_weights.py",
+    "src/pairedrl/ops/archive.py",
+    "tests/test_archive.py"
+  ],
+  "entries": [
+    {
+      "accept_missing": null,
+      "call_id": "fc-01M4R3ZDCKFWTFCGM5HFY5TVPJ",
+      "dashboard_url": "https://modal.com/id/fc-01M4R3ZDCKFWTFCGM5HFY5TVPJ",
+      "function": "archive",
+      "label": "archive-c2",
+      "repo": "Melikshah/paired-rollouts-weights",
+      "run_id": "t1-c2-paired-s1",
+      "spawned_utc": "2026-10-12T13:14:02+00:00"
+    },
+    {
+      "accept_missing": null,
+      "call_id": "fc-01M4R3ZDCKFWTFCGM5HFY5TVPJ",
+      "dashboard_url": "https://modal.com/id/fc-01M4R3ZDCKFWTFCGM5HFY5TVPJ",
+      "function": "archive",
+      "label": "archive-c2",
+      "repo": "Melikshah/paired-rollouts-weights",
+      "run_id": "t1-c2-independent-s1",
+      "spawned_utc": "2026-10-12T13:14:02+00:00"
+    },
+    {
+      "accept_missing": null,
+      "call_id": "fc-01M4R3ZDCKFWTFCGM5HFY5TVPJ",
+      "dashboard_url": "https://modal.com/id/fc-01M4R3ZDCKFWTFCGM5HFY5TVPJ",
+      "function": "archive",
+      "label": "archive-c2",
+      "repo": "Melikshah/paired-rollouts-weights",
+      "run_id": "t1-c2-paired-s2",
+      "spawned_utc": "2026-10-12T13:14:02+00:00"
+    },
+    {
+      "accept_missing": null,
+      "call_id": "fc-01M4R3ZDCKFWTFCGM5HFY5TVPJ",
+      "dashboard_url": "https://modal.com/id/fc-01M4R3ZDCKFWTFCGM5HFY5TVPJ",
+      "function": "archive",
+      "label": "archive-c2",
+      "repo": "Melikshah/paired-rollouts-weights",
+      "run_id": "t1-c2-independent-s0",
+      "spawned_utc": "2026-10-12T13:14:02+00:00"
+    },
+    {
+      "accept_missing": null,
+      "call_id": "fc-01M4R3ZDCKFWTFCGM5HFY5TVPJ",
+      "dashboard_url": "https://modal.com/id/fc-01M4R3ZDCKFWTFCGM5HFY5TVPJ",
+      "function": "archive",
+      "label": "archive-c2",
+      "repo": "Melikshah/paired-rollouts-weights",
+      "run_id": "t1-c2-independent-s2",
+      "spawned_utc": "2026-10-12T13:14:02+00:00"
+    },
+    {
+      "accept_missing": {
+        "reason": "gate 1 kept only checkpoints 80 and 100: save_total_limit 2 at its training commit 62caa40 (DEVIATIONS 2026-09-08, amendment A1)",
+        "steps": [
+          20,
+          40,
+          60
+        ]
+      },
+      "call_id": "fc-01M4R3ZDCKFWTFCGM5HFY5TVPJ",
+      "dashboard_url": "https://modal.com/id/fc-01M4R3ZDCKFWTFCGM5HFY5TVPJ",
+      "function": "archive",
+      "label": "archive-c2",
+      "repo": "Melikshah/paired-rollouts-weights",
+      "run_id": "gate1-c2-paired-s0",
+      "spawned_utc": "2026-10-12T13:14:02+00:00"
+    }
+  ],
+  "launched_utc": "2026-10-12T13:14:02+00:00",
+  "preregistration": null
+}

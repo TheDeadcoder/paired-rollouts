@@ -1,0 +1,350 @@
+{
+  "attempts": [
+    1
+  ],
+  "checkpoints": {
+    "adapter_final": true,
+    "complete": [
+      20,
+      40,
+      60,
+      80,
+      100
+    ],
+    "defects": {},
+    "expected": [
+      20,
+      40,
+      60,
+      80,
+      100
+    ],
+    "incomplete": [],
+    "missing": []
+  },
+  "commit_url": "https://huggingface.co/Melikshah/paired-rollouts-weights/commit/eac4f78ac66ff9005db6d36486ce9f8b267c51d9",
+  "files": [
+    {
+      "bytes": 5197,
+      "path": "trainer/checkpoint-100/README.md",
+      "sha256": "0649d1297b080604a05311d468b77c01d3d2d049a6ead025361403b42593f6f8"
+    },
+    {
+      "bytes": 1297,
+      "path": "trainer/checkpoint-100/adapter_config.json",
+      "sha256": "22b0ce3d3724604039b4e2ce74cbc762a4e9b49ff52f64fb0140a4f2a521d8f2"
+    },
+    {
+      "bytes": 186803584,
+      "path": "trainer/checkpoint-100/adapter_model.safetensors",
+      "sha256": "6d3edd822f838597a729348fd9ab68856d086a96302e5c859af30602a9c398aa"
+    },
+    {
+      "bytes": 7755,
+      "path": "trainer/checkpoint-100/chat_template.jinja",
+      "sha256": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80"
+    },
+    {
+      "bytes": 269427199,
+      "path": "trainer/checkpoint-100/optimizer.pt",
+      "sha256": "8c144a7e16f8bc7921f7f4203b81209a9115fa1602fbc632ccb01a86045c6db5"
+    },
+    {
+      "bytes": 1220,
+      "path": "trainer/checkpoint-100/processor_config.json",
+      "sha256": "bfbc24af59a3e73a9cd0653b8d4ae758dfaec4e3e6c15dfb1c6c8ee8d5683c85"
+    },
+    {
+      "bytes": 14581,
+      "path": "trainer/checkpoint-100/rng_state.pth",
+      "sha256": "a79eb8a84edda63501fd199e53366f81e8a7f029d298fdd58567fe1990ee87a4"
+    },
+    {
+      "bytes": 1465,
+      "path": "trainer/checkpoint-100/scheduler.pt",
+      "sha256": "89c7e585bf25f929251599f24890acceb440d06b049a496384748f1eed552840"
+    },
+    {
+      "bytes": 19989325,
+      "path": "trainer/checkpoint-100/tokenizer.json",
+      "sha256": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523"
+    },
+    {
+      "bytes": 2245,
+      "path": "trainer/checkpoint-100/tokenizer_config.json",
+      "sha256": "2ceedd625aa82858df6fc002a90250e0fcc1388ce3448eaf79e682a7ac4ae237"
+    },
+    {
+      "bytes": 165932,
+      "path": "trainer/checkpoint-100/trainer_state.json",
+      "sha256": "d28ad2ad0f59972c166e17552d6509bc8c6b187f3da9d63438990fcc94a92326"
+    },
+    {
+      "bytes": 7633,
+      "path": "trainer/checkpoint-100/training_args.bin",
+      "sha256": "a2a0ff2454453092eb01e022059a968eec01a37698954536f0eb3dff7581b702"
+    },
+    {
+      "bytes": 5197,
+      "path": "trainer/checkpoint-20/README.md",
+      "sha256": "0649d1297b080604a05311d468b77c01d3d2d049a6ead025361403b42593f6f8"
+    },
+    {
+      "bytes": 1297,
+      "path": "trainer/checkpoint-20/adapter_config.json",
+      "sha256": "22b0ce3d3724604039b4e2ce74cbc762a4e9b49ff52f64fb0140a4f2a521d8f2"
+    },
+    {
+      "bytes": 186803584,
+      "path": "trainer/checkpoint-20/adapter_model.safetensors",
+      "sha256": "13753a010760e3efe519a52c4361782af64f17d2da4c49b9ffb28899777ae066"
+    },
+    {
+      "bytes": 7755,
+      "path": "trainer/checkpoint-20/chat_template.jinja",
+      "sha256": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80"
+    },
+    {
+      "bytes": 269427199,
+      "path": "trainer/checkpoint-20/optimizer.pt",
+      "sha256": "5ff169800838ae26801cebc11688612a1b361c0425da0b1e09462faa538bb6bf"
+    },
+    {
+      "bytes": 1220,
+      "path": "trainer/checkpoint-20/processor_config.json",
+      "sha256": "bfbc24af59a3e73a9cd0653b8d4ae758dfaec4e3e6c15dfb1c6c8ee8d5683c85"
+    },
+    {
+      "bytes": 14581,
+      "path": "trainer/checkpoint-20/rng_state.pth",
+      "sha256": "4590e5fdbcc081f1faa7ebbf62501c3feeba33ae9e1a5396d8cf7732d28569e7"
+    },
+    {
+      "bytes": 1465,
+      "path": "trainer/checkpoint-20/scheduler.pt",
+      "sha256": "a61d627a0be8f090521f868fc08a38adfc2d64773407881dab0b559d77a4c120"
+    },
+    {
+      "bytes": 19989325,
+      "path": "trainer/checkpoint-20/tokenizer.json",
+      "sha256": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523"
+    },
+    {
+      "bytes": 2245,
+      "path": "trainer/checkpoint-20/tokenizer_config.json",
+      "sha256": "2ceedd625aa82858df6fc002a90250e0fcc1388ce3448eaf79e682a7ac4ae237"
+    },
+    {
+      "bytes": 33651,
+      "path": "trainer/checkpoint-20/trainer_state.json",
+      "sha256": "03fc64aee21a22bf2613d53a8a701cdcdf33bb103d48464f851115ba288706eb"
+    },
+    {
+      "bytes": 7633,
+      "path": "trainer/checkpoint-20/training_args.bin",
+      "sha256": "a2a0ff2454453092eb01e022059a968eec01a37698954536f0eb3dff7581b702"
+    },
+    {
+      "bytes": 5197,
+      "path": "trainer/checkpoint-40/README.md",
+      "sha256": "0649d1297b080604a05311d468b77c01d3d2d049a6ead025361403b42593f6f8"
+    },
+    {
+      "bytes": 1297,
+      "path": "trainer/checkpoint-40/adapter_config.json",
+      "sha256": "22b0ce3d3724604039b4e2ce74cbc762a4e9b49ff52f64fb0140a4f2a521d8f2"
+    },
+    {
+      "bytes": 186803584,
+      "path": "trainer/checkpoint-40/adapter_model.safetensors",
+      "sha256": "7133b737043057e97e060dcff663107eedc3f3d4f415d8b0babe27bd7eabfa77"
+    },
+    {
+      "bytes": 7755,
+      "path": "trainer/checkpoint-40/chat_template.jinja",
+      "sha256": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80"
+    },
+    {
+      "bytes": 269427199,
+      "path": "trainer/checkpoint-40/optimizer.pt",
+      "sha256": "ce56969f6cb3b504e2163c30abd4981c31b642817158a5cb95fbae51f66a9e9e"
+    },
+    {
+      "bytes": 1220,
+      "path": "trainer/checkpoint-40/processor_config.json",
+      "sha256": "bfbc24af59a3e73a9cd0653b8d4ae758dfaec4e3e6c15dfb1c6c8ee8d5683c85"
+    },
+    {
+      "bytes": 14581,
+      "path": "trainer/checkpoint-40/rng_state.pth",
+      "sha256": "329a4892e925c092681f261baf2b0d9f09ba7f80505ea23e0452a4947afda827"
+    },
+    {
+      "bytes": 1465,
+      "path": "trainer/checkpoint-40/scheduler.pt",
+      "sha256": "b6994b10dd26d2c6a69d68166de04c9febed84f840b4dc0298433d938eae955d"
+    },
+    {
+      "bytes": 19989325,
+      "path": "trainer/checkpoint-40/tokenizer.json",
+      "sha256": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523"
+    },
+    {
+      "bytes": 2245,
+      "path": "trainer/checkpoint-40/tokenizer_config.json",
+      "sha256": "2ceedd625aa82858df6fc002a90250e0fcc1388ce3448eaf79e682a7ac4ae237"
+    },
+    {
+      "bytes": 66860,
+      "path": "trainer/checkpoint-40/trainer_state.json",
+      "sha256": "8b52227404f958dac4824ee9961db12e151843dc3a1765ac7204c400f229c1a7"
+    },
+    {
+      "bytes": 7633,
+      "path": "trainer/checkpoint-40/training_args.bin",
+      "sha256": "a2a0ff2454453092eb01e022059a968eec01a37698954536f0eb3dff7581b702"
+    },
+    {
+      "bytes": 5197,
+      "path": "trainer/checkpoint-60/README.md",
+      "sha256": "0649d1297b080604a05311d468b77c01d3d2d049a6ead025361403b42593f6f8"
+    },
+    {
+      "bytes": 1297,
+      "path": "trainer/checkpoint-60/adapter_config.json",
+      "sha256": "22b0ce3d3724604039b4e2ce74cbc762a4e9b49ff52f64fb0140a4f2a521d8f2"
+    },
+    {
+      "bytes": 186803584,
+      "path": "trainer/checkpoint-60/adapter_model.safetensors",
+      "sha256": "3d55eac8222c13836fde53ee2b0e35e57c96ce32c0827b1d37be1096dd79fd5b"
+    },
+    {
+      "bytes": 7755,
+      "path": "trainer/checkpoint-60/chat_template.jinja",
+      "sha256": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80"
+    },
+    {
+      "bytes": 269427199,
+      "path": "trainer/checkpoint-60/optimizer.pt",
+      "sha256": "4b236396fba9ecd96ab9f88eb5681919df6576b64e024809a1803db5aaf5ba13"
+    },
+    {
+      "bytes": 1220,
+      "path": "trainer/checkpoint-60/processor_config.json",
+      "sha256": "bfbc24af59a3e73a9cd0653b8d4ae758dfaec4e3e6c15dfb1c6c8ee8d5683c85"
+    },
+    {
+      "bytes": 14581,
+      "path": "trainer/checkpoint-60/rng_state.pth",
+      "sha256": "c0311739cac4d63e21021ececef7a81aff69346b6fcd1263ec3513869a891f7b"
+    },
+    {
+      "bytes": 1465,
+      "path": "trainer/checkpoint-60/scheduler.pt",
+      "sha256": "5940c5c61fba7c0c8c3d5d50f4366869a3b9a0c79fff2faf4ff162a048c2d61f"
+    },
+    {
+      "bytes": 19989325,
+      "path": "trainer/checkpoint-60/tokenizer.json",
+      "sha256": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523"
+    },
+    {
+      "bytes": 2245,
+      "path": "trainer/checkpoint-60/tokenizer_config.json",
+      "sha256": "2ceedd625aa82858df6fc002a90250e0fcc1388ce3448eaf79e682a7ac4ae237"
+    },
+    {
+      "bytes": 99808,
+      "path": "trainer/checkpoint-60/trainer_state.json",
+      "sha256": "7eefd16350a286466b9d6f216d632f9e1cd143980cb1d4a8c7ead0f6e1507eea"
+    },
+    {
+      "bytes": 7633,
+      "path": "trainer/checkpoint-60/training_args.bin",
+      "sha256": "a2a0ff2454453092eb01e022059a968eec01a37698954536f0eb3dff7581b702"
+    },
+    {
+      "bytes": 5197,
+      "path": "trainer/checkpoint-80/README.md",
+      "sha256": "0649d1297b080604a05311d468b77c01d3d2d049a6ead025361403b42593f6f8"
+    },
+    {
+      "bytes": 1297,
+      "path": "trainer/checkpoint-80/adapter_config.json",
+      "sha256": "22b0ce3d3724604039b4e2ce74cbc762a4e9b49ff52f64fb0140a4f2a521d8f2"
+    },
+    {
+      "bytes": 186803584,
+      "path": "trainer/checkpoint-80/adapter_model.safetensors",
+      "sha256": "7f5d3ed024707a07b0ed758e09ea716e5fe39059e075a84c9d940c25ae68f84a"
+    },
+    {
+      "bytes": 7755,
+      "path": "trainer/checkpoint-80/chat_template.jinja",
+      "sha256": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80"
+    },
+    {
+      "bytes": 269427199,
+      "path": "trainer/checkpoint-80/optimizer.pt",
+      "sha256": "2d77b3ab814d0444e283fa8f5b13725bc25781f62a0ed3a441e4a681255fb777"
+    },
+    {
+      "bytes": 1220,
+      "path": "trainer/checkpoint-80/processor_config.json",
+      "sha256": "bfbc24af59a3e73a9cd0653b8d4ae758dfaec4e3e6c15dfb1c6c8ee8d5683c85"
+    },
+    {
+      "bytes": 14581,
+      "path": "trainer/checkpoint-80/rng_state.pth",
+      "sha256": "7f4085c8d755f8f6f0daa13c826f335f55acc6507268a0978920ad7ced094f77"
+    },
+    {
+      "bytes": 1465,
+      "path": "trainer/checkpoint-80/scheduler.pt",
+      "sha256": "68e12ea105d1321d2f396e3113101572120c00e3b670a28d0154eb748559938c"
+    },
+    {
+      "bytes": 19989325,
+      "path": "trainer/checkpoint-80/tokenizer.json",
+      "sha256": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523"
+    },
+    {
+      "bytes": 2245,
+      "path": "trainer/checkpoint-80/tokenizer_config.json",
+      "sha256": "2ceedd625aa82858df6fc002a90250e0fcc1388ce3448eaf79e682a7ac4ae237"
+    },
+    {
+      "bytes": 132855,
+      "path": "trainer/checkpoint-80/trainer_state.json",
+      "sha256": "099e65a91cfaa80e76fe1276aa95c88417aab356e4e418a376c258cf8d2f743b"
+    },
+    {
+      "bytes": 7633,
+      "path": "trainer/checkpoint-80/training_args.bin",
+      "sha256": "a2a0ff2454453092eb01e022059a968eec01a37698954536f0eb3dff7581b702"
+    },
+    {
+      "bytes": 5197,
+      "path": "adapter_final/README.md",
+      "sha256": "0649d1297b080604a05311d468b77c01d3d2d049a6ead025361403b42593f6f8"
+    },
+    {
+      "bytes": 1297,
+      "path": "adapter_final/adapter_config.json",
+      "sha256": "22b0ce3d3724604039b4e2ce74cbc762a4e9b49ff52f64fb0140a4f2a521d8f2"
+    },
+    {
+      "bytes": 186803584,
+      "path": "adapter_final/adapter_model.safetensors",
+      "sha256": "6d3edd822f838597a729348fd9ab68856d086a96302e5c859af30602a9c398aa"
+    }
+  ],
+  "git_commit": "c9a2c4b9372c45429810b62d8c27304eb3f9dec9",
+  "provider": "modal",
+  "repo": "Melikshah/paired-rollouts-weights",
+  "revision": "eac4f78ac66ff9005db6d36486ce9f8b267c51d9",
+  "run_id": "t1-c2-paired-s2",
+  "total_bytes": 2568616689,
+  "uploaded_utc": "2026-10-12T13:17:19+00:00"
+}

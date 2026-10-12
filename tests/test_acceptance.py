@@ -220,3 +220,39 @@ def test_upload_weights_refuses_unverified_runs_and_records_the_inventory(tmp_pa
     assert final["bytes"] == 5 and final["sha256"] == hashlib.sha256(b"final").hexdigest()
     saved = json.loads((tmp_path / "weights" / "run-l.json").read_text())
     assert saved["total_bytes"] == sum(f["bytes"] for f in record["files"]) and saved["git_commit"] == "abc1234"
+
+
+def test_missing_checkpoints_are_accepted_only_explicitly_and_recorded_as_defects(tmp_path):
+    verify, upload = load_script("verify_run"), load_script("upload_weights")
+    run_dir = complete_run(tmp_path, small_spec())
+    write_checkpoint(run_dir / "trainer" / "checkpoint-4", 4)
+    (run_dir / "adapter_final").mkdir()
+    (run_dir / "adapter_final" / "adapter_model.safetensors").write_text("final")
+    (run_dir / "adapter_final" / "adapter_config.json").write_text("{}")
+    entry = run_register(run_dir)
+    assert entry["checkpoints"]["missing"] == [2] and entry["checkpoints"]["complete"] == [4]
+    ok, reasons = verify.verdict(entry, weights=True)
+    assert not ok and "checkpoints missing [2]" in reasons[0]
+    assert verify.verdict(entry, weights=True, accept_missing=[2]) == (True, [])
+    ok, reasons = verify.verdict(entry, weights=True, accept_missing=[2, 4])
+    assert not ok and "accepted as missing but not missing: checkpoints [4]" in reasons
+    calls = []
+
+    def fake_commit(repo, uploads, message):
+        calls.append([p for p, _ in uploads])
+        return "0123abcd", f"https://huggingface.co/{repo}/commit/0123abcd"
+
+    with pytest.raises(ValueError, match="needs a reason"):
+        upload.upload_run(run_dir, "user/repo", commit_fn=fake_commit, out_dir=tmp_path / "w", accept_missing=[2])
+    with pytest.raises(ValueError, match="not accepted with weights"):
+        upload.upload_run(run_dir, "user/repo", commit_fn=fake_commit, out_dir=tmp_path / "w")
+    assert calls == [] and not (tmp_path / "w").exists()
+    record = upload.upload_run(run_dir, "user/repo", commit_fn=fake_commit, out_dir=tmp_path / "w",
+                               accept_missing=[2], accept_reason="the run kept only its last checkpoint")
+    assert len(calls) == 1 and not any("checkpoint-2" in p for p in calls[0])
+    assert record["checkpoints"]["missing"] == [2] and record["checkpoints"]["complete"] == [4]
+    assert record["checkpoints"]["defects"] == {"checkpoint-2": ["missing, accepted: the run kept only its last checkpoint"]}
+    assert entry["checkpoints"]["defects"] == {}
+    write_checkpoint(run_dir / "trainer" / "checkpoint-2", 2, **{"optimizer.pt": None})
+    ok, reasons = verify.verdict(run_register(run_dir), weights=True, accept_missing=[2])
+    assert not ok and "incomplete ['checkpoint-2']" in reasons[0]

@@ -2,11 +2,14 @@
 in one commit, and record the durable copy.
 
     python scripts/upload_weights.py outputs/runs/<run_id> --repo <user>/<name> [--data-dir data/tasks] [--out-dir registers/weights]
+        [--accept-missing-checkpoints 20,40,60 --accept-missing-reason "<why they are absent>"]
 
 Refuses a run that verify_run would not ACCEPT with --weights. Uploads every file under trainer/checkpoint-*/ and
 adapter_final/ to <run_id>/<same relative path> in the repository and writes registers/weights/<run_id>.json: the
 repository, the upload revision and URL, the upload time, the run's code commit, the checkpoint inventory the
-verdict saw, and (path, bytes, sha256) of every uploaded file. Authentication is the token of `huggingface-cli login`.
+verdict saw, and (path, bytes, sha256) of every uploaded file. Checkpoints accepted as missing (with a stated reason)
+are written under checkpoints.defects. Authentication is the token of `huggingface-cli login` or HF_TOKEN in the
+environment (scripts/archive_modal.py reads it from a Modal secret).
 """
 
 import argparse
@@ -58,11 +61,23 @@ def hf_commit(repo: str, uploads: list[tuple[str, pathlib.Path]], message: str) 
     return info.oid, info.commit_url
 
 
-def upload_run(run_dir, repo: str, commit_fn=hf_commit, data_dir=None, out_dir="registers/weights") -> dict:
-    """Verify, upload and record; raises ValueError with the verdict's reasons when the run is not accepted."""
+def accepted_inventory(checkpoints: dict, accept_missing, reason: str) -> dict:
+    """The verdict's checkpoint inventory with every checkpoint accepted as missing recorded under defects."""
+    out = json.loads(json.dumps(checkpoints))
+    for step in sorted(set(accept_missing)):
+        out["defects"][f"checkpoint-{step}"] = [f"missing, accepted: {reason}"]
+    return out
+
+
+def upload_run(run_dir, repo: str, commit_fn=hf_commit, data_dir=None, out_dir="registers/weights",
+               accept_missing=(), accept_reason: str | None = None) -> dict:
+    """Verify, upload and record; raises ValueError with the verdict's reasons when the run is not accepted.
+    `accept_missing` names expected checkpoint steps that are absent (verify_run's explicit option) and needs a reason."""
     run_dir = pathlib.Path(run_dir)
+    if accept_missing and not (accept_reason or "").strip():
+        raise ValueError(f"{run_dir.name}: accepting missing checkpoints {sorted(set(accept_missing))} needs a reason")
     entry = run_register(run_dir, data_dir=data_dir)
-    ok, reasons = load_verdict()(entry, weights=True)
+    ok, reasons = load_verdict()(entry, weights=True, accept_missing=accept_missing)
     if not ok:
         raise ValueError(f"{entry['run_id']} is not accepted with weights: {'; '.join(reasons)}")
     files = archive_files(run_dir)
@@ -78,7 +93,7 @@ def upload_run(run_dir, repo: str, commit_fn=hf_commit, data_dir=None, out_dir="
         "git_commit": entry["git_commit"],
         "provider": entry["provider"],
         "attempts": [a["attempt"] for a in entry["attempts"]],
-        "checkpoints": entry["checkpoints"],
+        "checkpoints": accepted_inventory(entry["checkpoints"], accept_missing, accept_reason) if accept_missing else entry["checkpoints"],
         "files": listed,
         "total_bytes": sum(item["bytes"] for item in listed),
     }
@@ -94,9 +109,14 @@ def main() -> int:
     parser.add_argument("--repo", required=True, help="Hugging Face model repository, <user>/<name>")
     parser.add_argument("--data-dir", default="data/tasks")
     parser.add_argument("--out-dir", default="registers/weights")
+    parser.add_argument("--accept-missing-checkpoints", default=None,
+                        help="comma-separated checkpoint steps known to be absent, for instance 20,40,60")
+    parser.add_argument("--accept-missing-reason", default=None, help="why they are absent; required with the option above")
     args = parser.parse_args()
+    accept = sorted({int(s) for s in (args.accept_missing_checkpoints or "").split(",") if s.strip()})
     try:
-        record = upload_run(args.run_dir, args.repo, data_dir=args.data_dir, out_dir=args.out_dir)
+        record = upload_run(args.run_dir, args.repo, data_dir=args.data_dir, out_dir=args.out_dir,
+                            accept_missing=accept, accept_reason=args.accept_missing_reason)
     except ValueError as e:
         print(f"refusing to upload: {e}")
         return 1
