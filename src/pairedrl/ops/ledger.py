@@ -83,7 +83,8 @@ def launch_register_path(register_dir, label: str, launched_utc: str) -> pathlib
 
 
 def write_launch_register(
-    path, commit: str, deployed_app: str, launched_utc: str, entries: list[dict], preregistration: str | None = None
+    path, commit: str, deployed_app: str, launched_utc: str, entries: list[dict], preregistration: str | None = None,
+    extra: dict | None = None,
 ) -> dict:
     register = {
         "launched_utc": launched_utc,
@@ -91,6 +92,7 @@ def write_launch_register(
         "app": deployed_app,
         "preregistration": preregistration,
         "entries": entries,
+        **(extra or {}),
     }
     path = pathlib.Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)

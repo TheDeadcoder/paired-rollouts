@@ -18,10 +18,13 @@ from pairedrl.train.dataset import (
 )
 
 ARMS = ("paired", "independent", "clean", "blocking", "blocking_paired")
+EVAL_PROFILES = ("full", "core")
 EVAL_SCHEDULES_PERIODIC = [1, 2]
 EVAL_SCHEDULES_FINAL = [1, 2, 3, 4]
 EVAL_SCHEDULES_CHALLENGE = [1]
 FINAL_TRANSITION_LEVELS = (0.10, 0.25)
+CORE_TRANSITION_LEVELS = (0.25,)
+MIN_KV_CACHE_BYTES = 2**30
 
 
 @dataclass
@@ -48,6 +51,7 @@ class RunSpec:
     checkpoint_steps: int = 20
     eval_tasks: int = 100
     final_eval_tasks: int = 200
+    eval_profile: str = "full"
     diagnostic_steps: list[int] = field(default_factory=lambda: [0, 50, 100])
     diagnostic_schedules: int = 8
     diagnostic_samples: int = 8
@@ -57,6 +61,7 @@ class RunSpec:
     vllm_gpu_memory_utilization: float = 0.35
     vllm_enable_prefix_caching: bool | None = None
     vllm_max_num_batched_tokens: int | None = None
+    vllm_kv_cache_memory_bytes: int | None = None
     per_device_eval_batch_size: int = 128
     micro_batch: int = 2
     logprob_chunk: int = 1
@@ -89,6 +94,12 @@ class RunSpec:
             raise ValueError("vllm_max_num_batched_tokens must be at least 1024")
         if self.max_tool_calling_iterations < 2:
             raise ValueError("max_tool_calling_iterations must be at least 2")
+        if self.eval_profile not in EVAL_PROFILES:
+            raise ValueError(f"eval_profile must be one of {EVAL_PROFILES}, got {self.eval_profile!r}")
+        if self.eval_profile == "core" and self.diagnostic_steps:
+            raise ValueError("the core evaluation profile runs no luck-share diagnostics; set diagnostic_steps to []")
+        if self.vllm_kv_cache_memory_bytes is not None and self.vllm_kv_cache_memory_bytes < MIN_KV_CACHE_BYTES:
+            raise ValueError("vllm_kv_cache_memory_bytes is in bytes and must be at least 1 GiB")
 
     def to_dict(self) -> dict:
         return dataclasses.asdict(self)
@@ -122,21 +133,31 @@ def assemble_training_rows(spec: RunSpec, tasks: list[Task]) -> list[dict]:
     return build_training_rows(tasks, config, spec.condition, n_rows, spec.seed)
 
 
+def periodic_set_names(spec: RunSpec) -> tuple[str, ...]:
+    """The periodic sets of the run's evaluation profile: full = clean, at-training noise and the matched challenge;
+    core = at-training noise and the matched challenge (no periodic clean set)."""
+    return ("noisy", "challenge") if spec.eval_profile == "core" else ("clean", "noisy", "challenge")
+
+
 def assemble_eval_sets(spec: RunSpec, tasks: list[Task], final: bool) -> dict[str, list[dict]]:
-    """Periodic sets (validation tasks): clean, at-training-noise and the matched challenge (every write fails
-    once; deterministic, so one schedule). Final sets (test tasks): clean, every transition level at the default
-    mixture, the held-out fault types, the challenge (all identical for every arm and condition), plus the run's own
-    training noise when it is not already one of those (outcome noise, outage-free mixtures)."""
+    """Periodic sets (validation tasks): clean (full profile only), at-training-noise and the matched challenge
+    (every write fails once; deterministic, so one schedule). Final sets (test tasks): clean, the transition levels
+    of the profile at the default mixture (full: p = 0.10 and 0.25; core: 0.25), the held-out fault types, the
+    challenge (all identical for every arm and condition), plus the run's own training noise when it is not already
+    one of those (outcome noise, outage-free mixtures). The core profile keeps exactly the full profile's tasks and
+    schedules for every set it keeps."""
     n = spec.final_eval_tasks if final else spec.eval_tasks
     indices = EVAL_SCHEDULES_FINAL if final else EVAL_SCHEDULES_PERIODIC
     tasks = tasks[:n]
-    sets = {"clean": build_eval_rows(tasks, NoiseConfig.clean(), "eval:clean", indices)}
+    clean = build_eval_rows(tasks, NoiseConfig.clean(), "eval:clean", indices)
     challenge = build_eval_rows(tasks, NoiseConfig.challenge_writes(), "eval:challenge", EVAL_SCHEDULES_CHALLENGE)
     if not final:
+        sets = {"clean": clean} if "clean" in periodic_set_names(spec) else {}
         noise = spec.eval_noise() if spec.arm != "clean" else NoiseConfig.transition(0.25, "paired")
         sets["noisy"] = build_eval_rows(tasks, noise, "eval:noisy", indices)
         sets["challenge"] = challenge
         return sets
+    sets = {"clean": clean}
     for name, config in shared_final_configs(spec).items():
         sets[name] = build_eval_rows(tasks, config, f"eval:{name}", indices)
     sets["challenge"] = challenge
@@ -144,8 +165,9 @@ def assemble_eval_sets(spec: RunSpec, tasks: list[Task], final: bool) -> dict[st
 
 
 def shared_final_configs(spec: RunSpec) -> dict[str, NoiseConfig]:
-    """The final noisy sets every run is evaluated on, plus the run's own training noise when it is none of them."""
-    shared = {f"noisy_p{round(level * 100):03d}": NoiseConfig.transition(level, "paired") for level in FINAL_TRANSITION_LEVELS}
+    """The final noisy sets of the run's profile, plus the run's own training noise when it is none of them."""
+    levels = CORE_TRANSITION_LEVELS if spec.eval_profile == "core" else FINAL_TRANSITION_LEVELS
+    shared = {f"noisy_p{round(level * 100):03d}": NoiseConfig.transition(level, "paired") for level in levels}
     shared["heldout_types"] = NoiseConfig.heldout_types(0.25, "paired")
     own = spec.eval_noise()
     if spec.arm != "clean" and own not in shared.values():
@@ -153,15 +175,24 @@ def shared_final_configs(spec: RunSpec) -> dict[str, NoiseConfig]:
     return shared
 
 
+def eval_sets_sha256(spec: RunSpec, splits: dict[str, list[Task]]) -> str:
+    """sha256 of every periodic and final evaluation row the run will see (prompts, tasks, schedule seeds, noise):
+    two runs with this digest equal are evaluated on identical inputs."""
+    rows = {"periodic": assemble_eval_sets(spec, splits["heldout"], final=False),
+            "final": assemble_eval_sets(spec, splits["test"], final=True)}
+    return hashlib.sha256(json.dumps(rows, sort_keys=True).encode("utf-8")).hexdigest()
+
+
 def expected_eval_sizes(spec: RunSpec) -> dict[str, dict[str, int]]:
     """Episode counts a complete run shows in every periodic set (per evaluated step) and every final set, from
     the spec alone; `assemble_eval_sets` on the real pools produces exactly these sizes."""
     per_task = len(EVAL_SCHEDULES_PERIODIC)
-    periodic = {
+    sizes = {
         "clean": spec.eval_tasks * per_task,
         "noisy": spec.eval_tasks * per_task,
         "challenge": spec.eval_tasks * len(EVAL_SCHEDULES_CHALLENGE),
     }
+    periodic = {name: sizes[name] for name in periodic_set_names(spec)}
     final = {"clean": spec.final_eval_tasks * len(EVAL_SCHEDULES_FINAL)}
     for name in shared_final_configs(spec):
         final[name] = spec.final_eval_tasks * len(EVAL_SCHEDULES_FINAL)
@@ -373,6 +404,10 @@ def vllm_engine_overrides(spec: RunSpec) -> dict:
         overrides["enable_prefix_caching"] = spec.vllm_enable_prefix_caching
     if spec.vllm_max_num_batched_tokens is not None:
         overrides["max_num_batched_tokens"] = spec.vllm_max_num_batched_tokens
+    if spec.vllm_kv_cache_memory_bytes is not None:
+        # vLLM 0.27.1 CacheConfig: an explicit KV-cache size replaces the gpu_memory_utilization-based sizing, so a
+        # job's start-up does not depend on how much memory another job on the same GPU holds at that moment.
+        overrides["kv_cache_memory_bytes"] = spec.vllm_kv_cache_memory_bytes
     return overrides
 
 

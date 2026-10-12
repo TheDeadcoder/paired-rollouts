@@ -206,3 +206,123 @@ def test_launch_remote_refuses_dirty_tree(tmp_path, monkeypatch):
     monkeypatch.setattr(sys, "argv", ["launch_remote.py", "--host", "root@h", "--specs", "configs/x.json", "--label", "l"])
     with pytest.raises(SystemExit, match="uncommitted"):
         launch.main()
+
+
+def test_queue_command_builders():
+    from pairedrl.ops.remote import (
+        ensure_checkout_command,
+        queue_append_command,
+        queue_host_status_command,
+        queue_run_command,
+        read_files_command,
+    )
+
+    status = chain_status_command("pairedrl")
+    assert "[s]cripts/run_local.py" in status and "[s]cripts/run_queue.py" in status
+    host = queue_host_status_command(None)
+    assert "echo QUEUE" in host and "echo CHAIN" in host
+    assert subprocess.run(["bash", "-c", host], capture_output=True, text=True, check=False).stdout.strip() == "IDLE"
+    clone = ensure_checkout_command("/root/work/paired-rollouts", "/root/work/checkouts", "abc123")
+    assert "git fetch -q origin" in clone and "git clone -q /root/work/paired-rollouts /root/work/checkouts/abc123" in clone
+    assert clone.endswith("git checkout -q -f abc123 && git rev-parse HEAD")
+    entry = {"kind": "pair", "jobs": [{"name": "a", "spec": "configs/a.json"}], "note": "it's"}
+    append = queue_append_command("pairedrl", "/work/checkouts/abc123", "/work/runs/queue", entry)
+    assert append.startswith("docker exec pairedrl bash -c ") and "scripts/run_queue.py append" in append
+    assert "PYTHONPATH=/work/checkouts/abc123/src" in append and "--entry-json" in append
+    run = queue_run_command("pairedrl", "/work/checkouts/abc123", "/work/runs/queue", "/work/runs", "digitalocean", 1.99, "/work/hf")
+    assert run.startswith("docker exec -d pairedrl bash -c ") and "scripts/run_queue.py run" in run and "HF_HOME=/work/hf" in run
+    assert ">> /work/runs/queue/runner.log" in run and "--usd-per-hour 1.99" in run
+    native = queue_run_command(None, "/ws/c", "/ws/runs/queue", "/ws/runs", "runpod", 3.49, "/ws/hf")
+    assert native.startswith("nohup bash -c ") and native.endswith("&")
+    assert read_files_command("/a", "/b") == "cat /a 2>/dev/null ; echo '----8<----' ; cat /b 2>/dev/null"
+
+
+def test_launch_remote_queue_mode_appends_entries_and_starts_one_runner(tmp_path, monkeypatch, capsys):
+    launch = load_script("launch_remote")
+    (tmp_path / "docs").mkdir()
+    ledger = tmp_path / "docs" / "RUN_LEDGER.md"
+    ledger.write_text("# Run ledger\n\n" + LEDGER_HEADER + "\n|---|---|---|---|---|---|---|---|---|---|\n", encoding="utf-8")
+    (tmp_path / "configs").mkdir()
+    for run_id, arm in (("solo", "paired"), ("pa", "paired"), ("ind", "independent"), ("late", "paired")):
+        (tmp_path / "configs" / f"{run_id}.json").write_text(json.dumps({
+            "run_id": run_id, "model": "Qwen/Qwen3.5-2B", "condition": "C2", "arm": arm, "p": 0.25, "steps": 100, "notes": "x"}))
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(launch, "git_state", lambda: ("abc123", []))
+    calls, state = [], {"host": "IDLE", "alive": False, "n": 0}
+
+    def fake_run(cmd, capture_output=False, text=False, check=False):
+        command = cmd[-1]
+        calls.append(command)
+        if "echo QUEUE" in command:
+            out = f"{state['host']}\n"
+        elif "git clone" in command:
+            out = "abc123\n"
+        elif "run_queue.py append" in command:
+            state["n"] += 1
+            out = f"APPENDED e{state['n']:04d} {'RUNNER_ALIVE' if state['alive'] else 'RUNNER_IDLE'}\n"
+        else:
+            out = ""
+        return subprocess.CompletedProcess(cmd, 0, stdout=out, stderr="")
+
+    monkeypatch.setattr(launch.subprocess, "run", fake_run)
+    monkeypatch.setattr(sys, "argv", ["launch_remote.py", "--host", "root@h", "--entry", "configs/solo.json",
+                                      "--entry", "configs/pa.json,configs/ind.json", "--label", "do-a"])
+    launch.main()
+    out = capsys.readouterr().out
+    assert "QUEUED solo on root@h (entry e0001, slot 0)" in out and "QUEUED ind on root@h (entry e0002, slot 1)" in out
+    assert sum("run_queue.py run" in c for c in calls) == 1 and not any("pip install" in c for c in calls)
+    appends = [c for c in calls if "run_queue.py append" in c]
+    assert '"kind": "pair"' in appends[1] and "/work/checkouts/abc123" in appends[1]
+    register = json.loads(next((tmp_path / "registers" / "launches").glob("*_do-a.json")).read_text())
+    assert register["queue"]["host_queue_dir"] == "/root/work/runs/queue" and register["queue"]["checkout"] == "/work/checkouts/abc123"
+    assert [(e["run_id"], e["queue_entry"], e["slot"]) for e in register["entries"]] == [("solo", "e0001", 0), ("pa", "e0002", 0), ("ind", "e0002", 1)]
+    assert "call root@h:ind" in ledger.read_text()
+
+    state.update(host="QUEUE", alive=True)
+    monkeypatch.setattr(sys, "argv", ["launch_remote.py", "--host", "root@h", "--entry", "configs/late.json", "--label", "do-a2"])
+    with pytest.raises(SystemExit, match="pass --append"):
+        launch.main()
+    calls.clear()
+    monkeypatch.setattr(sys, "argv", ["launch_remote.py", "--host", "root@h", "--entry", "configs/late.json", "--label", "do-a2", "--append"])
+    launch.main()
+    assert not any("run_queue.py run" in c for c in calls) and any("run_queue.py append" in c for c in calls)
+    state.update(host="CHAIN")
+    monkeypatch.setattr(sys, "argv", ["launch_remote.py", "--host", "root@h", "--entry", "configs/solo.json", "--label", "x", "--relaunch"])
+    with pytest.raises(SystemExit, match="outside a queue"):
+        launch.main()
+    monkeypatch.setattr(sys, "argv", ["launch_remote.py", "--host", "root@h", "--entry", "configs/a.json,configs/b.json,configs/c.json", "--label", "x"])
+    with pytest.raises(SystemExit, match="two comma-separated specs"):
+        launch.main()
+
+
+def test_run_local_guards_its_import_path_and_records_its_slot(tmp_path, monkeypatch):
+    import argparse
+
+    run_local = load_script("run_local")
+    run_local.check_import_path(ROOT)
+    with pytest.raises(SystemExit, match="not from this checkout"):
+        run_local.check_import_path(tmp_path)
+    assert run_local.placement(argparse.Namespace(slot=None)) is None
+    for key in ("TMPDIR", "TRITON_CACHE_DIR", "TORCHINDUCTOR_CACHE_DIR", "VLLM_CACHE_ROOT"):
+        monkeypatch.setenv(key, str(tmp_path / key))
+    monkeypatch.setenv("MASTER_PORT", "29999")
+    monkeypatch.delenv("VLLM_PORT", raising=False)
+    where = run_local.placement(argparse.Namespace(slot=1, start_offset_s=312.0, shares_gpu_with="r1-c2-paired-s3", queue_entry="e0002"))
+    assert where["ports"]["MASTER_PORT"] == "29999" and where["ports"]["VLLM_PORT"] == "31100"
+    assert where["slot"] == 1 and where["start_offset_s"] == 312.0 and where["shares_gpu_with"] == "r1-c2-paired-s3"
+    assert all(pathlib.Path(p).is_dir() for p in where["dirs"].values())
+
+
+def test_vllm_facts_record_the_kv_cache_the_engine_allocated():
+    from types import SimpleNamespace
+
+    from pairedrl.ops.job import vllm_facts
+
+    cache = SimpleNamespace(enable_prefix_caching=False, gpu_memory_utilization=0.2, kv_cache_memory_bytes=None,
+                            num_gpu_blocks=2048, block_size=16)
+    cfg = SimpleNamespace(cache_config=cache, scheduler_config=SimpleNamespace(max_num_batched_tokens=4096, max_num_seqs=192),
+                          model_config=SimpleNamespace(max_model_len=12288))
+    trainer = SimpleNamespace(vllm_generation=SimpleNamespace(llm=SimpleNamespace(llm_engine=SimpleNamespace(vllm_config=cfg))))
+    facts = vllm_facts(trainer)
+    assert facts["kv_cache_tokens"] == 2048 * 16 and facts["gpu_memory_utilization"] == 0.2 and facts["max_num_seqs"] == 192
+    assert "error" in vllm_facts(SimpleNamespace())

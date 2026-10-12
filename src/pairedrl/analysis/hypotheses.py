@@ -13,7 +13,13 @@ import numpy as np
 
 from pairedrl.analysis.curves import _phase_step, lineage_records, load_attempts
 from pairedrl.analysis.diagnostics import luck_share
-from pairedrl.train.runner import RunSpec, luck_share_tables_by_phase, periodic_steps
+from pairedrl.train.runner import (
+    RunSpec,
+    expected_eval_sizes,
+    luck_share_tables_by_phase,
+    periodic_set_names,
+    periodic_steps,
+)
 
 H2_MEAN_MARGIN = 0.03
 H3_MARGIN = 0.05
@@ -100,11 +106,22 @@ def paired_bootstrap(per_seed_values: np.ndarray, n_boot: int, rng: np.random.Ge
     return out
 
 
+def require_sets(runs, periodic: str | None = None, final: str | None = None) -> None:
+    """Refuse runs whose evaluation profile has no such set: an absent curve (the core profile has no periodic clean
+    set) is absent, never an empty or zero curve."""
+    for r in runs:
+        if periodic is not None and periodic not in periodic_set_names(r.spec):
+            raise ValueError(f"{r.run_id}: eval_profile {r.spec.eval_profile!r} has no periodic {periodic!r} set")
+        if final is not None and final not in expected_eval_sizes(r.spec)["final"]:
+            raise ValueError(f"{r.run_id}: eval_profile {r.spec.eval_profile!r} has no final {final!r} set")
+
+
 def h2(pairs: list[tuple[RunData, RunData]], condition: str, n_boot: int = 10000, seed: int = 0) -> dict:
     """H2a (C2, at-training-noise validation AUC) or H2b (C4, clean validation AUC): mean over seeds of the
     paired-minus-independent AUC difference at least 0.03, every seed-level difference positive, and the final test
     direction not contradicting (paired mean not below the independent mean)."""
     set_name, final_name = H2_SETS[condition]
+    require_sets([r for pr in pairs for r in pr], periodic=set_name, final=final_name)
     rng = np.random.default_rng(seed)
     steps = periodic_steps(pairs[0][0].spec)
     tasks = sorted(set.intersection(*[set(r.periodic_tasks(set_name)) for pr in pairs for r in pr]))
@@ -157,6 +174,7 @@ def h2(pairs: list[tuple[RunData, RunData]], condition: str, n_boot: int = 10000
 def h3(pairs: list[tuple[RunData, RunData]], n_boot: int = 10000, seed: int = 0) -> dict:
     """H3 (C2): on the matched challenge set, paired success exceeds independent success by at least 5 points
     averaged over steps 40, 60 and 80 and over seeds, with every seed-level difference positive."""
+    require_sets([r for pr in pairs for r in pr], periodic="challenge")
     rng = np.random.default_rng(seed)
     for pr in pairs:
         for r in pr:
@@ -187,6 +205,7 @@ def h3(pairs: list[tuple[RunData, RunData]], n_boot: int = 10000, seed: int = 0)
 def h5(pairs: list[tuple[RunData, RunData]], n_boot: int = 10000, seed: int = 0) -> dict:
     """H5 (C2): on the held-out-fault-type test set the paired arm is non-inferior with margin 3 points: the lower
     bound of the 90 percent bootstrap interval of the paired-minus-independent difference is above -0.03."""
+    require_sets([r for pr in pairs for r in pr], final="heldout_types")
     rng = np.random.default_rng(seed)
     tasks = sorted(set.intersection(*[set(r.final["heldout_types"]) for pr in pairs for r in pr]))
     per_seed_task = np.array([final_vector(p, "heldout_types", tasks) - final_vector(i, "heldout_types", tasks) for p, i in pairs])

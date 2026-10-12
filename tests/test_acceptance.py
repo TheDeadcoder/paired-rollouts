@@ -256,3 +256,30 @@ def test_missing_checkpoints_are_accepted_only_explicitly_and_recorded_as_defect
     write_checkpoint(run_dir / "trainer" / "checkpoint-2", 2, **{"optimizer.pt": None})
     ok, reasons = verify.verdict(run_register(run_dir), weights=True, accept_missing=[2])
     assert not ok and "incomplete ['checkpoint-2']" in reasons[0]
+
+
+def test_a_core_run_is_accepted_without_the_dropped_sets_and_rejected_without_a_core_set(tmp_path):
+    from pairedrl.analysis.hypotheses import RunData, h2
+
+    verify = load_script("verify_run")
+    spec = small_spec(eval_profile="core", diagnostic_steps=[])
+    run_dir = complete_run(tmp_path, spec)
+    entry = run_register(run_dir)
+    assert verify.verdict(entry, weights=False) == (True, [])
+    assert set(entry["curves"]) == {"noisy", "challenge"} and "clean" not in entry["auc"]
+    assert entry["completeness"]["episodes_expected"] == 3 * (4 + 2) + (8 + 8 + 8 + 2) + 4 * 2 * 2
+    records = read_episode_log(run_dir / "episodes.jsonl")
+    rewrite(run_dir, episodes=[r for r in records if not r["phase"].startswith("final_noisy_p025")])
+    ok, reasons = verify.verdict(run_register(run_dir), weights=False)
+    assert not ok and "missing sets 1" in reasons[0]
+    shutil.rmtree(run_dir)
+    run_dir = complete_run(tmp_path, spec)
+    full_clean = [dict(r, phase=r["phase"].replace("eval_noisy", "eval_clean"), condition="eval:clean")
+                  for r in read_episode_log(run_dir / "episodes.jsonl") if r["phase"] == "eval_noisy:step0"]
+    rewrite(run_dir, episodes=read_episode_log(run_dir / "episodes.jsonl") + full_clean)
+    ok, reasons = verify.verdict(run_register(run_dir), weights=False)
+    assert not ok and "unexpected phases 1" in reasons[0]
+    c4 = [complete_run(tmp_path / arm, small_spec(run_id=f"c4-{arm}", condition="C4", arm=arm, p=0.0, q=0.1,
+                                                   eval_profile="core", diagnostic_steps=[])) for arm in ("paired", "independent")]
+    with pytest.raises(ValueError, match="no periodic 'clean' set"):
+        h2([(RunData(c4[0]), RunData(c4[1]))], "C4", n_boot=10)

@@ -4,6 +4,7 @@ trainer checkpoints and adapter_final/, checkpointing the state files after ever
 `checkpoint_every` training steps; a relaunch under the same run id preserves the previous attempt and resumes."""
 
 import datetime as dt
+import hashlib
 import importlib.metadata as md
 import importlib.util
 import json
@@ -174,16 +175,51 @@ def write_refusal(spec: RunSpec, out_dir: pathlib.Path, reason: str, git_commit:
 
 
 def vllm_facts(trainer) -> dict:
+    """The colocated engine's configuration after initialization, including the KV cache it actually allocated
+    (blocks x block size, in tokens) and the device memory left at that point."""
     try:
         cfg = trainer.vllm_generation.llm.llm_engine.vllm_config
-        return {
-            "enable_prefix_caching": cfg.cache_config.enable_prefix_caching,
+        cache = cfg.cache_config
+        facts = {
+            "enable_prefix_caching": cache.enable_prefix_caching,
             "max_num_batched_tokens": cfg.scheduler_config.max_num_batched_tokens,
             "max_num_seqs": cfg.scheduler_config.max_num_seqs,
             "max_model_len": cfg.model_config.max_model_len,
+            "gpu_memory_utilization": getattr(cache, "gpu_memory_utilization", None),
+            "kv_cache_memory_bytes_requested": getattr(cache, "kv_cache_memory_bytes", None),
+            "kv_cache_blocks": getattr(cache, "num_gpu_blocks", None),
+            "kv_cache_block_size": getattr(cache, "block_size", None),
         }
+        if facts["kv_cache_blocks"] and facts["kv_cache_block_size"]:
+            facts["kv_cache_tokens"] = int(facts["kv_cache_blocks"]) * int(facts["kv_cache_block_size"])
     except Exception as e:  # noqa: BLE001
         return {"error": f"{type(e).__name__}: {e}"}
+    try:
+        import torch
+
+        free, total = torch.cuda.mem_get_info()
+        facts["device_free_gb_after_init"] = round(free / 1e9, 2)
+        facts["device_total_gb"] = round(total / 1e9, 2)
+        facts["torch_reserved_gb_after_init"] = round(torch.cuda.memory_reserved() / 1e9, 2)
+    except Exception as e:  # noqa: BLE001
+        facts["device_memory_error"] = f"{type(e).__name__}: {e}"
+    return facts
+
+
+def adapter_fingerprint(model) -> str | None:
+    """sha256 over the names and raw bytes of the model's LoRA parameters in name order: equal for two jobs exactly
+    when they start from the same adapter."""
+    import torch
+
+    h = hashlib.sha256()
+    found = False
+    for name, param in sorted(model.named_parameters(), key=lambda kv: kv[0]):
+        if "lora_" not in name:
+            continue
+        found = True
+        h.update(name.encode("utf-8"))
+        h.update(param.detach().contiguous().reshape(-1).cpu().view(torch.uint8).numpy().tobytes())
+    return h.hexdigest() if found else None
 
 
 def count_lines(path: pathlib.Path) -> int:
@@ -204,19 +240,22 @@ def run_job(
     commit_fn=None,
     checkpoint_every: int = 10,
     reraise_attempts: int = 0,
+    placement: dict | None = None,
 ) -> dict:
     """Execute one run. `git_commit` is the launcher's commit and `deployed_commit` the code's own; they must be
     equal and clean or the invocation is refused before the run directory is touched, as is a repeat of a COMPLETE
     run or a relaunch with a different spec. `commit_fn` (optional) persists the run directory after every state
     write, for volumes that need an explicit commit. A FAILED attempt numbered at most `reraise_attempts` re-raises
     its error after recording it, so a platform retry policy (Modal) resumes it from the newest checkpoint; later
-    attempts return normally, which bounds the retries of a deterministic failure."""
+    attempts return normally, which bounds the retries of a deterministic failure. `placement` (slot, ports, start
+    offset, the run sharing the GPU) is recorded in the manifest when the job runs from the droplet queue."""
     import torch
 
     from pairedrl.train.env_adapter import BackOfficeEnv
     from pairedrl.train.runner import (
         EvalSchedule,
         build_trainer,
+        eval_sets_sha256,
         luck_share_tables_by_phase,
         read_episode_log,
         summarize_episodes,
@@ -264,6 +303,8 @@ def run_job(
         "step_timings": [],
         "vllm": {},
     }
+    if placement:
+        manifest["placement"] = dict(placement)
     t0 = time.perf_counter()
     trainer = None
     schedule = None
@@ -291,6 +332,8 @@ def run_job(
         )
         manifest["vllm"] = vllm_facts(trainer)
         manifest["model_commit_hash"] = getattr(getattr(trainer.model, "config", None), "_commit_hash", None)
+        manifest["initial_adapter_sha256"] = adapter_fingerprint(trainer.model)
+        manifest["eval_sets_sha256"] = eval_sets_sha256(spec, splits)
         schedule = EvalSchedule(spec, trainer, splits, periodic, on_checkpoint=write_state, checkpoint_every=checkpoint_every)
         write_state()
         if spec.eval_only:

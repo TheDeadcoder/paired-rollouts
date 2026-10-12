@@ -34,13 +34,68 @@ def install_command(repo: str, container: str | None) -> str:
 
 
 CHAIN_MARKER = "scripts/run_local.py"
+QUEUE_MARKER = "scripts/run_queue.py"
+
+
+def _pgrep(marker: str) -> str:
+    """pgrep for a script; the bracketed first letter keeps pgrep from matching its own command line."""
+    return f"pgrep -f {shlex.quote(f'[{marker[0]}]{marker[1:]}')} > /dev/null"
 
 
 def chain_status_command(container: str | None) -> str:
-    """Prints RUNNING when a job chain is alive where the jobs run, IDLE otherwise (one job per GPU at a time).
-    The bracketed first letter keeps pgrep from matching its own command line."""
-    pattern = f"[{CHAIN_MARKER[0]}]{CHAIN_MARKER[1:]}"
-    return in_container(container, f"pgrep -f {shlex.quote(pattern)} > /dev/null && echo RUNNING || echo IDLE")
+    """Prints RUNNING when a job chain or a queue runner is alive where the jobs run, IDLE otherwise (a chain never
+    shares the GPU with anything)."""
+    return in_container(container, f"({_pgrep(CHAIN_MARKER)} || {_pgrep(QUEUE_MARKER)}) && echo RUNNING || echo IDLE")
+
+
+def queue_host_status_command(container: str | None) -> str:
+    """Prints QUEUE when the droplet queue's runner is alive, CHAIN when only jobs outside a queue run, IDLE otherwise."""
+    return in_container(container, f"{_pgrep(QUEUE_MARKER)} && echo QUEUE || ({_pgrep(CHAIN_MARKER)} && echo CHAIN || echo IDLE)")
+
+
+def ensure_checkout_command(remote_repo: str, checkouts_dir: str, commit: str) -> str:
+    """A checkout of `commit` of its own under checkouts_dir (a local clone of the host's repository, so git works
+    inside the container too): queued entries run from the checkout of their commit, so entries appended at a later
+    commit never change the code of jobs already queued or running."""
+    repo, base = shlex.quote(remote_repo), shlex.quote(checkouts_dir)
+    target = shlex.quote(f"{checkouts_dir.rstrip('/')}/{commit}")
+    return (
+        f"cd {repo} && git fetch -q origin && mkdir -p {base} && (test -d {target}/.git || git clone -q {repo} {target}) "
+        f"&& cd {target} && git checkout -q -f {shlex.quote(commit)} && git rev-parse HEAD"
+    )
+
+
+def queue_append_command(container: str | None, checkout: str, queue_dir: str, entry: dict) -> str:
+    """Append one entry to the droplet queue; prints APPENDED <id> RUNNER_ALIVE or RUNNER_IDLE."""
+    import json
+
+    ckout = shlex.quote(checkout)
+    return in_container(container, (
+        f"cd {ckout} && PYTHONPATH={ckout}/src python {QUEUE_MARKER} append --queue-dir {shlex.quote(queue_dir)} "
+        f"--entry-json {shlex.quote(json.dumps(entry, sort_keys=True))}"
+    ))
+
+
+def queue_run_command(
+    container: str | None, checkout: str, queue_dir: str, runs_dir: str, provider: str, usd_per_hour: float, hf_home: str,
+) -> str:
+    """Start the droplet queue's runner detached (docker exec -d, or nohup on a pod), so it survives the laptop going
+    offline; a second runner on the same queue exits at once."""
+    env = ENV.format(hf_home=shlex.quote(hf_home))
+    ckout, queue = shlex.quote(checkout), shlex.quote(queue_dir)
+    inner = (
+        f"cd {ckout} && mkdir -p {queue} && {env} PYTHONPATH={ckout}/src python {QUEUE_MARKER} run --queue-dir {queue} "
+        f"--runs-dir {shlex.quote(runs_dir)} --provider {shlex.quote(provider)} --usd-per-hour {usd_per_hour} "
+        f">> {queue}/runner.log 2>&1"
+    )
+    if container is None:
+        return f"nohup bash -c {shlex.quote(inner)} > /dev/null 2>&1 &"
+    return in_container(container, inner, detached=True)
+
+
+def read_files_command(*paths: str) -> str:
+    """Print each file (or nothing when it is absent), separated by a marker line, on the host."""
+    return " ; echo '----8<----' ; ".join(f"cat {shlex.quote(p)} 2>/dev/null" for p in paths)
 
 
 def run_chain_command(

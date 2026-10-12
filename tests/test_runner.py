@@ -296,3 +296,40 @@ def test_expected_evidence_names_every_record_and_pool_digests_match_the_manifes
     assert tampered["test"]["match"] is False and tampered["test"]["count"] == 300 and tampered["train"]["match"] is True
     (other / "MANIFEST.json").unlink()
     assert not any(v["match"] for v in task_pool_digests(other).values())
+
+
+def test_core_profile_keeps_the_h2a_sets_and_drops_the_rest():
+    full = spec(eval_tasks=64, final_eval_tasks=200)
+    core = spec(eval_tasks=64, final_eval_tasks=200, eval_profile="core", diagnostic_steps=[])
+    periodic_full = assemble_eval_sets(full, SPLITS["heldout"], final=False)
+    periodic_core = assemble_eval_sets(core, SPLITS["heldout"], final=False)
+    assert list(periodic_core) == ["noisy", "challenge"]
+    for name in periodic_core:
+        assert periodic_core[name] == periodic_full[name]
+    final_core = assemble_eval_sets(core, SPLITS["test"], final=True)
+    final_full = assemble_eval_sets(full, SPLITS["test"], final=True)
+    assert list(final_core) == ["clean", "noisy_p025", "heldout_types", "challenge"]
+    for name in final_core:
+        assert final_core[name] == final_full[name]
+    sizes = expected_eval_sizes(core)
+    assert sizes["periodic"] == {"noisy": 128, "challenge": 64} and sum(sizes["final"].values()) == 3 * 800 + 200
+    assert {k: len(v) for k, v in periodic_core.items()} == sizes["periodic"]
+    assert {k: len(v) for k, v in final_core.items()} == sizes["final"]
+    assert 6 * sum(sizes["periodic"].values()) + sum(sizes["final"].values()) == 3752
+    outcome = spec(condition="C4", p=0.0, q=0.1, eval_profile="core", diagnostic_steps=[])
+    assert "at_training" in expected_eval_sizes(outcome)["final"] and "noisy_p010" not in expected_eval_sizes(outcome)["final"]
+    assert expected_evidence(core, SPLITS)["diagnostic_steps"] == []
+    assert expected_eval_sizes(full) == expected_eval_sizes(spec(eval_tasks=64, final_eval_tasks=200, eval_profile="full"))
+
+
+def test_new_spec_fields_validate_and_reach_the_engine():
+    with pytest.raises(ValueError, match="eval_profile"):
+        spec(eval_profile="lite")
+    with pytest.raises(ValueError, match="no luck-share diagnostics"):
+        spec(eval_profile="core")
+    with pytest.raises(ValueError, match="at least 1 GiB"):
+        spec(vllm_kv_cache_memory_bytes=40)
+    assert "kv_cache_memory_bytes" not in vllm_engine_overrides(spec())
+    assert vllm_engine_overrides(spec(vllm_kv_cache_memory_bytes=32 * 2**30))["kv_cache_memory_bytes"] == 32 * 2**30
+    old = {"run_id": "t", "model": "m", "condition": "C2", "arm": "paired", "p": 0.25}
+    assert RunSpec.from_dict(old).eval_profile == "full" and RunSpec.from_dict(old).vllm_kv_cache_memory_bytes is None

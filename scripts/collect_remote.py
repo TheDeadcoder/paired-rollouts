@@ -4,7 +4,9 @@
 
 Reads each run's manifest on the host over SSH (or rsyncs the run directory without weights into outputs/runs/),
 prints one line per run, and fills in the ledger status once a run is terminal. Exit code 0 when every run in the
-register is terminal, 1 otherwise. A manifest that has not progressed for two hours is flagged STALE.
+register is terminal, 1 otherwise. A manifest that has not progressed for two hours is flagged STALE. For a launch
+into the droplet queue it also prints the queue's status: every entry's state, each job's attempts and last
+progress, the watchdog's events and the step-0 identity checks.
 """
 
 import argparse
@@ -15,7 +17,8 @@ import subprocess
 import sys
 
 from pairedrl.ops.ledger import TERMINAL, latest_launch_register, read_launch_register, set_status
-from pairedrl.ops.remote import rsync_command, ssh_command
+from pairedrl.ops.queue import format_status
+from pairedrl.ops.remote import read_files_command, rsync_command, ssh_command
 
 STALE_AFTER_S = 2 * 3600
 
@@ -54,6 +57,19 @@ def describe(run_id: str, manifest: dict | None, now: dt.datetime) -> tuple[str,
     return state, line
 
 
+def queue_report(host: str, host_queue_dir: str) -> str:
+    """The droplet queue's status, read on the host."""
+    command = read_files_command(f"{host_queue_dir}/status.json", f"{host_queue_dir}/entries.jsonl")
+    proc = subprocess.run(ssh_command(host, command), capture_output=True, text=True, check=False)
+    status_text, _, entries_text = proc.stdout.partition("----8<----")
+    try:
+        status = json.loads(status_text) if status_text.strip() else {}
+        entries = [json.loads(line) for line in entries_text.splitlines() if line.strip()]
+    except json.JSONDecodeError as e:
+        return f"queue status unreadable on {host}: {e}"
+    return format_status(status, entries)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--register", help="launch register JSON; defaults to the newest under --register-dir")
@@ -89,6 +105,9 @@ def main() -> int:
             set_status(args.ledger, entry["call_id"], state)
         else:
             all_terminal = False
+    queue = register.get("queue")
+    if queue:
+        print(queue_report(register["entries"][0]["host"], queue["host_queue_dir"]))
     return 0 if all_terminal else 1
 
 

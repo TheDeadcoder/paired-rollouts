@@ -14,6 +14,7 @@ from pairedrl.train.runner import (
     identity_counts,
     load_task_splits,
     luck_share_tables_by_phase,
+    periodic_set_names,
     read_episode_log,
     summarize_episodes,
     summarize_groups,
@@ -387,7 +388,9 @@ def run_register(run_dir, threshold: float | None = None, data_dir=None) -> dict
     groups, group_lineage = lineage_records(attempts, "groups.jsonl")
     spec = manifest["spec"]
     run_spec = RunSpec.from_dict(spec)
-    curves = {name: periodic_curve(records, name) for name in PERIODIC_SETS}
+    # Only the sets of the run's evaluation profile: a core run has no periodic clean curve, which stays absent
+    # (no key) rather than empty or zero.
+    curves = {name: periodic_curve(records, name) for name in periodic_set_names(run_spec)}
     luck = luck_by_phase_strict(records, run_spec)
     evidence = expected_evidence(run_spec, load_task_splits(data_dir))
     pools = task_pool_digests(data_dir)
