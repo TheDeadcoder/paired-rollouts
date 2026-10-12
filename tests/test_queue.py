@@ -260,6 +260,38 @@ def test_step0_input_comparison_ignores_arm_and_labels_only():
     assert eval_sets_sha256(small_spec(), splits) == eval_sets_sha256(small_spec(arm="independent"), splits)
 
 
+def test_the_initial_adapter_depends_only_on_the_seed():
+    torch = pytest.importorskip("torch")
+    from pairedrl.ops.job import adapter_fingerprint, seed_initial_adapter
+
+    def adapter(rng_seed):
+        torch.manual_seed(rng_seed)
+        model = torch.nn.ModuleDict({
+            "q": torch.nn.ModuleDict({"base": torch.nn.Linear(16, 16), "lora_A": torch.nn.Linear(16, 4, bias=False),
+                                      "lora_B": torch.nn.Linear(4, 16, bias=False)}),
+            "v": torch.nn.ModuleDict({"lora_A": torch.nn.Linear(16, 4, bias=False).to(torch.bfloat16),
+                                      "lora_B": torch.nn.Linear(4, 16, bias=False).to(torch.bfloat16)}),
+        })
+        for name, p in model.named_parameters():
+            if "lora_B" in name:
+                torch.nn.init.zeros_(p)
+        return model
+
+    a, b = adapter(1), adapter(2)
+    assert adapter_fingerprint(a) != adapter_fingerprint(b)
+    base = a["q"]["base"].weight.clone()
+    assert seed_initial_adapter(a, 3) == seed_initial_adapter(b, 3) == 2
+    assert adapter_fingerprint(a) == adapter_fingerprint(b)
+    assert torch.equal(a["q"]["base"].weight, base)
+    assert all(not p.any() for name, p in a.named_parameters() if "lora_B" in name)
+    assert a["v"]["lora_A"].weight.dtype == torch.bfloat16
+    bound = 1 / 16 ** 0.5
+    assert 0 < a["q"]["lora_A"].weight.abs().max() <= bound
+    c = adapter(1)
+    seed_initial_adapter(c, 4)
+    assert adapter_fingerprint(c) != adapter_fingerprint(a)
+
+
 def test_entry_validation_and_a_second_runner(tmp_path):
     ok = {"kind": "command", "commit": "c", "checkout": str(tmp_path), "jobs": [{"name": "p", "argv": ["x"], "progress": ["*.json"]}]}
     q.validate_entry(ok)

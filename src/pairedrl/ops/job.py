@@ -222,6 +222,29 @@ def adapter_fingerprint(model) -> str | None:
     return h.hexdigest() if found else None
 
 
+def seed_initial_adapter(model, seed: int) -> int:
+    """Redraw every LoRA A matrix from a CPU generator seeded with the run seed, in parameter-name order, with PEFT's
+    default initialization (Kaiming-uniform with a = sqrt(5), drawn in float32, then cast to the parameter's dtype and
+    device); B stays as PEFT made it (zero). TRL 1.12 creates the adapter before it applies the run seed, so without
+    this the initial adapter follows whatever RNG state the process has and the two arms of a seed start from
+    different adapters (the same policy, the base model, because B is zero). Returns the number of matrices drawn."""
+    import math
+
+    import torch
+
+    generator = torch.Generator().manual_seed(seed)
+    drawn = 0
+    with torch.no_grad():
+        for name, param in sorted(model.named_parameters(), key=lambda kv: kv[0]):
+            if "lora_A" not in name:
+                continue
+            values = torch.empty(param.shape, dtype=torch.float32)
+            torch.nn.init.kaiming_uniform_(values, a=math.sqrt(5), generator=generator)
+            param.copy_(values.to(device=param.device, dtype=param.dtype))
+            drawn += 1
+    return drawn
+
+
 def count_lines(path: pathlib.Path) -> int:
     if not path.exists():
         return 0
@@ -332,6 +355,8 @@ def run_job(
         )
         manifest["vllm"] = vllm_facts(trainer)
         manifest["model_commit_hash"] = getattr(getattr(trainer.model, "config", None), "_commit_hash", None)
+        if not spec.adapter_path:
+            manifest["initial_adapter_seeded_matrices"] = seed_initial_adapter(trainer.model, spec.seed)
         manifest["initial_adapter_sha256"] = adapter_fingerprint(trainer.model)
         manifest["eval_sets_sha256"] = eval_sets_sha256(spec, splits)
         schedule = EvalSchedule(spec, trainer, splits, periodic, on_checkpoint=write_state, checkpoint_every=checkpoint_every)
