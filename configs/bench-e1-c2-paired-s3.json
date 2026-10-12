@@ -1,0 +1,16 @@
+{
+  "run_id": "bench-e1-c2-paired-s3",
+  "model": "Qwen/Qwen3.5-2B",
+  "condition": "C2",
+  "arm": "paired",
+  "p": 0.25,
+  "q": 0.0,
+  "seed": 3,
+  "steps": 4,
+  "prompts_per_step": 24,
+  "num_generations": 8,
+  "train_only": true,
+  "diagnostic_steps": [],
+  "vllm_gpu_memory_utilization": 0.35,
+  "notes": "concurrency benchmark, not pre-registered; E1: solo C2 training at the tier-1 vLLM memory setting (0.35), 4 steps, no evaluations"
+}

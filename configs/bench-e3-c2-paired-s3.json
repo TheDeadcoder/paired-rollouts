@@ -1,0 +1,20 @@
+{
+  "run_id": "bench-e3-c2-paired-s3",
+  "model": "Qwen/Qwen3.5-2B",
+  "condition": "C2",
+  "arm": "paired",
+  "p": 0.25,
+  "q": 0.0,
+  "seed": 3,
+  "steps": 1,
+  "prompts_per_step": 24,
+  "num_generations": 8,
+  "eval_profile": "core",
+  "eval_tasks": 128,
+  "final_eval_tasks": 8,
+  "per_device_eval_batch_size": 256,
+  "checkpoint_steps": 1,
+  "diagnostic_steps": [],
+  "vllm_gpu_memory_utilization": 0.2,
+  "notes": "concurrency benchmark, not pre-registered; E3: the E2 pair at evaluation batch 256 and 1 training step"
+}
