@@ -1,0 +1,74 @@
+{
+  "app": "root@165.245.128.135",
+  "commit": "a0e01b93a1a359e406da5830e68252bf0e8766cf",
+  "entries": [
+    {
+      "call_id": "root@165.245.128.135:bench-e1-c2-paired-s3",
+      "container": "pairedrl",
+      "host": "root@165.245.128.135",
+      "host_run_dir": "/root/work/runs/bench-e1-c2-paired-s3",
+      "pair": false,
+      "queue_entry": "e0001",
+      "run_id": "bench-e1-c2-paired-s3",
+      "slot": 0,
+      "spawned_utc": "2026-10-12T15:11:29+00:00",
+      "spec_path": "configs/bench-e1-c2-paired-s3.json"
+    },
+    {
+      "call_id": "root@165.245.128.135:bench-e2-c2-paired-s3",
+      "container": "pairedrl",
+      "host": "root@165.245.128.135",
+      "host_run_dir": "/root/work/runs/bench-e2-c2-paired-s3",
+      "pair": true,
+      "queue_entry": "e0002",
+      "run_id": "bench-e2-c2-paired-s3",
+      "slot": 0,
+      "spawned_utc": "2026-10-12T15:11:29+00:00",
+      "spec_path": "configs/bench-e2-c2-paired-s3.json"
+    },
+    {
+      "call_id": "root@165.245.128.135:bench-e2-c2-independent-s3",
+      "container": "pairedrl",
+      "host": "root@165.245.128.135",
+      "host_run_dir": "/root/work/runs/bench-e2-c2-independent-s3",
+      "pair": true,
+      "queue_entry": "e0002",
+      "run_id": "bench-e2-c2-independent-s3",
+      "slot": 1,
+      "spawned_utc": "2026-10-12T15:11:29+00:00",
+      "spec_path": "configs/bench-e2-c2-independent-s3.json"
+    },
+    {
+      "call_id": "root@165.245.128.135:bench-e3-c2-paired-s3",
+      "container": "pairedrl",
+      "host": "root@165.245.128.135",
+      "host_run_dir": "/root/work/runs/bench-e3-c2-paired-s3",
+      "pair": true,
+      "queue_entry": "e0003",
+      "run_id": "bench-e3-c2-paired-s3",
+      "slot": 0,
+      "spawned_utc": "2026-10-12T15:11:29+00:00",
+      "spec_path": "configs/bench-e3-c2-paired-s3.json"
+    },
+    {
+      "call_id": "root@165.245.128.135:bench-e3-c2-independent-s3",
+      "container": "pairedrl",
+      "host": "root@165.245.128.135",
+      "host_run_dir": "/root/work/runs/bench-e3-c2-independent-s3",
+      "pair": true,
+      "queue_entry": "e0003",
+      "run_id": "bench-e3-c2-independent-s3",
+      "slot": 1,
+      "spawned_utc": "2026-10-12T15:11:29+00:00",
+      "spec_path": "configs/bench-e3-c2-independent-s3.json"
+    }
+  ],
+  "launched_utc": "2026-10-12T15:11:29+00:00",
+  "preregistration": null,
+  "queue": {
+    "append": false,
+    "checkout": "/work/checkouts/a0e01b93a1a359e406da5830e68252bf0e8766cf",
+    "host_queue_dir": "/root/work/runs/queue",
+    "queue_dir": "/work/runs/queue"
+  }
+}
